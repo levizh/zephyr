@@ -1,0 +1,17 @@
+# Kconfig.series - xhsc f460 MCU line
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_HC32F4
+	bool "xhsc hc32f4 series MCU"
+	select SOC_FAMILY_HC32
+	select CPU_HAS_SYSTICK
+	select CPU_CORTEX_M4
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select HAS_HC32_DDL
+	help
+	  Enable support for xhsc hc32f4 MCU series

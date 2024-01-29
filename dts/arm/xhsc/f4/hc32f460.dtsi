@@ -1,0 +1,114 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <arm/armv7-m.dtsi>
+ #include <mem.h>
+ #include <dt-bindings/gpio/gpio.h>
+
+ / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash-controller@40010400 {
+		compatible = "xhsc,hc32_flash";
+		label = "FLASH_CTRL";
+		reg = <0x40010400 0x01b0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			label = "FLASH_HC32";
+			reg = <0 0x80000>;
+			erase-block-size = <8192>;
+			write-block-size = <4>;
+		};
+	};
+
+/* The on-chip SRAM is split into SRAM0 and SRAMH regions that form a
+	 * contiguous block in the memory map, however misaligned accesses
+	 * across the 0x2000_0000 boundary are not supported in the Arm
+	 * Cortex-M4 architecture.*/
+	sramH: memory@1fff8000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x1fff8000 0x8000>;
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x27000>;
+	};
+
+	sramB: memory@200F0000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x200F0000 0x1000>;
+	};
+
+	soc {
+		gpioa: gpio@40053c00 {
+			compatible = "xhsc,hc32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40053c00 0x40>;
+			label = "GPIOA";
+		};
+
+		gpiob: gpio@40053c40 {
+			compatible = "xhsc,hc32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40053c40 0x40>;
+			label = "GPIOB";
+		};
+
+		gpioc: gpio@40053c80 {
+			compatible = "xhsc,hc32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40053c80 0x40>;
+			label = "GPIOC";
+		};
+
+		gpiod: gpio@40053cc0 {
+			compatible = "xhsc,hc32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40053cc0 0x40>;
+			label = "GPIOD";
+		};
+
+		gpioe: gpio@40053d00 {
+			compatible = "xhsc,hc32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40053d00 0x40>;
+			label = "GPIOE";
+		};
+
+		gpioh: gpio@40053d40 {
+			compatible = "xhsc,hc32-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40053d40 0x40>;
+			label = "GPIOH";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

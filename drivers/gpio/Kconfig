@@ -72,4 +72,6 @@ source "drivers/gpio/Kconfig.stellaris"
 
 source "drivers/gpio/Kconfig.rv32m1"
 
+source "drivers/gpio/Kconfig.hc32"
+
 endif # GPIO

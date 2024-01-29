@@ -40,4 +40,6 @@ source "ext/hal/st/lib/Kconfig"
 
 source "ext/hal/ti/simplelink/Kconfig"
 
+source "ext/hal/xhsc/hc32_ddl/Kconfig"
+
 endmenu

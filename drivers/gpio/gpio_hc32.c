@@ -195,7 +195,7 @@ static int gpio_hc32_init(struct device *device)
 
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port) \
 static const struct gpio_hc32_config gpio_hc32_cfg_##__suffix = {\
-	.base = (u32_t *)__base_addr,	\
+	.base = (u16_t *)__base_addr,	\
 	.port = __port,					\
 };									\
 static struct gpio_hc32_data gpio_hc32_data_##__suffix;		\

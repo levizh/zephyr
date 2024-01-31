@@ -33,4 +33,12 @@ config GPIO_HC32
 
 endif # GPIO
 
+if PINMUX
+
+config PINMUX_HC32
+	bool
+	default y
+
+endif #PINMUX
+
 endif # SOC_HC32F460

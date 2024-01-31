@@ -18,7 +18,7 @@
  */
 struct gpio_hc32_config {
 	/* port PCRxy register base address, TODO:check if used */
-	u32_t *base;
+	u16_t *base;
 	/* IO port */
 	u8_t port;
 };

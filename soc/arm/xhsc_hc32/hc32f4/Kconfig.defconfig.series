@@ -1,0 +1,16 @@
+# Kconfig.defconfig.series - xhsc hc32f460 configuration
+# options
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_HC32F4
+
+config SOC_SERIES
+	default "hc32f4"
+
+source "soc/arm/xhsc_hc32/hc32f4/Kconfig.defconfig.hc32f4*"
+
+endif # SOC_SERIES_HC32F4

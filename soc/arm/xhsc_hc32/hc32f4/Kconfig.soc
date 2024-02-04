@@ -1,0 +1,20 @@
+# Kconfig.soc - xhsc f460 MCU line
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "XHSC HC32F4 MCU Selection"
+depends on SOC_SERIES_HC32F4
+
+config SOC_HC32F460
+	bool "HC32F460"
+	select PLATFORM_SPECIFIC_INIT
+	#PLATFORM_SPECIFIC_INIT uesed for set sram3 R/W cycles = 2
+
+config SOC_HC32F4A0
+	bool "HC32F4A0"
+
+endchoice

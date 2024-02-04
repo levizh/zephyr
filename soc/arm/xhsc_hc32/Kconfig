@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2018, xhsc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_HC32
+	bool
+
+if SOC_FAMILY_HC32
+
+config SOC_FAMILY
+	string
+	default "xhsc_hc32"
+
+source "soc/arm/xhsc_hc32/*/Kconfig.soc"
+
+endif # SOC_FAMILY_HC32

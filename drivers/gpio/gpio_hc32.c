@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT xhsc_gpio_hc32
+#define DT_DRV_COMPAT xhsc_hc32_gpio
 
 #include <errno.h>
 
@@ -195,58 +195,19 @@ static int gpio_hc32_init(const struct device *dev)
 {
     return 0;
 }
-#if 0
+
 #define GPIO_HC32_DEFINE(n) \
-	static const struct gpio_hc32_config gpio_hc32_config##n = {	\
+	static const struct gpio_hc32_config gpio_hc32_cfg_##n = {	\
 		.common = {						     \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
 		},														\
 		.base =	DT_INST_REG_ADDR(n),						\
 		.port = n, 			\
 	};\
-	static int gpio_hc32_init_##n(const struct device *dev)		\
-	{									\
-		return 0;							\
-	}								\
 	static struct gpio_hc32_data gpio_hc32_data_##n;	\
-	DEVICE_DT_INST_DEFINE(n, gpio_hc32_init_##n, NULL,     \
+	DEVICE_DT_INST_DEFINE(n, gpio_hc32_init, NULL,     \
 	        &gpio_hc32_data_##n, &gpio_hc32_cfg_##n,     \
 	        POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,     \
 	        &gpio_hc32_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_HC32_DEFINE)
-#endif
-
-#if 1
-#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port) \
-static const struct gpio_hc32_config gpio_hc32_cfg_##__suffix = {\
-	.common = {						       \
-			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U), \
-		},	\
-	.base = (uint16_t *)__base_addr,	\
-	.port = __port,					\
-};									\
-static struct gpio_hc32_data gpio_hc32_data_##__suffix;		\
-DEVICE_DT_DEFINE(__node,				\
-			gpio_hc32_init,					\
-			NULL,\
-			&gpio_hc32_data_##__suffix,			\
-			&gpio_hc32_cfg_##__suffix,			\
-			PRE_KERNEL_1,					\
-			CONFIG_GPIO_INIT_PRIORITY,			\
-			&gpio_hc32_driver);
-
-#define GPIO_DEVICE_INIT_HC32(__suffix, __SUFFIX)		\
-	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),	\
-			 __suffix,					\
-			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),	\
-			GPIO_PORT_##__SUFFIX					)
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
-GPIO_DEVICE_INIT_HC32(a, A);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiod), okay)
-GPIO_DEVICE_INIT_HC32(d, D);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay) */
-#endif

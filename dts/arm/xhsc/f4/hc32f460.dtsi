@@ -22,14 +22,12 @@
 
 	flash-controller@40010400 {
 		compatible = "xhsc,hc32_flash";
-		label = "FLASH_CTRL";
 		reg = <0x40010400 0x01b0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
-			label = "FLASH_HC32";
 			reg = <0 0x80000>;
 			erase-block-size = <8192>;
 			write-block-size = <4>;
@@ -40,22 +38,23 @@
 	 * contiguous block in the memory map, however misaligned accesses
 	 * across the 0x2000_0000 boundary are not supported in the Arm
 	 * Cortex-M4 architecture.*/
-	sramH: memory@1fff8000 {
+/* 	sramH: memory@1fff8000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x1fff8000 0x8000>;
-	};
+		reg = <0x1fff8000 DT_SIZE_K(32)>;
+	};*/
 
-	sram0: memory@20000000 {
+	sram0: memory@1fff8000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x20000000 0x27000>;
+		reg = <0x1fff8000 DT_SIZE_K(188)>;
+			 // <0x20000000 DT_SIZE_K(156)>;
 	};
 
 	sramB: memory@200F0000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x200F0000 0x1000>;
+		reg = <0x200F0000 DT_SIZE_K(4)>;
 	};
 
 	soc {

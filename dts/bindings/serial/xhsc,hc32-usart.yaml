@@ -1,0 +1,9 @@
+description: XHSC USART
+
+compatible: "xhsc,hc32-usart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true

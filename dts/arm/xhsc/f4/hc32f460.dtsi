@@ -107,6 +107,30 @@
 				reg = <0x40053d40 0x40>;
 			};
 		};
+
+		usart1: serial@4001d000 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x4001d000 0x1c>;
+			status = "disabled";
+		};
+
+		usart2: serial@4001d400 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x4001d400 0x1c>;
+			status = "disabled";
+		};
+
+		usart3: serial@40021000 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x40021000 0x1c>;
+			status = "disabled";
+		};
+
+		usart4: serial@40021400 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x40021400 0x1c>;
+			status = "disabled";
+		};
 	};
 };
 

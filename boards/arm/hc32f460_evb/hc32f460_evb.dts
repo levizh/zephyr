@@ -5,6 +5,7 @@
 
 /dts-v1/;
 #include <xhsc/f4/hc32f460.dtsi>
+#include "hc32f460_evb-pinctrl.dtsi"
 
 / {
 	model = "xhsc, EV_F460_LQ100_Rev2.0 board";
@@ -13,6 +14,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,console = &usart4;
+		zephyr,shell-uart = &usart4;
 	};
 
 	leds {
@@ -72,3 +75,9 @@
 	status = "okay";
 };
 
+&usart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart4_default>;
+	pinctrl-names = "default";
+};

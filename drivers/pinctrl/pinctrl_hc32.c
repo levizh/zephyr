@@ -29,13 +29,13 @@ static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
 static inline bool HC32_pin_is_valid(uint16_t pin)
 {
-	return ((BIT(pin) & GPIO_PIN_ALL) == 0);
+	return ((pin & GPIO_PIN_ALL) == 0);
 }
 
 static int hc32_pin_configure(const uint32_t pin_mux)
 {
 	uint8_t port_num = HC32_PORT(pin_mux);
-	uint16_t pin_num = HC32_PIN(pin_mux);
+	uint16_t pin_num = BIT(HC32_PIN(pin_mux));
 	uint8_t mode = HC32_MODE(pin_mux);
 	uint16_t func_num = HC32_FUNC_NUM(pin_mux);
 	stc_gpio_init_t stc_gpio_init;
@@ -107,7 +107,7 @@ static int hc32_pin_configure(const uint32_t pin_mux)
 	}
 
 end:
-	return GPIO_Init(port_num, BIT(pin_num), &stc_gpio_init);
+	return GPIO_Init(port_num, pin_num, &stc_gpio_init);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,

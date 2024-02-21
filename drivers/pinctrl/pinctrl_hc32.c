@@ -29,7 +29,7 @@ static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
 static inline bool HC32_pin_is_valid(uint16_t pin)
 {
-	return ((BIT(pin) & GPIO_PIN_ALL) != 0);
+	return ((BIT(pin) & GPIO_PIN_ALL) == 0);
 }
 
 static int hc32_pin_configure(const uint32_t pin_mux)

@@ -5,7 +5,9 @@
 #
 
 add_subdirectory(${SOC_SERIES})
-#add_subdirectory(common)
+
+# This is for access to pinctrl macros
+zephyr_include_directories(common)
 
 zephyr_linker_sources_ifdef(CONFIG_HC32_LL_ICG
   ROM_START

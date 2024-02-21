@@ -32,7 +32,7 @@ static inline bool HC32_pin_is_valid(uint16_t pin)
 	return ((BIT(pin) & GPIO_PIN_ALL) != 0);
 }
 
-static int hc32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
+static int hc32_pin_configure(const uint32_t pin_mux)
 {
 	uint8_t port_num = HC32_PORT(pin_mux);
 	uint16_t pin_num = HC32_PIN(pin_mux);
@@ -55,13 +55,13 @@ static int hc32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 	case HC32_GPIO:
 		func_num = 0;
 		stc_gpio_init.u16PinAttr = PIN_ATTR_DIGITAL;
-		if (HC32_INPUT_ENABLE == HC32_PIN_EN_DIR(pin_cfg)) {
+		if (HC32_INPUT_ENABLE == HC32_PIN_EN_DIR(pin_mux)) {
 			/* input */
 			stc_gpio_init.u16PinDir = PIN_DIR_IN;
 		} else {
 			/* output */
 			stc_gpio_init.u16PinDir = PIN_DIR_OUT;
-			if (HC32_OUTPUT_HIGH == HC32_OUT_LEVEL(pin_cfg)) {
+			if (HC32_OUTPUT_HIGH == HC32_OUT_LEVEL(pin_mux)) {
 				stc_gpio_init.u16PinState = PIN_STAT_SET;
 			}
 		}
@@ -80,16 +80,16 @@ static int hc32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 		break;
 	}
 
-	if (HC32_PULL_UP == HC32_PIN_BIAS(pin_cfg)) {
+	if (HC32_PULL_UP == HC32_PIN_BIAS(pin_mux)) {
 		stc_gpio_init.u16PullUp = PIN_PU_ON;
 	}
-	if (HC32_PUSH_PULL == HC32_PIN_DRV(pin_cfg)) {
+	if (HC32_PUSH_PULL == HC32_PIN_DRV(pin_mux)) {
 		stc_gpio_init.u16PinOutputType = PIN_OUT_TYPE_CMOS;
 	} else {
 		stc_gpio_init.u16PinOutputType = PIN_OUT_TYPE_NMOS;
 	}
 
-	switch (HC32_PIN_DRIVER_STRENGTH(pin_cfg)) {
+	switch (HC32_PIN_DRIVER_STRENGTH(pin_mux)) {
 	case HC32_DRIVER_STRENGTH_LOW:
 		stc_gpio_init.u16PinDrv = PIN_LOW_DRV;
 		break;
@@ -113,16 +113,12 @@ end:
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-	uint32_t pin_mux, pin_cfg;
 	int ret = 0;
 
 	ARG_UNUSED(reg);
 
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
-		pin_mux = pins[i].pinmux;
-		pin_cfg = pins[i].pincfg;
-
-		ret = hc32_pin_configure(pin_mux, pin_cfg);
+		ret = hc32_pin_configure(pins[i]);
 		if (ret < 0) {
 			return ret;
 		}

@@ -19,20 +19,20 @@
 #define HC32_FUNC_NUM(_mux) \
 	(((_mux) >> HC32_FUNC_SHIFT) & HC32_FUNC_MSK)
 
-#define HC32_PIN_BIAS(_cfg) \
-	(((_cfg) >> HC32_PUR_SHIFT) & HC32_PUR_MSK)
+#define HC32_PIN_BIAS(_mux) \
+	(((_mux) >> HC32_PUR_SHIFT) & HC32_PUR_MSK)
 
-#define HC32_PIN_DRV(_cfg) \
-	(((_cfg) >> HC32_NOD_SHIFT) & HC32_NOD_MSK)
+#define HC32_PIN_DRV(_mux) \
+	(((_mux) >> HC32_NOD_SHIFT) & HC32_NOD_MSK)
 
-#define HC32_OUT_LEVEL(_cfg) \
-	(((_cfg) >> HC32_OTYPE_SHIFT) & HC32_OTYPE_MSK)
+#define HC32_OUT_LEVEL(_mux) \
+	(((_mux) >> HC32_OTYPE_SHIFT) & HC32_OTYPE_MSK)
 
-#define HC32_PIN_EN_DIR(_cfg) \
-	(((_cfg) >> HC32_DIREN_SHIFT) & HC32_DIREN_MSK)
+#define HC32_PIN_EN_DIR(_mux) \
+	(((_mux) >> HC32_DIREN_SHIFT) & HC32_DIREN_MSK)
 
-#define HC32_PIN_DRIVER_STRENGTH(_cfg) \
-	(((_cfg) >> HC32_STRENGTH_SHIFT) & HC32_STRENGTH_MSK)
+#define HC32_PIN_DRIVER_STRENGTH(_mux) \
+	(((_mux) >> HC32_STRENGTH_SHIFT) & HC32_STRENGTH_MSK)
 
 /* pinmux filed in pinctrl_soc_pin*/
 /**
@@ -58,7 +58,7 @@
 #define HC32_PORT_MSK    0x0FU
 
 /**
- * @brief Pin configuration configuration bit field.
+ * @brief pinmux bit field.
  *
  * Fields:
  * - func_num [ 10 ：17]
@@ -95,26 +95,36 @@
 #define HC32_DRIVER_STRENGTH_MEDIUM 0x1
 #define HC32_DRIVER_STRENGTH_HIGH   0x2
 
+/**
+ * @brief Pin cfg bit field in pinmux.
+ *
+ * Fields:
+ * - STRENGTH [28:29]
+ * - DIREN [ 27]
+ * - OTYPE [ 26 ]
+ * - NOD  [ 25 ]
+ * - PUR [ 24 ]
+*/
 /** PUR field mask. */
 #define HC32_PUR_MSK         0x01U
 /** PUR field position. */
-#define HC32_PUR_SHIFT       0U
+#define HC32_PUR_SHIFT       24U
 /** NOD field mask. */
 #define HC32_NOD_MSK         0x01U
 /** NOD field position. */
-#define HC32_NOD_SHIFT       1U
+#define HC32_NOD_SHIFT       25U
 /** OTYPE field mask. */
 #define HC32_OTYPE_MSK       0x01U
 /** OTYPE field position. */
-#define HC32_OTYPE_SHIFT     2U
+#define HC32_OTYPE_SHIFT     26U
 /** DIREN field mask. */
 #define HC32_DIREN_MSK       0x01U
 /** DIREN field position. */
-#define HC32_DIREN_SHIFT     3U
+#define HC32_DIREN_SHIFT     27U
 /** STRENGTH field mask. */
 #define HC32_STRENGTH_MSK    0x03U
 /** STRENGTH field position. */
-#define HC32_STRENGTH_SHIFT  4U
+#define HC32_STRENGTH_SHIFT  28U
 
 
 #endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_HC32_PINCTRL_H_ */

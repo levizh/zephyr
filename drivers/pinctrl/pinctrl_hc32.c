@@ -7,25 +7,39 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <hc32_ll.h>
 
+#define HC32_GPIO_PORT_VALID(nodelabel)				\
+		(DT_NODE_EXISTS(DT_NODELABEL(nodelabel)))?	\
+		(DT_NODE_HAS_STATUS(DT_NODELABEL(nodelabel), okay)):	\
+		(0)
+
 /**
- * @brief Array containing pointers to each GPIO port.
+ * @brief Array containing bool value to each GPIO port.
  *
- * Entries will be NULL if the GPIO port is not enabled.
+ * Entries will be 0 if the GPIO port is not enabled.
  */
-static const struct device *const gpio_ports[] = {
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
+static volatile uint8_t gpio_ports_valid[] = {
+	HC32_GPIO_PORT_VALID(gpioa),
+	HC32_GPIO_PORT_VALID(gpiob),
+	HC32_GPIO_PORT_VALID(gpioc),
+	HC32_GPIO_PORT_VALID(gpiod),
+	HC32_GPIO_PORT_VALID(gpioe),
+	HC32_GPIO_PORT_VALID(gpiof),
+	HC32_GPIO_PORT_VALID(gpiog),
+	HC32_GPIO_PORT_VALID(gpioh),
+	HC32_GPIO_PORT_VALID(gpioi),
 };
 
-/** Number of GPIO ports. */
-static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
+static uint16_t gpio_ports_cnt;
+static void HC32_port_sum(void)
+{
+	uint8_t i;
+	size_t port_long = ARRAY_SIZE(gpio_ports_valid);
+	gpio_ports_cnt = 0;
+
+	for (i = 0; i < port_long; i++) {
+		gpio_ports_cnt += gpio_ports_valid[i];
+	}
+}
 
 static inline bool HC32_pin_is_valid(uint16_t pin)
 {
@@ -126,3 +140,5 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 	return 0;
 }
+
+SYS_INIT(HC32_port_sum, PRE_KERNEL_1, 0);

@@ -29,16 +29,16 @@ static volatile uint8_t gpio_ports_valid[] = {
 	HC32_GPIO_PORT_VALID(gpioi),
 };
 
-static uint16_t gpio_ports_cnt;
-static void HC32_port_sum(void)
+static inline uint8_t HC32_get_port(uint8_t port_num)
 {
-	uint8_t i;
-	size_t port_long = ARRAY_SIZE(gpio_ports_valid);
-	gpio_ports_cnt = 0;
-
-	for (i = 0; i < port_long; i++) {
-		gpio_ports_cnt += gpio_ports_valid[i];
-	}
+#if defined(HC32F460)
+	if ('H' == (port_num + 'A'))
+		return GPIO_PORT_H;
+	else
+		return port_num;
+#elif defined(HC32F4A0)
+	return port_num;
+#endif
 }
 
 static inline bool HC32_pin_is_valid(uint16_t pin)
@@ -56,9 +56,10 @@ static int hc32_pin_configure(const uint32_t pin_mux)
 
 	GPIO_StructInit(&stc_gpio_init);
 
-	if ((port_num >= gpio_ports_cnt) || (HC32_pin_is_valid(pin_num))) {
+	if ((gpio_ports_valid[port_num] != 1) || (HC32_pin_is_valid(pin_num))) {
 		return -EINVAL;
 	}
+	port_num = HC32_get_port(port_num);
 
 	switch (mode) {
 	case HC32_ANALOG:
@@ -140,5 +141,3 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 	return 0;
 }
-
-SYS_INIT(HC32_port_sum, PRE_KERNEL_1, 0);

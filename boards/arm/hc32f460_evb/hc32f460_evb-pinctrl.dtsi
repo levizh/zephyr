@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <dt-bindings/pinctrl/hc32-pinctrl.h>
+#include <dt-bindings/pinctrl/hc32-pinctrl.h>
 
  &pinctrl {
 	 usart4_default: usart4_default {

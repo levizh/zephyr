@@ -27,7 +27,6 @@
  */
 static int System_CLK_Init()
 {
-	LL_PERIPH_WE(LL_PERIPH_ALL);
 	stc_clock_xtal_init_t stcXtalInit;
 	stc_clock_pll_init_t      stcMpllInit;
 
@@ -79,5 +78,24 @@ static int System_CLK_Init()
 	return 0;
 }
 
-SYS_INIT(System_CLK_Init, PRE_KERNEL_1, 0);
+/**
+ * @brief Perform basic hardware initialization at boot.
+ *
+ * This needs to be run from the very beginning.
+ * So the init priority has to be 0 (zero).
+ *
+ * @return 0
+ */
+static int xhsc_hc32f4_init(void)
+{
+	LL_PERIPH_WE(LL_PERIPH_ALL);
+	/* System clock is set to 200 MHz */
+	System_CLK_Init();
+	/* Enable Flash cache for both instruction and data */
+	EFM_CacheCmd(ENABLE);
+
+	return 0;
+}
+
+SYS_INIT(xhsc_hc32f4_init, PRE_KERNEL_1, 0);
 

@@ -7,6 +7,7 @@
  #include <arm/armv7-m.dtsi>
  #include <mem.h>
  #include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/hc32-intc.h>
 
  / {
 	cpus {
@@ -64,6 +65,45 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
+		intc: interrupt-controller@40051000 {
+			compatible = "xhsc,hc32-intc";
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			reg = <0x40051000 0x1000>;
+			num-extints = <16>;
+			interrupts = <HC32_EXTINT0_IRQ_NUM  HC32_EXTINT0_IRQ_PRIO>,
+						 <HC32_EXTINT1_IRQ_NUM  HC32_EXTINT1_IRQ_PRIO>,
+						 <HC32_EXTINT2_IRQ_NUM  HC32_EXTINT2_IRQ_PRIO>, 
+						 <HC32_EXTINT3_IRQ_NUM  HC32_EXTINT3_IRQ_PRIO>, 
+						 <HC32_EXTINT4_IRQ_NUM  HC32_EXTINT4_IRQ_PRIO>, 
+						 <HC32_EXTINT5_IRQ_NUM  HC32_EXTINT5_IRQ_PRIO>,
+						 <HC32_EXTINT6_IRQ_NUM  HC32_EXTINT6_IRQ_PRIO>, 
+						 <HC32_EXTINT7_IRQ_NUM  HC32_EXTINT7_IRQ_PRIO>,
+						 <HC32_EXTINT8_IRQ_NUM  HC32_EXTINT8_IRQ_PRIO>,
+						 <HC32_EXTINT9_IRQ_NUM  HC32_EXTINT9_IRQ_PRIO>,
+						 <HC32_EXTINT10_IRQ_NUM HC32_EXTINT10_IRQ_PRIO>, 
+						 <HC32_EXTINT11_IRQ_NUM HC32_EXTINT11_IRQ_PRIO>,
+						 <HC32_EXTINT12_IRQ_NUM HC32_EXTINT12_IRQ_PRIO>,
+						 <HC32_EXTINT13_IRQ_NUM HC32_EXTINT13_IRQ_PRIO>,
+						 <HC32_EXTINT14_IRQ_NUM HC32_EXTINT14_IRQ_PRIO>,
+						 <HC32_EXTINT15_IRQ_NUM HC32_EXTINT15_IRQ_PRIO>;
+			interrupt-names = "extint0",  "extint1",  "extint2",  "extint3",
+							  "extint4",  "extint5",  "extint6",  "extint7",
+							  "extint8",  "extint9",  "extint10", "extint11",
+							  "extint12", "extint13", "extint14", "extint15";
+			int-srcs = <INTC_SRC_PORT_EIRQ0  INTC_SRC_PORT_EIRQ1  
+						INTC_SRC_PORT_EIRQ2  INTC_SRC_PORT_EIRQ3  
+						INTC_SRC_PORT_EIRQ4  INTC_SRC_PORT_EIRQ5  
+						INTC_SRC_PORT_EIRQ6  INTC_SRC_PORT_EIRQ7  
+						INTC_SRC_PORT_EIRQ8  INTC_SRC_PORT_EIRQ9  
+						INTC_SRC_PORT_EIRQ10 INTC_SRC_PORT_EIRQ11 
+						INTC_SRC_PORT_EIRQ12 INTC_SRC_PORT_EIRQ13 
+						INTC_SRC_PORT_EIRQ14 INTC_SRC_PORT_EIRQ15>;
+			// intcs = <&intc HC32_EXTINT0_IRQ_NUM INTC_SRC_PORT_EIRQ0>, 
+			//         <&intc HC32_EXTINT1_IRQ_NUM INTC_SRC_PORT_EIRQ1>;
+		};
 
 			gpioa: gpio@40053c00 {
 				compatible = "xhsc,hc32-gpio";

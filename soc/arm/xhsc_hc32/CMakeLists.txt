@@ -9,8 +9,8 @@ add_subdirectory(${SOC_SERIES})
 # This is for access to pinctrl macros
 zephyr_include_directories(common)
 
-zephyr_linker_sources_ifdef(CONFIG_HC32_LL_ICG
+zephyr_linker_sources(
   ROM_START
-  SORT_KEY 0x400
+  SORT_KEY ${CONFIG_HC32_FLASH_CONFIG_OFFSET}
   flash_config.ld
   )

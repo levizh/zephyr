@@ -1,0 +1,32 @@
+description: XHSC HC32 family Interrupt Controller
+
+compatible: "xhsc,hc32-intc"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  num-extints:
+    type: int
+    required: true
+    description: Number of extint supported by the interrupt controller.
+
+  int-srcs:
+    type: array
+    required: true
+    description: Select interrupt trigger source for each interrupt vector.
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irqn
+  - int_src

@@ -26,6 +26,10 @@ config HC32_DDL_DEBUG
 	bool "if enable assert function in hc32_ddl drivers"
 	default n
 
+config HC32_FLASH_CONFIG_OFFSET
+	hex "HC32 flash configuration field offset"
+	default 0x400
+
 if GPIO
 
 config GPIO_HC32

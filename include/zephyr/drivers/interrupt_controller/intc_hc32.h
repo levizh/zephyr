@@ -25,15 +25,16 @@ enum hc32_extint_trigger {
 };
 
 /* callback for exti interrupt */
-typedef void (*hc32_extint_callback_t)(int ch, void *user);
+typedef void (*hc32_extint_callback_t)(int pin, void *user);
 
 
 /* extint config */
 void hc32_extint_enable(int port, int pin);
 void hc32_extint_disable(int port, int pin);
-void hc32_extint_trigger(int ch, int trigger);
-int  hc32_extint_set_callback(int ch, hc32_extint_callback_t cb, void *data);
-void hc32_extint_unset_callback(int ch);
+void hc32_extint_trigger(int pin, int trigger);
+int  hc32_extint_set_callback(int pin, hc32_extint_callback_t cb, void *user);
+void hc32_extint_unset_callback(int pin);
+void hc32_extint_get_irq_info(int pin, int *irqn, int *intsrc);
 
 
 /* intc config */

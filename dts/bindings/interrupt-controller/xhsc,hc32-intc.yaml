@@ -14,7 +14,7 @@ properties:
   interrupt-names:
     required: true
 
-  num-extints:
+  extint-nums:
     type: int
     required: true
     description: Number of extint supported by the interrupt controller.
@@ -23,6 +23,11 @@ properties:
     type: array
     required: true
     description: Select interrupt trigger source for each interrupt vector.
+
+  extint-chs:
+    type: array
+    required: true
+    description: Description of the external channel for each interrupt vector.
 
   "#interrupt-cells":
     const: 2

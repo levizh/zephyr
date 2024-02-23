@@ -8,7 +8,7 @@
  * @brief Driver for interrupt/event controller in HC32 MCUs
  */
 
-#define EXTI_NODE DT_INST(0, st_stm32_exti)
+#define INTC_NODE                       DT_INST(0, xhsc_hc32_intc)
 
 #include <zephyr/device.h>
 #include <soc.h>
@@ -18,298 +18,207 @@
 #include <zephyr/irq.h>
 #include <errno.h>
 
+#define LOG_LEVEL CONFIG_INTC_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(intc_hc32);
 
-// #include "stm32_hsem.h"
 
-// /** @brief EXTI line ranges hold by a single ISR */
-// struct stm32_exti_range {
-// 	/** Start of the range */
-// 	uint8_t start;
-// 	/** Range length */
-// 	uint8_t len;
-// };
+#define INTC_EXTINT_NUM                 DT_PROP(DT_NODELABEL(intc), extint_nums)
+#define INTC_EXTINT_IRQN_DEFAULT        0xFF
+#define INTC_EXTINT_INTSRC_DEFAULT      0x1FF
 
-// #define NUM_EXTI_LINES DT_PROP(DT_NODELABEL(exti), num_lines)
 
-// static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 0xFF};
+static IRQn_Type extint_irq_table[INTC_EXTINT_NUM] = {[0 ... INTC_EXTINT_NUM - 1] = INTC_EXTINT_IRQN_DEFAULT};
+static en_int_src_t extint_src_table[INTC_EXTINT_NUM] = {[0 ... INTC_EXTINT_NUM - 1] = INTC_EXTINT_INTSRC_DEFAULT};
 
-// /* wrapper for user callback */
-// struct __exti_cb {
-// 	stm32_exti_callback_t cb;
-// 	void *data;
-// };
+/* wrapper for user callback */
+struct hc32_extint_cb {
+	hc32_extint_callback_t cb;
+	void *user;
+};
 
-// /* driver data */
-// struct stm32_exti_data {
-// 	/* per-line callbacks */
-// 	struct __exti_cb cb[NUM_EXTI_LINES];
-// };
+/* driver data */
+struct hc32_extint_data {
+	/* callbacks */
+	struct hc32_extint_cb cb[INTC_EXTINT_NUM];
+};
 
-// void stm32_exti_enable(int line)
-// {
-// 	int irqnum = 0;
 
-// 	if (line >= NUM_EXTI_LINES) {
-// 		__ASSERT_NO_MSG(line);
-// 	}
+/**
+ * @brief EXTINT ISR handler
+ */
+static void hc32_extint_isr(const void *extint_ch)
+{
+	const struct device *dev = DEVICE_DT_GET(INTC_NODE);
+	struct hc32_extint_data *data = dev->data;
+	uint8_t ch = *(uint8_t *)extint_ch;
 
-// 	/* Get matching exti irq provided line thanks to irq_table */
-// 	irqnum = exti_irq_table[line];
-// 	if (irqnum == 0xFF) {
-// 		__ASSERT_NO_MSG(line);
-// 	}
+	if (ch >= INTC_EXTINT_NUM)  {
+		__ASSERT_NO_MSG(ch);
+	}
 
-// 	/* Enable requested line interrupt */
-// #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-// 	LL_C2_EXTI_EnableIT_0_31(BIT((uint32_t)line));
-// #else
-// 	LL_EXTI_EnableIT_0_31(BIT((uint32_t)line));
-// #endif
+	if (SET == EXTINT_GetExtIntStatus(BIT((uint32_t)ch))) {
+		EXTINT_ClearExtIntStatus(BIT((uint32_t)ch));
+		/* run callback only if one is registered */
+		if (data->cb[ch].cb != NULL) {
+			data->cb[ch].cb(ch, data->cb[ch].user);
+		}
+	}
+}
 
-// 	/* Enable exti irq interrupt */
-// 	irq_enable(irqnum);
-// }
+/* Fill irq information */
+static void hc32_fill_irq_table(uint8_t ch, int irqn, int intsrc)
+{
+	extint_irq_table[ch] = (IRQn_Type)irqn;
+	extint_src_table[ch] = (en_int_src_t)intsrc;
+}
 
-// void stm32_exti_disable(int line)
-// {
-// 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-// 	if (line < 32) {
-// #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-// 		LL_C2_EXTI_DisableIT_0_31(BIT((uint32_t)line));
-// #else
-// 		LL_EXTI_DisableIT_0_31(BIT((uint32_t)line));
-// #endif
-// 	} else {
-// 		__ASSERT_NO_MSG(line);
-// 	}
-// 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
-// }
-
-// /**
-//  * @brief check if interrupt is pending
-//  *
-//  * @param line line number
-//  */
-// static inline int stm32_exti_is_pending(int line)
-// {
-// 	if (line < 32) {
-// #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-// 		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT((uint32_t)line)) ||
-// 			LL_EXTI_IsActiveFallingFlag_0_31(BIT((uint32_t)line)));
-// #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-// 		return LL_C2_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
-// #else
-// 		return LL_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
-// #endif
-// 	} else {
-// 		__ASSERT_NO_MSG(line);
-// 		return 0;
-// 	}
-// }
-
-// /**
-//  * @brief clear pending interrupt bit
-//  *
-//  * @param line line number
-//  */
-// static inline void stm32_exti_clear_pending(int line)
-// {
-// 	if (line < 32) {
-// #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-// 		LL_EXTI_ClearRisingFlag_0_31(BIT((uint32_t)line));
-// 		LL_EXTI_ClearFallingFlag_0_31(BIT((uint32_t)line));
-// #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-// 		LL_C2_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
-// #else
-// 		LL_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
-// #endif
-// 	} else {
-// 		__ASSERT_NO_MSG(line);
-// 	}
-// }
-
-// void stm32_exti_trigger(int line, int trigger)
-// {
-
-// 	if (line >= 32) {
-// 		__ASSERT_NO_MSG(line);
-// 	}
-
-// 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-// 	switch (trigger) {
-// 	case STM32_EXTI_TRIG_NONE:
-// 		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
-// 		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
-// 		break;
-// 	case STM32_EXTI_TRIG_RISING:
-// 		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
-// 		LL_EXTI_DisableFallingTrig_0_31(BIT((uint32_t)line));
-// 		break;
-// 	case STM32_EXTI_TRIG_FALLING:
-// 		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
-// 		LL_EXTI_DisableRisingTrig_0_31(BIT((uint32_t)line));
-// 		break;
-// 	case STM32_EXTI_TRIG_BOTH:
-// 		LL_EXTI_EnableRisingTrig_0_31(BIT((uint32_t)line));
-// 		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
-// 		break;
-// 	default:
-// 		__ASSERT_NO_MSG(trigger);
-// 		break;
-// 	}
-// 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
-// }
-
-// /**
-//  * @brief EXTI ISR handler
-//  *
-//  * Check EXTI lines in exti_range for pending interrupts
-//  *
-//  * @param exti_range Pointer to a exti_range structure
-//  */
-// static void stm32_exti_isr(const void *exti_range)
-// {
-// 	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
-// 	struct stm32_exti_data *data = dev->data;
-// 	const struct stm32_exti_range *range = exti_range;
-// 	int line;
-
-// 	/* see which bits are set */
-// 	for (uint8_t i = 0; i <= range->len; i++) {
-// 		line = range->start + i;
-// 		/* check if interrupt is pending */
-// 		if (stm32_exti_is_pending(line) != 0) {
-// 			/* clear pending interrupt */
-// 			stm32_exti_clear_pending(line);
-
-// 			/* run callback only if one is registered */
-// 			if (!data->cb[line].cb) {
-// 				continue;
-// 			}
-
-// 			data->cb[line].cb(line, data->cb[line].data);
-// 		}
-// 	}
-// }
-
-// static void stm32_fill_irq_table(int8_t start, int8_t len, int32_t irqn)
-// {
-// 	for (int i = 0; i < len; i++) {
-// 		exti_irq_table[start + i] = irqn;
-// 	}
-// }
-
-// /* This macro:
-//  * - populates line_range_x from line_range dt property
-//  * - fill exti_irq_table through stm32_fill_irq_table()
-//  * - calls IRQ_CONNECT for each irq & matching line_range
-//  */
-
-/*
-#define STM32_EXTI_INIT(node_id, interrupts, idx)			\
-	static const struct stm32_exti_range line_range_##idx = {	\
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_X2(idx)),	      \
-		DT_PROP_BY_IDX(node_id, line_ranges, UTIL_INC(UTIL_X2(idx))) \
-	};								\
-	stm32_fill_irq_table(line_range_##idx.start,			\
-			     line_range_##idx.len,			\
-			     DT_IRQ_BY_IDX(node_id, idx, irq));		\
+#define HC32_EXTINT_INIT(node_id, interrupts, idx)			\
+	static const uint8_t extint_ch_##idx =					\
+			DT_PROP_BY_IDX(node_id, extint_chs, idx); 		\
+	hc32_fill_irq_table(extint_ch_##idx,					\
+			DT_IRQ_BY_IDX(node_id, idx, irq), 				\
+			DT_PROP_BY_IDX(node_id, int_srcs, idx));		\
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),			\
-		DT_IRQ_BY_IDX(node_id, idx, priority),			\
-		stm32_exti_isr, &line_range_##idx,			\
-		0);
-*/
+			DT_IRQ_BY_IDX(node_id, idx, priority),			\
+			hc32_extint_isr, &extint_ch_##idx ,				\
+			0);
 
-// /**
-//  * @brief initialize EXTI device driver
-//  */
-// static int stm32_exti_init(const struct device *dev)
-// {
-// 	ARG_UNUSED(dev);
+/**
+ * @brief initialize intc device driver
+ */
+static int hc32_intc_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	// hc32_intc_irq_signin all extint ???
+	DT_FOREACH_PROP_ELEM(DT_NODELABEL(intc), interrupt_names, HC32_EXTINT_INIT);
 
-// 	DT_FOREACH_PROP_ELEM(DT_NODELABEL(exti),
-// 			     interrupt_names,
-// 			     STM32_EXTI_INIT);
+	return 0;
+}
 
-// 	return 0;
-// }
-
-// static struct stm32_exti_data exti_data;
-// DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
-// 		 NULL,
-// 		 &exti_data, NULL,
-// 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-// 		 NULL);
-
-// /**
-//  * @brief set & unset for the interrupt callbacks
-//  */
-// int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
-// {
-// 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
-// 	struct stm32_exti_data *data = dev->data;
-
-// 	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
-// 		return 0;
-// 	}
-
-// 	/* if callback already exists/maybe-running return busy */
-// 	if (data->cb[line].cb != NULL) {
-// 		return -EBUSY;
-// 	}
-
-// 	data->cb[line].cb = cb;
-// 	data->cb[line].data = arg;
-
-// 	return 0;
-// }
-
-// void stm32_exti_unset_callback(int line)
-// {
-// 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
-// 	struct stm32_exti_data *data = dev->data;
-
-// 	data->cb[line].cb = NULL;
-// 	data->cb[line].data = NULL;
-// }
-
-
+static struct hc32_extint_data extint_data;
+DEVICE_DT_DEFINE(INTC_NODE, &hc32_intc_init,
+		 NULL,
+		 &extint_data, NULL,
+		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
+		 NULL);
 
 
 void hc32_extint_enable(int port, int pin)
 {
-	ARG_UNUSED(port);
-	ARG_UNUSED(pin);
+	int irqnum = 0;
+
+	if (pin >= INTC_EXTINT_NUM) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	/* Get matching extint irq number from irq_table */
+	irqnum = extint_irq_table[pin];
+	if (irqnum == INTC_EXTINT_IRQN_DEFAULT) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	/* Enable requested pin interrupt */
+	GPIO_ExtIntCmd((uint8_t)port, BIT((uint32_t)pin), ENABLE);
+	/* Enable extint irq interrupt */
+	irq_enable(irqnum);
 }
 
 void hc32_extint_disable(int port, int pin)
 {
-	ARG_UNUSED(port);
-	ARG_UNUSED(pin);
+	int irqnum = 0;
+
+	if (pin >= INTC_EXTINT_NUM) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	/* Get matching extint irq number from irq_table */
+	irqnum = extint_irq_table[pin];
+	if (irqnum == INTC_EXTINT_IRQN_DEFAULT) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	/* Disable requested pin interrupt */
+	GPIO_ExtIntCmd((uint8_t)port, BIT((uint32_t)pin), DISABLE);
+	/* Disable extint irq interrupt */
+	irq_disable(irqnum);
 }
 
-void hc32_extint_trigger(int ch, int trigger)
+void hc32_extint_trigger(int pin, int trigger)
 {
-	ARG_UNUSED(ch);
-	ARG_UNUSED(trigger);
+	stc_extint_init_t stcExtIntInit;
+
+	if (pin >= INTC_EXTINT_NUM) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	/* ExtInt config */
+	(void)EXTINT_StructInit(&stcExtIntInit);
+	switch (trigger) {
+	case HC32_EXTINT_TRIG_FALLING:
+		stcExtIntInit.u32Edge = EXTINT_TRIG_FALLING;
+		break;
+	case HC32_EXTINT_TRIG_RISING:
+		stcExtIntInit.u32Edge = EXTINT_TRIG_RISING;
+		break;
+	case HC32_EXTINT_TRIG_BOTH:
+		stcExtIntInit.u32Edge = EXTINT_TRIG_BOTH;
+		break;
+	case HC32_EXTINT_TRIG_LOW_LVL:
+		stcExtIntInit.u32Edge = EXTINT_TRIG_LOW;
+		break;
+	default:
+		__ASSERT_NO_MSG(trigger);
+		break;
+	}
+	EXTINT_Init(BIT((uint32_t)pin), &stcExtIntInit);
 }
 
-int  hc32_extint_set_callback(int ch, hc32_extint_callback_t cb, void *data)
+int  hc32_extint_set_callback(int pin, hc32_extint_callback_t cb, void *user)
 {
-	ARG_UNUSED(ch);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(data);
+	const struct device *const dev = DEVICE_DT_GET(INTC_NODE);
+	struct hc32_extint_data *data = dev->data;
+
+	if (pin >= INTC_EXTINT_NUM) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	if ((data->cb[pin].cb == cb) && (data->cb[pin].user == user)) {
+		return 0;
+	}
+
+	/* if callback already exists/maybe-running return busy */
+	if (data->cb[pin].cb != NULL) {
+		return -EBUSY;
+	}
+	data->cb[pin].cb   = cb;
+	data->cb[pin].user = user;
+
 	return 0;
 }
 
-void hc32_extint_unset_callback(int ch)
+void hc32_extint_unset_callback(int pin)
 {
-	ARG_UNUSED(ch);
+	const struct device *const dev = DEVICE_DT_GET(INTC_NODE);
+	struct hc32_extint_data *data = dev->data;
+
+	if (pin >= INTC_EXTINT_NUM) {
+		__ASSERT_NO_MSG(pin);
+	}
+
+	data->cb[pin].cb   = NULL;
+	data->cb[pin].user = NULL;
 }
 
+void hc32_extint_get_irq_info(int pin, int *irqn, int *intsrc)
+{
+	if (pin >= INTC_EXTINT_NUM) {
+		__ASSERT_NO_MSG(pin);
+	}
 
+	*irqn   = extint_irq_table[pin];
+	*intsrc = extint_src_table[pin];
+}
 
 
 /* intc config */
@@ -321,6 +230,7 @@ int hc32_intc_irq_signin(int irqn, int intsrc)
 	stcIrqSignConfig.enIntSrc    = (en_int_src_t)intsrc;
 	stcIrqSignConfig.pfnCallback = NULL;
 	if (LL_OK != INTC_IrqSignIn(&stcIrqSignConfig)) {
+		LOG_ERR("intc signin failed!");
 		return -EACCES;
 	}
 
@@ -330,10 +240,9 @@ int hc32_intc_irq_signin(int irqn, int intsrc)
 int hc32_intc_irq_signout(int irqn)
 {
 	if (LL_OK != INTC_IrqSignOut((IRQn_Type)irqn)) {
+		LOG_ERR("intc signout failed!");
 		return -EACCES;
 	}
 
 	return 0;
 }
-
-

@@ -13,6 +13,21 @@
 #include <zephyr/drivers/reset.h>
 #include "gpio_hc32.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/drivers/interrupt_controller/intc_hc32.h>
+
+/**
+ * @brief Common GPIO driver for HC32 MCUs.
+ */
+
+/**
+ * @brief EXTI interrupt callback
+ */
+static void gpio_hc32_isr(int line, void *arg)
+{
+	struct gpio_hc32_data *data = arg;
+	EXTINT_ClearExtIntStatus(BIT(line));
+	gpio_fire_callbacks(&data->cb, data->dev, BIT(line));
+}
 
 /**
  * @brief Configure pin or port
@@ -25,10 +40,8 @@ static int gpio_hc32_configure(const struct device *port, gpio_pin_t pin,
 	stc_gpio_init_t stc_gpio_init;
 
 	GPIO_StructInit(&stc_gpio_init);
-	/* figure out if we can map the requested GPIO
-	 * configuration
-	 */
 
+	/* GPIO input/output configuration flags */
 	if ((flags & GPIO_OUTPUT) != 0U) {
 		/* ouput */
 		stc_gpio_init.u16PinDir = PIN_DIR_OUT;
@@ -71,38 +84,68 @@ static int gpio_hc32_configure(const struct device *port, gpio_pin_t pin,
 		stc_gpio_init.u16PinAttr = PIN_ATTR_ANALOG;
 	}
 
-	/* TODO:1,int edge(INTC module) */
-	GPIO_Init(hc32_port, BIT(pin), &stc_gpio_init);
+	/* GPIO interrupt configuration flags */
+	if ((flags & GPIO_INT_MASK) != 0) {
+		if ((flags & GPIO_INT_ENABLE) != 0) {
+			stc_gpio_init.u16ExtInt = PIN_EXTINT_ON;
+		} else if ((flags & GPIO_INT_DISABLE) != 0) {
+			stc_gpio_init.u16ExtInt = PIN_EXTINT_OFF;
+		}
 
-#if 0
-	if ((flags & GPIO_INT_ENABLE) != 0) {
-		stc_gpio_init.u16ExtInt = PIN_EXTINT_ON;
+		if ((flags & GPIO_INT_EDGE_BOTH) == GPIO_INT_EDGE_BOTH) {
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_BOTH);
+		} else if ((flags & GPIO_INT_EDGE_RISING) == GPIO_INT_EDGE_RISING) {
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_RISING);
+		} else if ((flags & GPIO_INT_EDGE_FALLING) == GPIO_INT_EDGE_FALLING) {
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_FALLING);
+		} else if ((flags & GPIO_INT_LEVEL_LOW) == GPIO_INT_LEVEL_LOW) {
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_LOW_LVL);
+		} else if (((flags & GPIO_INT_LEVEL_HIGH) == GPIO_INT_LEVEL_HIGH)
+			   || ((flags & GPIO_INT_LEVELS_LOGICAL) != 0)) {
+			/* Not support hight level and logical level set for int */
+			stc_gpio_init.u16ExtInt = PIN_EXTINT_OFF;
+			return -ENOTSUP;
+		}
 	}
-#endif
-	return 0;
+
+	return GPIO_Init(hc32_port, BIT(pin), &stc_gpio_init);
 }
 
+#if defined(CONFIG_GPIO_GET_CONFIG)
 static int gpio_hc32_get_config(const struct device *port, gpio_pin_t pin,
-				gpio_flags_t flags)
+				gpio_flags_t *flags)
 {
 	const struct gpio_hc32_config *cfg = port->config;;
 	uint16_t PCR_value = *(cfg->base + pin * 4);
+	gpio_flags_t hc32_flag = 0;
 
+	/* only support input/output cfg */
 	if ((PCR_value & GPIO_PCR_DDIS) == 0U) {
 		if (((PCR_value) & GPIO_PCR_POUTE) != 0U) {
-			flags |= GPIO_OUTPUT;
+			hc32_flag |= GPIO_OUTPUT;
+			if ((PCR_value & GPIO_PCR_POUT) != 0U) {
+				hc32_flag |= GPIO_OUTPUT_INIT_HIGH;
+			} else {
+				hc32_flag |= GPIO_OUTPUT_INIT_LOW;
+			}
 		} else {
-			flags |= GPIO_INPUT;
+			hc32_flag |= GPIO_INPUT;
 			if (((PCR_value) & GPIO_PCR_PUU) != 0U) {
-				flags |= GPIO_PULL_UP;
+				hc32_flag |= GPIO_PULL_UP;
 			}
 		}
 	} else {
-		flags &= ~(GPIO_OUTPUT | GPIO_INPUT);
+		hc32_flag &= ~(GPIO_OUTPUT | GPIO_INPUT);
 	}
 
-	return flags;
+	if ((PCR_value & GPIO_PCR_NOD) != 0U) {
+		hc32_flag |= GPIO_OPEN_DRAIN;
+	}
+
+	*flags = hc32_flag;
+	return 0;
 }
+#endif
 
 static int gpio_hc32_port_get_raw(const struct device *dev, uint32_t *value)
 {
@@ -156,8 +199,64 @@ static int gpio_hc32_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	/* FIXME: */
-	return 0;
+	const struct gpio_hc32_config *cfg = dev->config;
+	uint8_t port = cfg->port;
+	struct gpio_hc32_data *data = dev->data;
+	int irqn, intsrc;
+	int err = 0;
+
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
+		hc32_extint_disable(port, pin);
+		return 0;
+	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
+		hc32_extint_enable(port, pin);
+		return 0;
+	}
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
+
+	/* get irqn and intsrc for this pin */
+	hc32_extint_get_irq_info(pin, &irqn, &intsrc);
+
+	switch (mode) {
+	case GPIO_INT_DISABLE:
+		hc32_extint_disable(port, pin);
+		hc32_extint_unset_callback(pin);
+		hc32_extint_trigger(pin, HC32_EXTINT_TRIG_FALLING);
+		err = hc32_intc_irq_signout(irqn);
+		return err;
+		break;
+
+	case GPIO_INT_MODE_LEVEL:
+		if (GPIO_INT_TRIG_LOW == trig) {
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_LOW_LVL);
+		} else {
+			return -ENOTSUP;
+		}
+		break;
+
+	case GPIO_INT_MODE_EDGE:
+		switch (trig) {
+		case GPIO_INT_TRIG_LOW:
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_FALLING);
+			break;
+		case GPIO_INT_TRIG_HIGH:
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_RISING);
+			break;
+		case GPIO_INT_TRIG_BOTH:
+			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_BOTH);
+			break;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	err = hc32_extint_set_callback(pin, gpio_hc32_isr, data);
+	err |= hc32_intc_irq_signin(irqn, intsrc);
+	hc32_extint_enable(port, pin);
+	return err;
 }
 
 static int gpio_hc32_manage_callback(const struct device *dev,
@@ -171,7 +270,6 @@ static int gpio_hc32_manage_callback(const struct device *dev,
 
 static uint32_t gpio_hc32_get_pending_int(const struct device *dev)
 {
-	/* FIXME: */
 	return 0;
 }
 
@@ -193,6 +291,9 @@ static const struct gpio_driver_api gpio_hc32_driver = {
 
 static int gpio_hc32_init(const struct device *dev)
 {
+	struct gpio_hc32_data *data = dev->data;
+
+	data->dev = dev;
 	return 0;
 }
 

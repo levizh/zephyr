@@ -18,7 +18,7 @@
  */
 struct gpio_hc32_config {
 	struct gpio_driver_config common;
-	/* port PCRxy register base address, TODO:check if used */
+	/* port PCRxy register base address */
 	uint16_t *base;
 	/* IO port */
 	uint8_t port;
@@ -28,8 +28,10 @@ struct gpio_hc32_config {
  * @brief driver data
  */
 struct gpio_hc32_data {
-	/* Enabled INT pins generating a cb */
-	uint32_t cb_pins;
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
+	/* device's owner of this data */
+	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
 };

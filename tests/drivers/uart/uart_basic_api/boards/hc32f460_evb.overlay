@@ -1,0 +1,10 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &usart4 {
+	pinctrl-0 = <&usart4_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

@@ -1,0 +1,58 @@
+# Copyright (c) 2020 STMICROELECTRONICS
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for HC32 UART peripherals.
+description: HC32 UART-BASE
+
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  # clocks:
+  #   required: true
+
+  # resets:
+  #   required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  enintsrc:
+    required: true
+    type: array
+    description: |
+      Peripheral interrupt number
+
+  single-wire:
+    type: boolean
+    description: |
+      Enable the single wire half-duplex communication.
+      Using this mode, TX and RX lines are internally connected and
+      only TX pin is used afterwards and should be configured.
+      RX/TX conflicts must be handled on user side.
+
+  tx-rx-swap:
+    type: boolean
+    description:
+      Swap the TX and RX pins. Used in case of a cross wired connection.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  wakeup-line:
+    type: int
+    description: |
+      EXTI line number matching the device wakeup interrupt mask register.
+      This property is required on stm32 devices where the wakeup interrupt signal could be
+      configured masked at boot (sm32wl55 for instance), preventing the device to wakeup
+      the core from stop mode(s).
+      Valid range: 0 - 31
+

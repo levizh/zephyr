@@ -1,0 +1,75 @@
+# HC32 UART configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_EI_INTERRUPT_DRIVEN
+	bool "UART error Interrupt support"
+
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
+
+config UART_RI_INTERRUPT_DRIVEN
+	bool "UART rx full Interrupt Interrupt support"
+
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
+
+config UART_TI_INTERRUPT_DRIVEN
+	bool "UART transmit data register empty support"
+
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
+
+config UART_TCI_INTERRUPT_DRIVEN
+	bool "UART transmit complete Interrupt support"
+
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
+
+config UART_RTO_INTERRUPT_DRIVEN
+	bool "UART receive timeout Interrupt support"
+
+	help
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
+
+config HC32_LL_FCG
+	bool "HC32 FCG driver"
+	help
+		this option for temperature use
+
+config HC32_LL_INTERRUPTS
+	bool "HC32 INTC driver"
+	help
+		this option for temperature use
+
+config UART_HC32
+	bool "HC32 MCU serial driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+    select HC32_LL_USART
+	select HC32_LL_FCG
+	select SERIAL_SUPPORT_INTERRUPT
+	# the ASYNC implementation requires a DMA controller
+	select SERIAL_SUPPORT_ASYNC                     \
+		if DT_HAS_XHSC_HC32_DMA_V1_ENABLED ||       \
+		   DT_HAS_XHSC_HC32_DMA_V2_ENABLED ||       \
+		   DT_HAS_XHSC_HC32_DMA_V2BIS_ENABLED
+	select DMA if UART_ASYNC_API
+	select RESET
+	select INTC_HC32
+    select UART_EI_INTERRUPT_DRIVEN  if UART_INTERRUPT_DRIVEN
+    select UART_RI_INTERRUPT_DRIVEN  if UART_INTERRUPT_DRIVEN
+    select UART_TI_INTERRUPT_DRIVEN  if UART_INTERRUPT_DRIVEN
+    select UART_TCI_INTERRUPT_DRIVEN if UART_INTERRUPT_DRIVEN
+    select UART_RTO_INTERRUPT_DRIVEN if UART_INTERRUPT_DRIVEN
+	help
+	  This option enables the UART driver for HC32 family of
+	  processors.
+	  Set y if you wish to use serial port on HC32 MCU.

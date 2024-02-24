@@ -1,0 +1,5 @@
+description: HC32 UART
+
+compatible: "xhsc,hc32-uart"
+
+include: xhsc,hc32-uart-base.yaml

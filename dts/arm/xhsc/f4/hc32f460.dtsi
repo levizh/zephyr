@@ -111,10 +111,10 @@
 
 		intc: interrupt-controller@40051000 {
 			compatible = "xhsc,hc32-intc";
-			#interrupt-cells = <1>;
 			#address-cells = <1>;
 			interrupt-controller;
 			#interrupt-cells = <2>;
+			#intc-cells = <2>;
 			reg = <0x40051000 0x1000>;
 			extint-nums = <16>;
 			interrupts = <HC32_EXTINT0_IRQ_NUM  HC32_EXTINT0_IRQ_PRIO>,
@@ -154,8 +154,17 @@
 			compatible = "xhsc,hc32-dma";
 			#dma-cells = <3>;
 			reg = <0x40053000 0x400>;
-			interrupts = <38 0>, <39 0>, <40 0>, <41 0>,
-						<42 0>;
+			interrupts = <HC32_DMA1_CH0_IRQ_NUM HC32_DMA1_CH0_IRQ_PRIO>,
+						 <HC32_DMA1_CH1_IRQ_NUM HC32_DMA1_CH1_IRQ_PRIO>,
+						 <HC32_DMA1_CH2_IRQ_NUM HC32_DMA1_CH2_IRQ_PRIO>,
+						 <HC32_DMA1_CH3_IRQ_NUM HC32_DMA1_CH3_IRQ_PRIO>,
+						 <HC32_DMA1_ERR_IRQ_NUM HC32_DMA1_ERR_IRQ_PRIO>;
+			interrupt-names = "TC0", "TC1", "TC2", "TC3", "ERR";
+			intcs = <&intc HC32_DMA1_CH0_IRQ_NUM INT_SRC_DMA1_TC0>,
+					<&intc HC32_DMA1_CH1_IRQ_NUM INT_SRC_DMA1_TC1>,
+					<&intc HC32_DMA1_CH2_IRQ_NUM INT_SRC_DMA1_TC2>,
+					<&intc HC32_DMA1_CH3_IRQ_NUM INT_SRC_DMA1_TC3>,
+					<&intc HC32_DMA1_ERR_IRQ_NUM INT_SRC_DMA1_ERR>;
 			dma-channels = <4>;
 			status = "disabled";
 		};

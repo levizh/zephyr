@@ -18,21 +18,25 @@ LOG_MODULE_REGISTER(dma_hc32, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT xhsc_hc32_dma
 
 
-#define AOS_DMA_INST0_CH0		AOS_DMA1_0
-#define AOS_DMA_INST0_CH1		AOS_DMA1_1
-#define AOS_DMA_INST0_CH2		AOS_DMA1_2
-#define AOS_DMA_INST0_CH3		AOS_DMA1_3
+#define AOS_DMA_INST0_CH0		(AOS_DMA1_0)
+#define AOS_DMA_INST0_CH1		(AOS_DMA1_1)
+#define AOS_DMA_INST0_CH2		(AOS_DMA1_2)
+#define AOS_DMA_INST0_CH3		(AOS_DMA1_3)
 
-#define AOS_DMA_INST1_CH0		AOS_DMA2_0
-#define AOS_DMA_INST1_CH1		AOS_DMA2_1
-#define AOS_DMA_INST1_CH2		AOS_DMA2_2
-#define AOS_DMA_INST1_CH3		AOS_DMA2_3
+#define AOS_DMA_INST1_CH0		(AOS_DMA2_0)
+#define AOS_DMA_INST1_CH1		(AOS_DMA2_1)
+#define AOS_DMA_INST1_CH2		(AOS_DMA2_2)
+#define AOS_DMA_INST1_CH3		(AOS_DMA2_3)
+
+
+#define DMA_MCU_MAX_BLOCK_SIZE	(1024UL)
+#define DMA_MCU_MAX_BLOCK_CNT   (65535UL)
 
 struct dma_hc32_config {
 	uint32_t base;
 	uint32_t channels;
 	void (*irq_configure)(void);
-	void (*ch_irqn_saved)(void);
+	void (*aos_configure)(void);
 };
 
 struct dma_hc32_channel {
@@ -43,15 +47,11 @@ struct dma_hc32_channel {
 	bool busy;
 	uint32_t aos_target;
 	en_event_src_t aos_source;
-	uint32_t ch_irqn;
-	uint32_t ch_irqn_priority;
 };
 
 struct dma_hc32_data {
 	struct dma_context ctx;
 	struct dma_hc32_channel *channels;
-	uint32_t err_irqn;
-	uint32_t err_irqn_priority;
 };
 
 struct dma_hc32_ddl_config {
@@ -63,6 +63,15 @@ struct dma_hc32_ddl_config {
 	uint32_t u32SrcAddrInc;
 	uint32_t u32DestAddrInc;
 };
+
+static void dma_hc32_clear_int_flag(CM_DMA_TypeDef *DMAx, uint32_t channel)
+{
+	/* Int status clear */
+	DMA_ClearTransCompleteStatus(DMAx,
+				     (DMA_FLAG_BTC_CH0 << channel) | (DMA_FLAG_TC_CH0 << channel));
+	DMA_ClearErrStatus(DMAx,
+			   ((DMA_INT_REQ_ERR_CH0 << channel) | (DMA_INT_TRANS_ERR_CH0 << channel)));
+}
 
 static int dma_hc32_config(const struct device *dev, uint32_t channel,
 			   struct dma_config *dma_cfg)
@@ -82,7 +91,6 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 	/* dam_cfg parameters check */
 
 	/* These dma_cfg parameters do not care :
-	    dma_cfg->channel_directio
 		dma_cfg->source_handshake
 		dma_cfg->dest_handshake
 		dma_cfg->channel_priority
@@ -101,7 +109,7 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 	}
 
 	if (dma_cfg->block_count != 1) {
-		LOG_ERR("chained block transfer not supported now.");
+		LOG_ERR("block_count != 1 not supported now.");
 		return -ENOTSUP;
 	}
 
@@ -128,10 +136,39 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
+	if (dma_cfg->complete_callback_en != 0) {
+		LOG_ERR("support callback invoked at completion only.");
+		return -ENOTSUP;
+	}
+
 	/* dma_cfg->head_block->block_size is num of bytes to be transfer */
-	dma_ddl_cfg.u32BlockSize = dma_cfg->head_block->block_size /
-				   dma_cfg->source_data_size;
-	dma_ddl_cfg.u32TransCount = dma_cfg->block_count;
+	if (dma_cfg->channel_direction == MEMORY_TO_MEMORY) {
+		/* mem to mem single trig: cnt=0
+		   cfg_block_size ---> mcu_dma_block_size
+		   mcu_dma_block_cnt fix to 1UL */
+		dma_ddl_cfg.u32BlockSize = dma_cfg->head_block->block_size /
+					   dma_cfg->source_data_size;
+		dma_ddl_cfg.u32TransCount = 1UL;
+		if (dma_ddl_cfg.u32BlockSize > DMA_MCU_MAX_BLOCK_SIZE) {
+			LOG_ERR("for MEMORY_TO_MEMORY block size must be < %" PRIu32 " (%" PRIu32 ")",
+				(uint32_t)(DMA_MCU_MAX_BLOCK_SIZE / dma_cfg->source_data_size),
+				dma_cfg->head_block->block_size);
+			return -EINVAL;
+		}
+	} else {
+		/* others peripheral trig : cnt--
+		   cfg_block_size ---> mcu_dma_block_cnt
+		   mcu_dma_block_size fix to 1UL */
+		dma_ddl_cfg.u32BlockSize = 1UL;
+		dma_ddl_cfg.u32TransCount = dma_cfg->head_block->block_size /
+					    dma_cfg->source_data_size;
+		if (dma_ddl_cfg.u32TransCount > DMA_MCU_MAX_BLOCK_CNT) {
+			LOG_ERR("block size must be < %" PRIu32 " (%" PRIu32 ")",
+				(uint32_t)(DMA_MCU_MAX_BLOCK_CNT / dma_cfg->source_data_size),
+				dma_cfg->head_block->block_size);
+			return -EINVAL;
+		}
+	}
 
 	switch (dma_cfg->source_data_size) {
 	case 1U:
@@ -169,10 +206,7 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* Int status clear */
-	DMA_ClearTransCompleteStatus(DMAx,
-				     (DMA_FLAG_BTC_CH0 << channel) | (DMA_FLAG_TC_CH0 << channel));
-	DMA_ClearErrStatus(DMAx,
-			   ((DMA_INT_REQ_ERR_CH0 << channel) | (DMA_INT_TRANS_ERR_CH0 << channel)));
+	dma_hc32_clear_int_flag(DMAx, channel);
 
 	AOS_SetTriggerEventSrc(data->channels[channel].aos_target,
 			       data->channels[channel].aos_source);
@@ -181,7 +215,7 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 
 	stcDmaInit.u32IntEn      = DMA_INT_ENABLE;
 	stcDmaInit.u32BlockSize  = dma_ddl_cfg.u32BlockSize;
-	stcDmaInit.u32TransCount = 1UL;
+	stcDmaInit.u32TransCount = dma_ddl_cfg.u32TransCount;
 	stcDmaInit.u32DataWidth  = dma_ddl_cfg.u32DataWidth;
 	stcDmaInit.u32SrcAddr    = dma_ddl_cfg.u32SrcAddr;
 	stcDmaInit.u32DestAddr   = dma_ddl_cfg.u32DestAddr;
@@ -195,28 +229,10 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 	data->channels[channel].direction = dma_cfg->channel_direction;
 	data->channels[channel].data_width = dma_cfg->source_data_size;
 
-	/* Init config */
-	if (dma_cfg->complete_callback_en == 0) {
-		/* only TC enable, BTC disable */
-		DMA_TransCompleteIntCmd(DMAx, DMA_INT_BTC_CH0 << channel, DISABLE);
-		if (DMAx == CM_DMA1) {
-			hc32_intc_irq_signin(data->channels[channel].ch_irqn,
-					     INT_SRC_DMA1_TC0 + channel);
-		} else if (DMAx == CM_DMA2) {
-			hc32_intc_irq_signin(data->channels[channel].ch_irqn,
-					     INT_SRC_DMA2_TC0 + channel);
-		}
-	} else {
-		/* every BTC enable, TC disable */
-		DMA_TransCompleteIntCmd(DMAx, DMA_INT_TC_CH0 << channel, DISABLE);
-		if (DMAx == CM_DMA1) {
-			hc32_intc_irq_signin(data->channels[channel].ch_irqn,
-					     INT_SRC_DMA1_BTC0 + channel);
-		} else if (DMAx == CM_DMA2) {
-			hc32_intc_irq_signin(data->channels[channel].ch_irqn,
-					     INT_SRC_DMA2_BTC0 + channel);
-		}
-	}
+
+	/* only TC enable, BTC disable */
+	DMA_TransCompleteIntCmd(DMAx, DMA_INT_BTC_CH0 << channel, DISABLE);
+
 	if (dma_cfg->error_callback_en == 0) {
 		DMA_ErrIntCmd(DMAx, (DMA_INT_REQ_ERR_CH0 << channel) | (DMA_INT_TRANS_ERR_CH0 <<
 									channel), DISABLE);
@@ -294,17 +310,6 @@ static int dma_hc32_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_hc32_suspend(const struct device *dev, uint32_t channel)
-{
-
-}
-
-
-static int dma_hc32_resume(const struct device *dev, uint32_t channel)
-{
-
-}
-
 static int dma_hc32_get_status(const struct device *dev, uint32_t channel,
 			       struct dma_status *stat)
 {
@@ -326,19 +331,12 @@ static int dma_hc32_get_status(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_hc32_chan_filter(const struct device *dev,
-				int channel, void *filter_param)
-{
-
-}
-
 static const struct dma_driver_api dma_hc32_driver_api = {
 	.config = dma_hc32_config,
 	.reload = dma_hc32_reload,
 	.start = dma_hc32_start,
 	.stop = dma_hc32_stop,
 	.get_status = dma_hc32_get_status,
-	.chan_filter = dma_hc32_chan_filter,
 };
 
 static void dma_hc32_err_irq_handler(const struct device *dev)
@@ -364,49 +362,42 @@ static void dma_hc32_err_irq_handler(const struct device *dev)
 	}
 }
 
-static void dma_hc32_btc_tc_irq_handler(const struct device *dev, int channel)
+static void dma_hc32_tc_irq_handler(const struct device *dev, int channel)
 {
 	const struct dma_hc32_config *cfg = dev->config;
 	struct dma_hc32_data *data = dev->data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
 
-	if (DMAx->INTMASK1 & (DMA_INT_BTC_CH0 << channel)) {
-		if (SET == DMA_GetTransCompleteStatus(DMAx, DMA_FLAG_BTC_CH0 << channel)) {
-			DMA_ClearTransCompleteStatus(DMAx, DMA_FLAG_BTC_CH0 << channel);
-			if (data->channels[channel].callback) {
-				data->channels[channel].callback(dev, data->channels[channel].user_data,
-								 channel, DMA_STATUS_BLOCK);
-			}
-		}
-	}
-	if (DMAx->INTMASK1 & (DMA_INT_TC_CH0 << channel)) {
-		if (SET == DMA_GetTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel)) {
-			DMA_ClearTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel);
-			if (data->channels[channel].callback) {
-				data->channels[channel].callback(dev, data->channels[channel].user_data,
-								 channel, DMA_STATUS_COMPLETE);
-			}
+	if (SET == DMA_GetTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel)) {
+		DMA_ClearTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel);
+		if (data->channels[channel].callback) {
+			data->channels[channel].callback(dev, data->channels[channel].user_data,
+							 channel, DMA_STATUS_COMPLETE);
 		}
 	}
 	data->channels[channel].busy = false;
 }
 
 
-#define DMA_HC32_DEFINE_BTC_TC_IRQ_HANDLER(channel)				\
-static void dma_hc32_btc_tc_irq_handler_##channel(const struct device *dev)	\
+#define DMA_HC32_DEFINE_TC_IRQ_HANDLER(ch, inst)				\
+static void dma_hc32_tc_irq_handler_##inst##_##ch(const struct device *dev)	\
 {									\
-	dma_hc32_btc_tc_irq_handler(dev, channel);				\
+	dma_hc32_tc_irq_handler(dev, ch);				\
 }
 
-DMA_HC32_DEFINE_BTC_TC_IRQ_HANDLER(0);
-DMA_HC32_DEFINE_BTC_TC_IRQ_HANDLER(1);
-DMA_HC32_DEFINE_BTC_TC_IRQ_HANDLER(2);
-DMA_HC32_DEFINE_BTC_TC_IRQ_HANDLER(3);
+#define DMA_HC32_DEFINE_ERR_IRQ_HANDLER(inst)				\
+static void dma_hc32_err_irq_handler_##inst(const struct device *dev) \
+{                                  \
+	dma_hc32_err_irq_handler(dev); \
+}
+
+#define DEF_ALL_IRQ_HANDLE(inst, chs) LISTIFY(chs, DMA_HC32_DEFINE_TC_IRQ_HANDLER, (), inst) \
+										DMA_HC32_DEFINE_ERR_IRQ_HANDLER(inst)
+
 
 static int dma_hc32_init(const struct device *dev)
 {
 	const struct dma_hc32_config *cfg = dev->config;
-	struct dma_hc32_data *data = dev->data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
 
 	FCG_Fcg0PeriphClockCmd(FCG0_PERIPH_AOS, ENABLE);
@@ -416,70 +407,70 @@ static int dma_hc32_init(const struct device *dev)
 		FCG_Fcg0PeriphClockCmd(FCG0_PERIPH_DMA2, ENABLE);
 	}
 
-	cfg->ch_irqn_saved();
-	cfg->irq_configure();
-
-	if (DMAx == CM_DMA1) {
-		hc32_intc_irq_signin(data->err_irqn, INT_SRC_DMA1_ERR);
-	} else if (DMAx == CM_DMA2) {
-		hc32_intc_irq_signin(data->err_irqn, INT_SRC_DMA2_ERR);
+	for (uint32_t ch = 0; ch < cfg->channels; ch++) {
+		dma_hc32_clear_int_flag(DMAx, ch);
 	}
+
+	cfg->aos_configure();
+	cfg->irq_configure();
 
 	return 0;
 }
 
+#define DMA_CHANNELS(inst)	DT_INST_PROP(inst, dma_channels)
+
 #define CH_IRQ_CONFIGURE(ch, inst)                                                 \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, ch, irq),                          \
-		    DT_INST_IRQ_BY_IDX(inst, ch, priority), dma_hc32_btc_tc_irq_handler_##ch,       \
+		    DT_INST_IRQ_BY_IDX(inst, ch, priority), dma_hc32_tc_irq_handler_##inst##_##ch,       \
 		    DEVICE_DT_INST_GET(inst), 0);                              \
+	hc32_intc_irq_signin(DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, ch, irqn), \
+						 DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, ch, int_src));\
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, ch, irq));
 
 #define ERR_IRQ_CONFIGURE(inst)                                                 \
-	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, DT_INST_PROP(inst, dma_channels), irq),                          \
-		    DT_INST_IRQ_BY_IDX(inst, DT_INST_PROP(inst, dma_channels), priority), dma_hc32_err_irq_handler,       \
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), irq),                          \
+		    DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), priority), dma_hc32_err_irq_handler_##inst,  \
 		    DEVICE_DT_INST_GET(inst), 0);                              \
-	irq_enable(DT_INST_IRQ_BY_IDX(inst, DT_INST_PROP(inst, dma_channels), irq));
+	hc32_intc_irq_signin(DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, DMA_CHANNELS(inst), irqn), \
+						 DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, DMA_CHANNELS(inst), int_src));\
+	irq_enable(DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), irq));
 
 #define CONFIGURE_ALL_IRQS(inst, chs) LISTIFY(chs, CH_IRQ_CONFIGURE, (), inst) \
 									  ERR_IRQ_CONFIGURE(inst)
 
 
-#define IRQS_CH_SAVE(ch, inst) \
-	dma_hc32##inst##_data.channels[ch].ch_irqn = DT_INST_IRQ_BY_IDX(inst, ch, irq);\
-	dma_hc32##inst##_data.channels[ch].ch_irqn_priority = DT_INST_IRQ_BY_IDX(inst, ch, priority);\
+#define AOS_CH_CONFIGURE(ch, inst) \
 	dma_hc32##inst##_data.channels[ch].aos_target = AOS_DMA_INST##inst##_CH##ch;\
 	dma_hc32##inst##_data.channels[ch].aos_source = EVT_SRC_AOS_STRG;
 
-#define SAVE_ALL_CH_IRQS(inst, chs) LISTIFY(chs, IRQS_CH_SAVE, (), inst)
+#define CONFIGURE_ALL_AOS(inst, chs) LISTIFY(chs, AOS_CH_CONFIGURE, (), inst)
 
 #define HC32_DMA_INIT(inst)                                                    \
-	static void dma_hc32##inst##_ch_irq_configure(void)                       \
+	DEF_ALL_IRQ_HANDLE(inst, DMA_CHANNELS(inst))							\
+	static void dma_hc32##inst##_irq_configure(void)                       \
 	{                                                                      \
-		CONFIGURE_ALL_IRQS(inst, DT_INST_PROP(inst, dma_channels));      \
+		CONFIGURE_ALL_IRQS(inst, DMA_CHANNELS(inst));      \
 	}                                                                      \
 	static struct dma_hc32_channel                                         \
-		dma_hc32##inst##_channels[DT_INST_PROP(inst, dma_channels)];   \
-	ATOMIC_DEFINE(dma_hc32_atomic##inst,                                   \
-		      DT_INST_PROP(inst, dma_channels));                       \
+		dma_hc32##inst##_channels[DMA_CHANNELS(inst)];   \
+	ATOMIC_DEFINE(dma_hc32_atomic##inst, DMA_CHANNELS(inst));                       \
 	static struct dma_hc32_data dma_hc32##inst##_data = {                  \
 		.ctx =  {                                                      \
 			.magic = DMA_MAGIC,                                    \
 			.atomic = dma_hc32_atomic##inst,                       \
-			.dma_channels = DT_INST_PROP(inst, dma_channels),      \
+			.dma_channels = DMA_CHANNELS(inst),      \
 		},                                                             \
 		.channels = dma_hc32##inst##_channels,                         \
-		.err_irqn = DT_INST_IRQ_BY_IDX(inst, DT_INST_PROP(inst, dma_channels), irq), \
-		.err_irqn_priority = DT_INST_IRQ_BY_IDX(inst, DT_INST_PROP(inst, dma_channels), priority), \
 	};                                                                     \
-	static void dma_hc32##inst##_ch_irqn_saved(void)                       \
+	static void dma_hc32##inst##_aos_configure(void)                       \
 	{                                                                      \
-		SAVE_ALL_CH_IRQS(inst, DT_INST_PROP(inst, dma_channels));                             \
+		CONFIGURE_ALL_AOS(inst, DMA_CHANNELS(inst));                             \
 	}                                                                      \
 	static const struct dma_hc32_config dma_hc32##inst##_config = {        \
 		.base = DT_INST_REG_ADDR(inst),                                 \
-		.channels = DT_INST_PROP(inst, dma_channels),                  \
-		.irq_configure = dma_hc32##inst##_ch_irq_configure,               \
-		.ch_irqn_saved = dma_hc32##inst##_ch_irqn_saved,                    \
+		.channels = DMA_CHANNELS(inst),                  \
+		.irq_configure = dma_hc32##inst##_irq_configure,               \
+		.aos_configure = dma_hc32##inst##_aos_configure,                    \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_INST_DEFINE(inst, &dma_hc32_init, NULL,                      \

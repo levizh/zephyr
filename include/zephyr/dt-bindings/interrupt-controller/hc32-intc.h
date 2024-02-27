@@ -75,19 +75,25 @@
 /* DMA1 ch3 */
 #define HC32_DMA1_CH3_IRQ_NUM            INT041_IRQn
 #define HC32_DMA1_CH3_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 err */
+#define HC32_DMA1_ERR_IRQ_NUM            INT042_IRQn
+#define HC32_DMA1_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 
 /* DMA2 ch0 */
-#define HC32_DMA2_CH0_IRQ_NUM            INT042_IRQn
+#define HC32_DMA2_CH0_IRQ_NUM            INT043_IRQn
 #define HC32_DMA2_CH0_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 ch1 */
-#define HC32_DMA2_CH1_IRQ_NUM            INT043_IRQn
+#define HC32_DMA2_CH1_IRQ_NUM            INT020_IRQn
 #define HC32_DMA2_CH1_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 ch2 */
-#define HC32_DMA2_CH2_IRQ_NUM            INT020_IRQn
+#define HC32_DMA2_CH2_IRQ_NUM            INT021_IRQn
 #define HC32_DMA2_CH2_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 ch3 */
-#define HC32_DMA2_CH3_IRQ_NUM            INT021_IRQn
+#define HC32_DMA2_CH3_IRQ_NUM            INT022_IRQn
 #define HC32_DMA2_CH3_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA2 err */
+#define HC32_DMA2_ERR_IRQ_NUM            INT023_IRQn
+#define HC32_DMA2_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 
 #if defined(HC32_USING_UART1)
 #define HC32_UART1_RXERR_IRQ_NUM         INT012_IRQn

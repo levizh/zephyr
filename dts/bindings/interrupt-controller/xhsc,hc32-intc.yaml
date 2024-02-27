@@ -29,9 +29,15 @@ properties:
     required: true
     description: Description of the external channel for each interrupt vector.
 
+  "#intc-cells":
+    type: int
+    required: true
+    description: Number of items to expect in an interrupt specifier
+
   "#interrupt-cells":
     const: 2
 
-interrupt-cells:
+intc-cells:
   - irqn
   - int_src
+

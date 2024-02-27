@@ -5,11 +5,9 @@ description: |
   HC32 DMA controller
 
   a phandle to the DMA controller plus the following four integer cells:
-    1. channel: the dma stream from 0 to <dma-requests>
-    2. slot: DMA periph request ID, which is written in the DMAREQ_ID of the DMAMUX_CxCR
-    this value is 0 for Memory-to-memory transfers
-    or a value between <1> .. <dma-generators> (not supported yet)
-    or a value beweeen <dma-generators>+1  ..  <dma-generators>+<dma-requests>
+    1. channel: the dma channel from 0 to <dma-requests>
+    2. slot: DMA triger source, which is the event source number
+       this value please ref UM INTC chapter
     3. channel-config: A 32bit mask specifying the DMA channel configuration
     which is device dependent:
         -bit 6-7 : Direction  (see dma.h)
@@ -17,46 +15,35 @@ description: |
                0x1: MEM to PERIPH
                0x2: PERIPH to MEM
                0x3: reserved for PERIPH to PERIPH
-        -bit 9 : Peripheral Increment Address
+        -bit 9 : Source Increment Address
                0x0: no address increment between transfers
                0x1: increment address between transfers
-        -bit 10 : Memory Increment Address
+        -bit 10 : Dest Increment Address
                0x0: no address increment between transfers
                0x1: increment address between transfers
-        -bit 11-12 : Peripheral data size
+        -bit 11-12 : data size (source and dest all use this parameter)
                0x0: Byte (8 bits)
                0x1: Half-word (16 bits)
                0x2: Word (32 bits)
                0x3: reserved
-        -bit 13-14 : Memory data size
-               0x0: Byte (8 bits)
-               0x1: Half-word (16 bits)
-               0x2: Word (32 bits)
-               0x3: reserved
-        -bit 15: Peripheral Increment Offset Size
-               0x0: offset size is linked to the peripheral bus width
-               0x1: offset size is fixed to 4 (32-bit alignment)
-        -bit 16-17 : Priority level
-               0x0: low
-               0x1: medium
-               0x2: high
-               0x3: very high
+        -bit 13-14 : reserved
+        -bit 15: reserved
+        -bit 16-17 : reserved
 
-    examples for stm32f411
+    examples for hc32f460
      dma2: dma-controller@40020400 {
-         compatible = "st,stm32-dma-v1";
+         compatible = "xhsc,hc32-dma";
          ...
-         st,mem2mem;
-         dma-requests = <7>;
+         dma-requests = <511>;
          status = "disabled";
         };
 
-  For the client part, example for stm32f411 on DMA2 instance
-    Tx using stream 5 on channel 3 (stream 2 on channel 2 is also possible)
-    Rx using stream 2 on channel 3 (stream 0 on channel 3 is also possible)
+  For the client part, example for hc32f460 on DMA2 instance
+    Tx using channel 0
+    Rx using channel 3
     spi1 {
-     dmas = <&dma2 5 3 0x28440>,
-           <&dma2 2 3 0x28480>;
+     dmas = <&dma2 0 EVT_SRC_SPI1_SPTI 0x28440>,
+            <&dma2 3 EVT_SRC_SPI1_SPRI 0x28480>;
      dma-names = "tx", "rx";
      };
 
@@ -69,6 +56,10 @@ properties:
     required: true
 
   interrupts:
+    required: true
+
+  intcs:
+    type: phandle-array
     required: true
 
   "#dma-cells":

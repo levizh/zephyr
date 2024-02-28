@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <arm/armv7-m.dtsi>
- #include <mem.h>
- #include <dt-bindings/gpio/gpio.h>
- #include <zephyr/dt-bindings/clock/hc32f4_clock.h>
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/hc32f4_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/hc32-intc.h>
+#include <zephyr/dt-bindings/dma/hc32_dma.h>
 
  / {
 	cpus {
@@ -65,8 +66,8 @@
 			#size-cells = <1>;
 			reg = < 0x40054000 0x400 >;
 			compatible = "xhsc,hc32-clock-control";
-			clock-conf = <HC32_CLK_CONF_PERI HC32_CLK_CONF_USB 
-						HC32_CLK_CONF_I2S HC32_CLK_CONF_TPIU 
+			clock-conf = <HC32_CLK_CONF_PERI HC32_CLK_CONF_USB
+						HC32_CLK_CONF_I2S HC32_CLK_CONF_TPIU
 						HC32_CLK_CONF_SRC HC32_CLK_CONF_MCO>;
 
 			clk_xtal: clock_xtal {
@@ -104,7 +105,7 @@
 				div-q = <2>;
 				div-r = <2>;
 			};
-			
+
 			clk_sys: clock_system {
 				compatible = "xhsc,hc32-clock-sys";
 				clocks = < &clk_pll >;
@@ -231,6 +232,29 @@
 					<&intc HC32_DMA1_CH3_IRQ_NUM INT_SRC_DMA1_TC3>,
 					<&intc HC32_DMA1_ERR_IRQ_NUM INT_SRC_DMA1_ERR>;
 			dma-channels = <4>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>,
+					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA1>;
+			status = "disabled";
+		};
+
+		dma2: dma@40053400 {
+			compatible = "xhsc,hc32-dma";
+			#dma-cells = <3>;
+			reg = <0x40053400 0x400>;
+			interrupts = <HC32_DMA2_CH0_IRQ_NUM HC32_DMA2_CH0_IRQ_PRIO>,
+						 <HC32_DMA2_CH1_IRQ_NUM HC32_DMA2_CH1_IRQ_PRIO>,
+						 <HC32_DMA2_CH2_IRQ_NUM HC32_DMA2_CH2_IRQ_PRIO>,
+						 <HC32_DMA2_CH3_IRQ_NUM HC32_DMA2_CH3_IRQ_PRIO>,
+						 <HC32_DMA2_ERR_IRQ_NUM HC32_DMA2_ERR_IRQ_PRIO>;
+			interrupt-names = "TC0", "TC1", "TC2", "TC3", "ERR";
+			intcs = <&intc HC32_DMA2_CH0_IRQ_NUM INT_SRC_DMA2_TC0>,
+					<&intc HC32_DMA2_CH1_IRQ_NUM INT_SRC_DMA2_TC1>,
+					<&intc HC32_DMA2_CH2_IRQ_NUM INT_SRC_DMA2_TC2>,
+					<&intc HC32_DMA2_CH3_IRQ_NUM INT_SRC_DMA2_TC3>,
+					<&intc HC32_DMA2_ERR_IRQ_NUM INT_SRC_DMA2_ERR>;
+			dma-channels = <4>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>,
+					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA2>;
 			status = "disabled";
 		};
 

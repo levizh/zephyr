@@ -10,25 +10,27 @@ description: |
        this value please ref UM INTC chapter
     3. channel-config: A 32bit mask specifying the DMA channel configuration
     which is device dependent:
-        -bit 6-7 : Direction  (see dma.h)
+        -bit 4-5 : Direction  (see dma.h)
                0x0: MEM to MEM
                0x1: MEM to PERIPH
                0x2: PERIPH to MEM
                0x3: reserved for PERIPH to PERIPH
-        -bit 9 : Source Increment Address
+        -bit 6-7 : Source Increment Address
                0x0: no address increment between transfers
                0x1: increment address between transfers
-        -bit 10 : Dest Increment Address
+               0x2: decrement address between transfers
+               0x3: reserved
+        -bit 8-9 : Dest Increment Address
                0x0: no address increment between transfers
                0x1: increment address between transfers
-        -bit 11-12 : data size (source and dest all use this parameter)
+               0x2: decrement address between transfers
+               0x3: reserved
+        -bit 10-11 : data size (source and dest all use this parameter)
                0x0: Byte (8 bits)
                0x1: Half-word (16 bits)
                0x2: Word (32 bits)
                0x3: reserved
-        -bit 13-14 : reserved
-        -bit 15: reserved
-        -bit 16-17 : reserved
+        -bit 12-31 : reserved
 
     examples for hc32f460
      dma2: dma-controller@40020400 {
@@ -42,8 +44,8 @@ description: |
     Tx using channel 0
     Rx using channel 3
     spi1 {
-     dmas = <&dma2 0 EVT_SRC_SPI1_SPTI 0x00240>,
-            <&dma2 3 EVT_SRC_SPI1_SPRI 0x00480>;
+     dmas = <&dma2 0 EVT_SRC_SPI1_SPTI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+            <&dma2 3 EVT_SRC_SPI1_SPRI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
      dma-names = "tx", "rx";
      };
 

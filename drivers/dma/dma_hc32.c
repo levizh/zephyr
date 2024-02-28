@@ -10,6 +10,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma/dma_hc32.h>
 #include <zephyr/drivers/interrupt_controller/intc_hc32.h>
+#include <zephyr/drivers/clock_control/hc32_clock_control.h>
 
 #include "hc32_ll.h"
 
@@ -35,6 +36,7 @@ LOG_MODULE_REGISTER(dma_hc32, CONFIG_DMA_LOG_LEVEL);
 struct dma_hc32_config {
 	uint32_t base;
 	uint32_t channels;
+	void (*fcg_configure)(void);
 	void (*irq_configure)(void);
 	void (*aos_configure)(void);
 };
@@ -87,6 +89,11 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 		LOG_ERR("channel must be < %" PRIu32 " (%" PRIu32 ")",
 			cfg->channels, channel);
 		return -EINVAL;
+	}
+
+	if (data->channels[channel].busy) {
+		LOG_ERR("dma channel %d is busy.", channel);
+		return -EBUSY;
 	}
 
 	/* dam_cfg parameters check */
@@ -187,11 +194,6 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 		break;
 	}
 
-	if ((dma_cfg->channel_direction == MEMORY_TO_MEMORY)
-	    && (dma_cfg_user_data->slot != EVT_SRC_AOS_STRG)) {
-		LOG_WRN("note: dma mem to mem, but trig source not EVT_SRC_AOS_STRG !");
-	}
-
 	dma_ddl_cfg.u32SrcAddr  = dma_cfg->head_block->source_address;
 	dma_ddl_cfg.u32DestAddr = dma_cfg->head_block->dest_address;
 
@@ -215,7 +217,18 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 	data->channels[channel].user_data = dma_cfg->user_data;
 	data->channels[channel].direction = dma_cfg->channel_direction;
 	data->channels[channel].data_width = dma_cfg->source_data_size;
-	data->channels[channel].aos_source = dma_cfg_user_data->slot;
+	if (dma_cfg_user_data != NULL) {
+		data->channels[channel].aos_source = dma_cfg_user_data->slot;
+	} else {
+		LOG_WRN("dma_config->user_data is NULL !");
+	}
+
+	if ((dma_cfg->channel_direction == MEMORY_TO_MEMORY)
+	    && (data->channels[channel].aos_source != EVT_SRC_AOS_STRG)) {
+		LOG_WRN("note: dma mem to mem, but trig source not EVT_SRC_AOS_STRG !");
+		data->channels[channel].aos_source = EVT_SRC_AOS_STRG;
+		LOG_WRN("note: force trig source to EVT_SRC_AOS_STRG !");
+	}
 
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
@@ -255,6 +268,7 @@ static int dma_hc32_reload(const struct device *dev, uint32_t channel,
 	const struct dma_hc32_config *cfg = dev->config;
 	struct dma_hc32_data *data = dev->data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
+	uint32_t u32TransSize;
 
 	if (channel >= cfg->channels) {
 		LOG_ERR("reload channel must be < %" PRIu32 " (%" PRIu32 ")",
@@ -263,14 +277,43 @@ static int dma_hc32_reload(const struct device *dev, uint32_t channel,
 	}
 
 	if (data->channels[channel].busy) {
+		LOG_ERR("dma channel %d is busy.", channel);
 		return -EBUSY;
+	}
+
+	if ((size % data->channels[channel].data_width) != 0) {
+		LOG_ERR("size is not an integer multiple of data_width.");
+		return -ENOTSUP;
+	}
+
+	u32TransSize = size / data->channels[channel].data_width;
+
+	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
+		if (u32TransSize > DMA_MCU_MAX_BLOCK_SIZE) {
+			LOG_ERR("for MEMORY_TO_MEMORY block size must be < %" PRIu32 " (%" PRIu32 ")",
+				(uint32_t)(DMA_MCU_MAX_BLOCK_SIZE / data->channels[channel].data_width),
+				size);
+			return -EINVAL;
+		}
+	} else {
+		if (u32TransSize > DMA_MCU_MAX_BLOCK_CNT) {
+			LOG_ERR("block size must be < %" PRIu32 " (%" PRIu32 ")",
+				(uint32_t)(DMA_MCU_MAX_BLOCK_CNT / data->channels[channel].data_width),
+				size);
+			return -EINVAL;
+		}
 	}
 
 	(void)DMA_ChCmd(DMAx, channel, DISABLE);
 
 	DMA_SetSrcAddr(DMAx, channel, src);
 	DMA_SetDestAddr(DMAx, channel, dst);
-	DMA_SetBlockSize(DMAx, channel, size / data->channels[channel].data_width);
+
+	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
+		DMA_SetBlockSize(DMAx, channel, u32TransSize);
+	} else {
+		DMA_SetTransCount(DMAx, channel, u32TransSize);
+	}
 
 	(void)DMA_ChCmd(DMAx, channel, ENABLE);
 
@@ -334,7 +377,7 @@ static int dma_hc32_get_status(const struct device *dev, uint32_t channel,
 	}
 
 	stat->pending_length = DMA_GetTransCount(DMAx, channel) * DMA_GetBlockSize(DMAx,
-										   channel);
+										   channel)  * data->channels[channel].data_width;
 	stat->dir = data->channels[channel].direction;
 	stat->busy = data->channels[channel].busy;
 
@@ -362,11 +405,11 @@ static void dma_hc32_err_irq_handler(const struct device *dev)
 						    ((DMA_INT_REQ_ERR_CH0 << ch) | (DMA_INT_TRANS_ERR_CH0 << ch)))) {
 				DMA_ClearErrStatus(DMAx,
 						   ((DMA_INT_REQ_ERR_CH0 << ch) | (DMA_INT_TRANS_ERR_CH0 << ch)));
+				data->channels[ch].busy = false;
 				if (data->channels[ch].callback) {
 					data->channels[ch].callback(dev, data->channels[ch].user_data,
 								    ch, -EIO);
 				}
-				data->channels[ch].busy = false;
 			}
 		}
 	}
@@ -380,12 +423,12 @@ static void dma_hc32_tc_irq_handler(const struct device *dev, int channel)
 
 	if (SET == DMA_GetTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel)) {
 		DMA_ClearTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel);
+		data->channels[channel].busy = false;
 		if (data->channels[channel].callback) {
 			data->channels[channel].callback(dev, data->channels[channel].user_data,
 							 channel, DMA_STATUS_COMPLETE);
 		}
 	}
-	data->channels[channel].busy = false;
 }
 
 
@@ -408,17 +451,14 @@ static void dma_hc32_err_irq_handler_##inst(const struct device *dev) \
 static int dma_hc32_init(const struct device *dev)
 {
 	const struct dma_hc32_config *cfg = dev->config;
+	struct dma_hc32_data *data = dev->data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
 
-	FCG_Fcg0PeriphClockCmd(FCG0_PERIPH_AOS, ENABLE);
-	if (DMAx == CM_DMA1) {
-		FCG_Fcg0PeriphClockCmd(FCG0_PERIPH_DMA1, ENABLE);
-	} else if (DMAx == CM_DMA2) {
-		FCG_Fcg0PeriphClockCmd(FCG0_PERIPH_DMA2, ENABLE);
-	}
+	cfg->fcg_configure();
 
 	for (uint32_t ch = 0; ch < cfg->channels; ch++) {
 		dma_hc32_clear_int_flag(DMAx, ch);
+		data->channels[ch].busy = false;
 	}
 
 	cfg->aos_configure();
@@ -455,12 +495,17 @@ static int dma_hc32_init(const struct device *dev)
 
 #define CONFIGURE_ALL_AOS(inst, chs) LISTIFY(chs, AOS_CH_CONFIGURE, (), inst)
 
+
+#define DMA_FCG_CONFIGURE(clk, inst)  \
+		clock_control_on(DEVICE_DT_GET(HC32_CLOCK_CONTROL_NODE), &dma_hc32##inst##_fcg_config[clk]);
+
+#define CONFIGURE_ALL_FCGS(inst, clks) LISTIFY(clks, DMA_FCG_CONFIGURE, (), inst)
+
+
 #define HC32_DMA_INIT(inst)                                                    \
 	DEF_ALL_IRQ_HANDLE(inst, DMA_CHANNELS(inst))							\
-	static void dma_hc32##inst##_irq_configure(void)                       \
-	{                                                                      \
-		CONFIGURE_ALL_IRQS(inst, DMA_CHANNELS(inst));      \
-	}                                                                      \
+	static struct hc32_modules_clock_sys 								\
+		dma_hc32##inst##_fcg_config[DT_INST_NUM_CLOCKS(inst)] = HC32_MODULES_CLOCKS(DT_DRV_INST(inst)); \
 	static struct dma_hc32_channel                                         \
 		dma_hc32##inst##_channels[DMA_CHANNELS(inst)];   \
 	ATOMIC_DEFINE(dma_hc32_atomic##inst, DMA_CHANNELS(inst));                       \
@@ -472,6 +517,14 @@ static int dma_hc32_init(const struct device *dev)
 		},                                                             \
 		.channels = dma_hc32##inst##_channels,                         \
 	};                                                                     \
+	static void dma_hc32##inst##_fcg_configure(void)                       \
+	{                                                                      \
+		CONFIGURE_ALL_FCGS(inst, DT_INST_NUM_CLOCKS(inst));     		 \
+	}                                                                      \
+	static void dma_hc32##inst##_irq_configure(void)                       \
+	{                                                                      \
+		CONFIGURE_ALL_IRQS(inst, DMA_CHANNELS(inst));      \
+	}                                                                      \
 	static void dma_hc32##inst##_aos_configure(void)                       \
 	{                                                                      \
 		CONFIGURE_ALL_AOS(inst, DMA_CHANNELS(inst));                             \
@@ -479,6 +532,7 @@ static int dma_hc32_init(const struct device *dev)
 	static const struct dma_hc32_config dma_hc32##inst##_config = {        \
 		.base = DT_INST_REG_ADDR(inst),                                 \
 		.channels = DMA_CHANNELS(inst),                  \
+		.fcg_configure = dma_hc32##inst##_fcg_configure,               \
 		.irq_configure = dma_hc32##inst##_irq_configure,               \
 		.aos_configure = dma_hc32##inst##_aos_configure,                    \
 	};                                                                     \

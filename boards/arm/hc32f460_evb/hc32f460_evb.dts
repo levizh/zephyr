@@ -75,6 +75,26 @@
 	status = "okay";
 };
 
+&clk_xtal {
+	status = "okay";
+};
+
+&clk_hrc {
+	status = "okay";
+};
+
+&clk_mrc {
+	status = "okay";
+};
+
+&clk_lrc {
+	status = "okay";
+};
+
+&clk_pll {
+	status = "okay";
+};
+
 &usart4 {
 	status = "okay";
 	current-speed = <115200>;

@@ -1,0 +1,11 @@
+
+config CLOCK_CONTROL_HC32
+	bool "HC32 Clock Control"
+
+if CLOCK_CONTROL_HC32
+
+config HC32_LL_CLK
+	bool
+	default y
+	
+endif

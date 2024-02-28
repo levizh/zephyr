@@ -15,5 +15,6 @@ config SOC_SERIES_HC32F4
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select HAS_HC32_DDL
+	select CLOCK_CONTROL_HC32 if CLOCK_CONTROL
 	help
 	  Enable support for xhsc hc32f4 MCU series

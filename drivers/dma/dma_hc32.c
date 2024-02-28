@@ -8,7 +8,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-
+#include <zephyr/drivers/dma/dma_hc32.h>
 #include <zephyr/drivers/interrupt_controller/intc_hc32.h>
 
 #include "hc32_ll.h"
@@ -77,6 +77,7 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 			   struct dma_config *dma_cfg)
 {
 	const struct dma_hc32_config *cfg = dev->config;
+	const struct dma_hc32_config_user_data *dma_cfg_user_data = dma_cfg->user_data;
 	struct dma_hc32_data *data = dev->data;
 	struct dma_hc32_ddl_config dma_ddl_cfg;
 	stc_dma_init_t stcDmaInit;
@@ -186,6 +187,11 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 		break;
 	}
 
+	if ((dma_cfg->channel_direction == MEMORY_TO_MEMORY)
+	    && (dma_cfg_user_data->slot != EVT_SRC_AOS_STRG)) {
+		LOG_WRN("note: dma mem to mem, but trig source not EVT_SRC_AOS_STRG !");
+	}
+
 	dma_ddl_cfg.u32SrcAddr  = dma_cfg->head_block->source_address;
 	dma_ddl_cfg.u32DestAddr = dma_cfg->head_block->dest_address;
 
@@ -205,6 +211,12 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 		dma_ddl_cfg.u32DestAddrInc = DMA_DEST_ADDR_FIX;
 	}
 
+	data->channels[channel].callback = dma_cfg->dma_callback;
+	data->channels[channel].user_data = dma_cfg->user_data;
+	data->channels[channel].direction = dma_cfg->channel_direction;
+	data->channels[channel].data_width = dma_cfg->source_data_size;
+	data->channels[channel].aos_source = dma_cfg_user_data->slot;
+
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
 
@@ -223,12 +235,6 @@ static int dma_hc32_config(const struct device *dev, uint32_t channel,
 	stcDmaInit.u32DestAddrInc = dma_ddl_cfg.u32DestAddrInc;
 
 	(void)DMA_Init(DMAx, channel, &stcDmaInit);
-
-	data->channels[channel].callback = dma_cfg->dma_callback;
-	data->channels[channel].user_data = dma_cfg->user_data;
-	data->channels[channel].direction = dma_cfg->channel_direction;
-	data->channels[channel].data_width = dma_cfg->source_data_size;
-
 
 	/* only TC enable, BTC disable */
 	DMA_TransCompleteIntCmd(DMAx, DMA_INT_BTC_CH0 << channel, DISABLE);
@@ -282,6 +288,10 @@ static int dma_hc32_start(const struct device *dev, uint32_t channel)
 			cfg->channels, channel);
 		return -EINVAL;
 	}
+
+	/* Int status clear */
+	dma_hc32_clear_int_flag(DMAx, channel);
+
 	(void)DMA_ChCmd(DMAx, channel, ENABLE);
 	data->channels[channel].busy = true;
 

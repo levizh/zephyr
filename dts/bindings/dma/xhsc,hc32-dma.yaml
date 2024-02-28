@@ -42,8 +42,8 @@ description: |
     Tx using channel 0
     Rx using channel 3
     spi1 {
-     dmas = <&dma2 0 EVT_SRC_SPI1_SPTI 0x28440>,
-            <&dma2 3 EVT_SRC_SPI1_SPRI 0x28480>;
+     dmas = <&dma2 0 EVT_SRC_SPI1_SPTI 0x00240>,
+            <&dma2 3 EVT_SRC_SPI1_SPRI 0x00480>;
      dma-names = "tx", "rx";
      };
 

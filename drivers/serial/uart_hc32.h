@@ -87,7 +87,6 @@ struct uart_dma_stream {
 #endif
 
 struct hc32_usart_cb_data {
-	IRQn_Type irq;
     /** Callback function */
     uart_irq_callback_user_data_t cb;
     /** User data. */

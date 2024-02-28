@@ -19,7 +19,7 @@
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/init.h>
-// #include <zephyr/drivers/interrupt_controller/exti_hc32.h>
+#include <zephyr/drivers/interrupt_controller/intc_hc32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
@@ -47,12 +47,8 @@ LOG_MODULE_REGISTER(uart_hc32, CONFIG_UART_LOG_LEVEL);
 #define HC32_UART_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-static inline void uart_hc32_set_baudrate(const struct device *dev, uint32_t baud_rate)
-{
-	// const struct uart_hc32_config *config = dev->config;
-	// struct uart_hc32_data *data = dev->data;
-
-}
+/* Interrupt controller config. */
+#define INTC_SetIntSrc hc32_intc_irq_signin
 
 static inline void uart_hc32_set_parity(const struct device *dev,
 					 uint32_t parity)
@@ -64,9 +60,9 @@ static inline void uart_hc32_set_parity(const struct device *dev,
 
 static inline uint32_t uart_hc32_get_parity(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 
-	return 0;
+	return USART_GetParity(config->usart);
 }
 
 static inline void uart_hc32_set_stopbits(const struct device *dev,
@@ -79,9 +75,9 @@ static inline void uart_hc32_set_stopbits(const struct device *dev,
 
 static inline uint32_t uart_hc32_get_stopbits(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 
-	return 0;
+	return USART_GetStopBit(config->usart);
 }
 
 static inline void uart_hc32_set_databits(const struct device *dev,
@@ -94,9 +90,9 @@ static inline void uart_hc32_set_databits(const struct device *dev,
 
 static inline uint32_t uart_hc32_get_databits(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 
-	return 0;
+	return USART_GetDataWidth(config->usart);
 }
 
 static inline void uart_hc32_set_hwctrl(const struct device *dev,
@@ -109,9 +105,9 @@ static inline void uart_hc32_set_hwctrl(const struct device *dev,
 
 static inline uint32_t uart_hc32_get_hwctrl(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 
-	return 0;
+	return USART_GetHWFlowControl(config->usart);
 }
 
 static inline uint32_t uart_hc32_cfg2ll_parity(enum uart_config_parity parity)
@@ -143,7 +139,6 @@ static inline enum uart_config_parity uart_hc32_ll2cfg_parity(uint32_t parity)
 static inline uint32_t uart_hc32_cfg2ll_stopbits(
 		enum uart_config_stop_bits sb)
 {
-
 	switch (sb) {
 	/* Some MCU's don't support 0.5 stop bits */
 #ifdef USART_STOPBIT_2BIT
@@ -156,7 +151,7 @@ static inline uint32_t uart_hc32_cfg2ll_stopbits(
 #endif	/* USART_STOPBIT_1BIT */
 	default:
 		return USART_STOPBIT_1BIT;
-		}
+	}
 }
 
 static inline enum uart_config_stop_bits uart_hc32_ll2cfg_stopbits(uint32_t sb)
@@ -190,7 +185,7 @@ static inline uint32_t uart_hc32_cfg2ll_databits(enum uart_config_data_bits db)
 }
 
 static inline enum
-	uart_config_data_bits uart_hc32_ll2cfg_databits(uint32_t db, uint32_t p)
+	uart_config_data_bits uart_hc32_ll2cfg_databits(uint32_t db)
 {
 	switch (db) {
 /* Some MCU's don't support 9B datawidth */
@@ -205,7 +200,7 @@ static inline enum
 }
 
 /**
- * @brief  Get LL hardware flow control define from
+ * @brief  Get DDL hardware flow control define from
  *         Zephyr hardware flow control option.
  * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS and UART_CFG_FLOW_CTRL_RS485.
  * @param  fc: Zephyr hardware flow control option.
@@ -213,29 +208,20 @@ static inline enum
  */
 static inline uint32_t uart_hc32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
 {
-	// if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
-	// 	return USART_HW_FLOWCTRL_CTS;
-	// } else if (fc == UART_CFG_FLOW_CTRL_RS485) {
-	// 	/* Driver Enable is handled separately */
-	// 	return LL_USART_HWCONTROL_NONE;
-	// }
-
-	return USART_HW_FLOWCTRL_CTS;
+	/* default config */
+	return USART_HW_FLOWCTRL_RTS;
 }
 
 /**
  * @brief  Get Zephyr hardware flow control option from
- *         LL hardware flow control define.
+ *         DDL hardware flow control define.
  * @note   Supports only LL_USART_HWCONTROL_RTS_CTS.
- * @param  fc: LL hardware flow control definition.
+ * @param  fc: DDL hardware flow control definition.
  * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_FLOW_CTRL_NONE.
  */
 static inline enum uart_config_flow_control uart_hc32_ll2cfg_hwctrl(uint32_t fc)
 {
-	// if (fc == LL_USART_HWCONTROL_RTS_CTS) {
-	// 	return UART_CFG_FLOW_CTRL_RTS_CTS;
-	// }
-
+	/* DDL driver compatible with cfg, just return none */
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
@@ -262,31 +248,26 @@ static int uart_hc32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* When the transformed ll stop bits don't match with what was requested, then it's not
-	 * supported
+	/* When the transformed ddl parity don't match with what was requested,
+	 * then it's not supported
+	 */
+	if (uart_hc32_ll2cfg_parity(parity) != cfg->parity) {
+		return -ENOTSUP;
+	}
+
+	/* When the transformed ddl stop bits don't match with what was requested,
+	 * then it's not supported
 	 */
 	if (uart_hc32_ll2cfg_stopbits(stopbits) != cfg->stop_bits) {
 		return -ENOTSUP;
 	}
 
-	/* When the transformed ll databits don't match with what was requested, then it's not
-	 * supported
+	/* When the transformed ddl databits don't match with what was requested,
+	 * then it's not supported
 	 */
-	if (uart_hc32_ll2cfg_databits(databits, parity) != cfg->data_bits) {
+	if (uart_hc32_ll2cfg_databits(databits) != cfg->data_bits) {
 		return -ENOTSUP;
 	}
-
-// 	/* Driver supports only RTS/CTS and RS485 flow control */
-// 	if (!(cfg->flow_ctrl == UART_CFG_FLOW_CTRL_NONE
-// 		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS &&
-// 			IS_UART_HWFLOW_INHCANCE(config->usart))
-// #if HAS_DRIVER_ENABLE
-// 		|| (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485 &&
-// 			IS_UART_DRIVER_ENABLE_INHCANCE(config->usart))
-// #endif
-// 		)) {
-// 		return -ENOTSUP;
-// 	}
 
 	// USART_FuncCmd(config->usart, DISABLE);
 
@@ -310,17 +291,10 @@ static int uart_hc32_config_get(const struct device *dev,
 
 	cfg->baudrate = uart_cfg->baudrate;
 	cfg->parity = uart_hc32_ll2cfg_parity(uart_hc32_get_parity(dev));
-	cfg->stop_bits = uart_hc32_ll2cfg_stopbits(
-		uart_hc32_get_stopbits(dev));
-	cfg->data_bits = uart_hc32_ll2cfg_databits(
-		uart_hc32_get_databits(dev), uart_hc32_get_parity(dev));
-	cfg->flow_ctrl = uart_hc32_ll2cfg_hwctrl(
-		uart_hc32_get_hwctrl(dev));
-#if HAS_DRIVER_ENABLE
-	if (uart_hc32_get_driver_enable(dev)) {
-		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
-	}
-#endif
+	cfg->stop_bits = uart_hc32_ll2cfg_stopbits(uart_hc32_get_stopbits(dev));
+	cfg->data_bits = uart_hc32_ll2cfg_databits(uart_hc32_get_databits(dev));
+	cfg->flow_ctrl = uart_hc32_ll2cfg_hwctrl(uart_hc32_get_hwctrl(dev));
+
 	return 0;
 }
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
@@ -334,18 +308,18 @@ static int uart_hc32_config_get(const struct device *dev,
 // {
 // 	const struct uart_hc32_config *config = dev->config;
 
-// 	// /* Clear overrun error flag */
-// 	// if (LL_USART_IsActiveFlag_ORE(config->usart)) {
-// 	// 	LL_USART_ClearFlag_ORE(config->usart);
-// 	// }
+// 	/* Clear overrun error flag */
+// 	if (USART_GetStatus(config->usart, USART_FLAG_OVERRUN)) {
+// 		USART_ClearStatus(config->usart, USART_FLAG_OVERRUN);
+// 	}
 
-// 	// /*
-// 	//  * On hc32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
-// 	//  * the uart_err_check function call (on errors flags clearing)
-// 	//  */
-// 	// if (!USART_GetStatus(config->usart, USART_FLAG_RX_FULL)) {
-// 	// 	return -1;
-// 	// }
+// 	/*
+// 	 * On hc32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
+// 	 * the uart_err_check function call (on errors flags clearing)
+// 	 */
+// 	if (!USART_GetStatus(config->usart, USART_FLAG_RX_FULL)) {
+// 		return -1;
+// 	}
 
 // 	get_fn(config, in);
 
@@ -366,15 +340,15 @@ static int uart_hc32_config_get(const struct device *dev,
 // 	 * or thread switch. Then, we can safely send our character. The character sent will be
 // 	 * interlaced with the characters potentially send with interrupt transmission API
 // 	 */
-// // 	while (1) {
-// // 		if (USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
-// // 			key = irq_lock();
-// // 			if (USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
-// // 				break;
-// // 			}
-// // 			irq_unlock(key);
-// // 		}
-// // 	}
+// 	while (1) {
+// 		if (USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
+// 			key = irq_lock();
+// 			if (USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
+// 				break;
+// 			}
+// 			irq_unlock(key);
+// 		}
+// 	}
 
 // 	set_fn(config, out);
 // 	irq_unlock(key);
@@ -385,19 +359,18 @@ static int uart_hc32_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_hc32_config *config = dev->config;
 
+	if (USART_GetStatus(config->usart,
+							USART_FLAG_OVERRUN | USART_FLAG_RX_TIMEOUT)) {
+		USART_ClearStatus(config->usart,
+							USART_FLAG_OVERRUN | USART_FLAG_FRAME_ERR);
+	}
+
 	if (SET != USART_GetStatus(config->usart, USART_FLAG_RX_FULL))
 	{
 		return EIO;
 	}
 
-	if (USART_GetStatus(config->usart, USART_FLAG_OVERRUN | \
-										USART_FLAG_RX_TIMEOUT)) {
-		return EIO;
-	}
-
-	*c = (uint8_t)(USART_ReadData(config->usart) & 0xFFU);
-	USART_ClearStatus(config->usart, USART_FLAG_RX_FULL);
-
+	*c = (unsigned char)USART_ReadData(config->usart);
 	return 0;
 }
 
@@ -405,7 +378,7 @@ static void uart_hc32_poll_out(const struct device *dev, unsigned char c)
 {
 	unsigned int key;
 	const struct uart_hc32_config *config = dev->config;
-	// (void)USART_UART_Trans(config->usart, (void *)&c, 1U, 0xFF);
+
 	key = irq_lock();
 	while (1)
 	{
@@ -413,6 +386,7 @@ static void uart_hc32_poll_out(const struct device *dev, unsigned char c)
 			break;
 		}
 	}
+
 	USART_WriteData(config->usart, (uint16_t)c);
 	irq_unlock(key);
 }
@@ -422,7 +396,10 @@ static void uart_hc32_poll_out(const struct device *dev, unsigned char c)
 static void poll_in_u9(const struct uart_hc32_config *config, void *in)
 {
 	// *((uint16_t *)in) = LL_USART_ReceiveData9(config->usart);
-	return 0;
+	if (USART_UART_Receive(config->usart, in, 1U, 0xFF))
+	{
+		;
+	}
 }
 
 static void poll_out_u9(const struct uart_hc32_config *config, void *out)
@@ -434,59 +411,20 @@ static void poll_out_u9(const struct uart_hc32_config *config, void *out)
 
 static int uart_hc32_err_check(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 	uint32_t err = 0U;
 
-	/* Check for errors, then clear them.
-	 * Some SoC clear all error flags when at least
-	 * one is cleared. (e.g. F4X, F1X, and F2X).
-	 * The hc32 F4X, F1X, and F2X also reads the usart DR when clearing Errors
-	 */
-// 	if (LL_USART_IsActiveFlag_ORE(config->usart)) {
-// 		err |= UART_ERROR_OVERRUN;
-// 	}
+	if (USART_GetStatus(config->usart, USART_FLAG_OVERRUN)) {
+		err |= UART_ERROR_OVERRUN;
+	}
 
-// 	if (LL_USART_IsActiveFlag_PE(config->usart)) {
-// 		err |= UART_ERROR_PARITY;
-// 	}
+	if (USART_GetStatus(config->usart, USART_FLAG_FRAME_ERR)) {
+		err |= UART_ERROR_FRAMING;
+	}
 
-// 	if (LL_USART_IsActiveFlag_FE(config->usart)) {
-// 		err |= UART_ERROR_FRAMING;
-// 	}
-
-// 	if (LL_USART_IsActiveFlag_NE(config->usart)) {
-// 		err |= UART_ERROR_NOISE;
-// 	}
-
-// #if !defined(CONFIG_SOC_SERIES_HC32F0X) || defined(USART_LIN_SUPPORT)
-// 	if (LL_USART_IsActiveFlag_LBD(config->usart)) {
-// 		err |= UART_BREAK;
-// 	}
-
-// 	if (err & UART_BREAK) {
-// 		LL_USART_ClearFlag_LBD(config->usart);
-// 	}
-// #endif
-// 	/* Clearing error :
-// 	 * the hc32 F4X, F1X, and F2X sw sequence is reading the usart SR
-// 	 * then the usart DR to clear the Error flags ORE, PE, FE, NE
-// 	 * --> so is the RXNE flag also cleared !
-// 	 */
-// 	if (err & UART_ERROR_OVERRUN) {
-// 		LL_USART_ClearFlag_ORE(config->usart);
-// 	}
-
-// 	if (err & UART_ERROR_PARITY) {
-// 		LL_USART_ClearFlag_PE(config->usart);
-// 	}
-
-// 	if (err & UART_ERROR_FRAMING) {
-// 		LL_USART_ClearFlag_FE(config->usart);
-// 	}
-
-// 	if (err & UART_ERROR_NOISE) {
-// 		LL_USART_ClearFlag_NE(config->usart);
-// 	}
+	if (USART_GetStatus(config->usart, USART_FLAG_PARITY_ERR)) {
+		err |= UART_ERROR_PARITY;
+	}
 
 	return err;
 }
@@ -501,49 +439,52 @@ static inline void __uart_hc32_get_clock(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-typedef void (*fifo_fill_fn)(const struct uart_hc32_config *config, const void *tx_data,
+typedef void (*fifo_fill_fn)(const struct device *dev, const void *tx_data,
 				 const uint8_t offset);
 
 static int uart_hc32_fifo_fill_visitor(const struct device *dev,
 			const void *tx_data, int size, fifo_fill_fn fill_fn)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 	uint8_t num_tx = 0U;
-	// unsigned int key;
+	unsigned int key;
 
-	// if (!USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
-	// 	return num_tx;
-	// }
+	if (!USART_GetStatus(config->usart, USART_FLAG_TX_EMPTY)) {
+		return num_tx;
+	}
 
 	/* Lock interrupts to prevent nested interrupts or thread switch */
-	// key = irq_lock();
+	key = irq_lock();
 
-	// while ((size - num_tx > 0) && USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
-	// 	/* TXE flag will be cleared with byte write to DR|RDR register */
+	/*
+	TXE flag will be set by hardware when moving data
+	from DR register to Shift register
+	*/
+	while ((size - num_tx > 0) &&
+		USART_GetStatus(config->usart, USART_FLAG_TX_EMPTY)) {
+		/* Send a character */
+		fill_fn(dev, tx_data, num_tx);
+		num_tx++;
+	}
 
-	// 	/* Send a character */
-	// 	fill_fn(config, tx_data, num_tx);
-	// 	num_tx++;
-	// }
-
-	// irq_unlock(key);
+	irq_unlock(key);
 
 	return num_tx;
 }
 
-static void fifo_fill_with_u8(const struct uart_hc32_config *config,
+static void fifo_fill_with_u8(const struct device *dev,
 					 const void *tx_data, const uint8_t offset)
 {
-	// const uint8_t *data = (const uint8_t *)tx_data;
+	const uint8_t *data = (const uint8_t *)tx_data;
 	/* Send a character (8bit) */
-	// LL_USART_TransmitData8(config->usart, data[offset]);
+	uart_hc32_poll_out(dev, data[offset]);
 }
 
 static int uart_hc32_fifo_fill(const struct device *dev,
 			const uint8_t *tx_data, int size)
 {
-	if (uart_hc32_ll2cfg_databits(uart_hc32_get_databits(dev),
-			uart_hc32_get_parity(dev)) == USART_DATA_WIDTH_9BIT) {
+	if (UART_CFG_DATA_BITS_9 ==
+			uart_hc32_ll2cfg_databits(uart_hc32_get_databits(dev))) {
 		return -ENOTSUP;
 	}
 	return uart_hc32_fifo_fill_visitor(dev, (const void *)tx_data, size,
@@ -556,24 +497,21 @@ typedef void (*fifo_read_fn)(const struct uart_hc32_config *config, void *rx_dat
 static int uart_hc32_fifo_read_visitor(const struct device *dev,
 			void *rx_data, const int size, fifo_read_fn read_fn)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 	uint8_t num_rx = 0U;
 
-	// while ((size - num_rx > 0) && USART_GetStatus(config->usart, USART_FLAG_RX_FULL)) {
-	// 	/* RXNE flag will be cleared upon read from DR|RDR register */
+	while ((size - num_rx > 0) &&
+			USART_GetStatus(config->usart, USART_FLAG_RX_FULL)) {
+		/* RXNE flag will be cleared upon read from RDR register */
 
-	// 	read_fn(config, rx_data, num_rx);
-	// 	num_rx++;
+		read_fn(config, rx_data, num_rx);
+		num_rx++;
 
-	// 	/* Clear overrun error flag */
-	// 	if (LL_USART_IsActiveFlag_ORE(config->usart)) {
-	// 		LL_USART_ClearFlag_ORE(config->usart);
-	// 		/*
-	// 		 * On hc32 F4X, F1X, and F2X, the RXNE flag is affected (cleared) by
-	// 		 * the uart_err_check function call (on errors flags clearing)
-	// 		 */
-	// 	}
-	// }
+		/* Clear overrun error flag */
+		if (USART_GetStatus(config->usart, USART_FLAG_OVERRUN)) {
+			USART_ClearStatus(config->usart, USART_FLAG_OVERRUN);
+		}
+	}
 
 	return num_rx;
 }
@@ -589,8 +527,8 @@ static void fifo_read_with_u8(const struct uart_hc32_config *config,
 static int uart_hc32_fifo_read(const struct device *dev,
 			uint8_t *rx_data, const int size)
 {
-	if (uart_hc32_ll2cfg_databits(uart_hc32_get_databits(dev),
-			uart_hc32_get_parity(dev)) == USART_DATA_WIDTH_9BIT) {
+	if (UART_CFG_DATA_BITS_9 ==
+			uart_hc32_ll2cfg_databits(uart_hc32_get_databits(dev))) {
 		return -ENOTSUP;
 	}
 	return uart_hc32_fifo_read_visitor(dev, (void *)rx_data, size,
@@ -641,14 +579,7 @@ static int uart_hc32_fifo_read(const struct device *dev,
 static void uart_hc32_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_hc32_config *config = dev->config;
-	struct uart_hc32_data *data = dev->data;
-	stc_irq_signin_config_t stcIrqSigninConfig;
 
-	// stcIrqSigninConfig.enIRQn = config->irq;
-	// stcIrqSigninConfig.enIntSrc = INT_SRC_USART4_TI;
-	// stcIrqSigninConfig.pfnCallback = NULL;
-	// (void)INTC_IrqSignOut(stcIrqSigninConfig.enIRQn);
-	// (void)INTC_IrqSignIn(&stcIrqSigninConfig);
 #ifdef CONFIG_UART_TI_INTERRUPT_DRIVEN
 	USART_FuncCmd(config->usart, USART_INT_TX_EMPTY, ENABLE);
 #endif /* CONFIG_UART_TI_INTERRUPT_DRIVEN */
@@ -688,13 +619,7 @@ static int uart_hc32_irq_tx_complete(const struct device *dev)
 static void uart_hc32_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_hc32_config *config = dev->config;
-	stc_irq_signin_config_t stcIrqSigninConfig;
 
-	// stcIrqSigninConfig.enIRQn = config->irq;
-	// stcIrqSigninConfig.enIntSrc = INT_SRC_USART4_RI;
-	// stcIrqSigninConfig.pfnCallback = NULL;
-	// (void)INTC_IrqSignOut(stcIrqSigninConfig.enIRQn);
-	// (void)INTC_IrqSignIn(&stcIrqSigninConfig);
 	USART_FuncCmd(config->usart, USART_INT_RX, ENABLE);
 }
 
@@ -750,14 +675,32 @@ static void uart_hc32_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
-	int i;
 	struct uart_hc32_data *data = dev->data;
 
-	for (i = 0; i < 5; i++)
-	{
-		data->user_cb[i].cb = cb;
-		data->user_cb[i].user_data = cb_data;
-	}
+#if defined (CONFIG_UART_EI_INTERRUPT_DRIVEN)
+	data->user_cb[UART_INT_IDX_EI].cb = cb;
+	data->user_cb[UART_INT_IDX_EI].user_data = cb_data;
+#endif
+
+#if defined (CONFIG_UART_TI_INTERRUPT_DRIVEN)
+	data->user_cb[UART_INT_IDX_RI].cb = cb;
+	data->user_cb[UART_INT_IDX_RI].user_data = cb_data;
+#endif
+
+#if defined (CONFIG_UART_TI_INTERRUPT_DRIVEN)
+	data->user_cb[UART_INT_IDX_TI].cb = cb;
+	data->user_cb[UART_INT_IDX_TI].user_data = cb_data;
+#endif
+
+#if defined (CONFIG_UART_TCI_INTERRUPT_DRIVEN)
+	data->user_cb[UART_INT_IDX_TCI].cb = cb;
+	data->user_cb[UART_INT_IDX_TCI].user_data = cb_data;
+#endif
+
+#if defined (CONFIG_UART_RTO_INTERRUPT_DRIVEN)
+	data->user_cb[UART_INT_IDX_RTO].cb = cb;
+	data->user_cb[UART_INT_IDX_RTO].user_data = cb_data;
+#endif
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
 	data->async_cb = NULL;
@@ -893,71 +836,6 @@ static void uart_hc32_dma_rx_flush(const struct device *dev)
 }
 
 #endif /* CONFIG_UART_ASYNC_API */
-
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || \
-	defined(CONFIG_UART_ASYNC_API)
-
-static void INTC_SetIntSrc(en_int_src_t enIntSrc, IRQn_Type enIRQn)
-{
-	stc_irq_signin_config_t stcIrqSigninConfig;
-
-	stcIrqSigninConfig.enIRQn = enIRQn;
-	stcIrqSigninConfig.enIntSrc = enIntSrc;
-	stcIrqSigninConfig.pfnCallback = NULL;
-	(void)INTC_IrqSignOut(stcIrqSigninConfig.enIRQn);
-	(void)INTC_IrqSignIn(&stcIrqSigninConfig);
-}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-// static void uart_hc32_isr(const struct device *dev)
-// {
-// 	struct uart_hc32_data *data = dev->data;
-// #if defined(CONFIG_UART_ASYNC_API)
-// 	const struct uart_hc32_config *config = dev->config;
-// #endif
-
-// #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-// 	if (data->user_cb) {
-// 		data->user_cb[](dev, data->user_data);
-// 	}
-// #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-// #ifdef CONFIG_UART_ASYNC_API
-// 	if (LL_USART_IsEnabledIT_IDLE(config->usart) &&
-// 			LL_USART_IsActiveFlag_IDLE(config->usart)) {
-
-// 		LL_USART_ClearFlag_IDLE(config->usart);
-
-// 		//LOG_DBG("idle interrupt occurred");
-
-// 		if (data->dma_rx.timeout == 0) {
-// 			uart_hc32_dma_rx_flush(dev);
-// 		} else {
-// 			/* Start the RX timer not null */
-// 			async_timer_start(&data->dma_rx.timeout_work,
-// 								data->dma_rx.timeout);
-// 		}
-// 	} else if (USART_GetStatus(config->usart, USART_FLAG_TX_CPLT) &&
-// 			USART_GetStatus(config->usart, USART_FLAG_TX_CPLT)) {
-
-// 		USART_FuncCmd(config->usart, USART_FLAG_TX_CPLT, DISABLE);
-// 		USART_ClearStatus(config->usart, USART_FLAG_TX_CPLT);
-// 		/* Generate TX_DONE event when transmission is done */
-// 		async_evt_tx_done(data);
-// 	} else if (USART_GetStatus(config->usart, USART_FLAG_RX_FULL)) {
-// #ifdef USART_SR_RXNE
-// 		/* clear the RXNE flag, because Rx data was not read */
-// 		USART_ClearStatus(config->usart, USART_FLAG_RX_FULL);
-// #else
-// 		/* clear the RXNE by flushing the fifo, because Rx data was not read */
-// 		LL_USART_RequestRxDataFlush(config->usart);
-// #endif /* USART_SR_RXNE */
-// 	}
-
-// 	/* Clear errors */
-// 	uart_hc32_err_check(dev);
-// }
-// #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
 #ifdef CONFIG_UART_ASYNC_API
 
@@ -1769,7 +1647,7 @@ static int uart_hc32_init(const struct device *dev)
 		}																	\
 																			\
 	static void usart_hc32_config_func_##index(const struct device *dev)	\
-	{											   						\
+	{																		\
 		USART_EI_IRQ_CONFIG(index)											\
 		USART_RI_IRQ_CONFIG(index)											\
 		USART_TI_IRQ_CONFIG(index)											\

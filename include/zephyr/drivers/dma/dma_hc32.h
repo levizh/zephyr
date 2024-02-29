@@ -7,12 +7,19 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_HC32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_HC32_H_
 
+/* get dma node_id */
 #define HC32_DMA_CTLR(id, dir)						\
 		DT_INST_DMAS_CTLR_BY_NAME(id, dir)
 
-#define HC32_DMA_SLOT(id, dir, slot)				\
+/* get dma cell: channel */
+#define HC32_DMA_CHANNEL(id, dir)						\
+		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel)
+
+/* get dma cell: slot */
+#define HC32_DMA_SLOT(id, dir)				\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, slot)
 
+/* get dma cell: channel-config */
 #define HC32_DMA_CHANNEL_CONFIG(id, dir)					\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
 

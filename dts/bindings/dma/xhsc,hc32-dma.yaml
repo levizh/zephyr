@@ -16,14 +16,14 @@ description: |
                0x2: PERIPH to MEM
                0x3: reserved for PERIPH to PERIPH
         -bit 6-7 : Source Increment Address
-               0x0: no address increment between transfers
-               0x1: increment address between transfers
-               0x2: decrement address between transfers
+               0x0: increment address between transfers
+               0x1: decrement address between transfers
+               0x2: no address increment between transfers
                0x3: reserved
         -bit 8-9 : Dest Increment Address
-               0x0: no address increment between transfers
-               0x1: increment address between transfers
-               0x2: decrement address between transfers
+               0x0: increment address between transfers
+               0x1: decrement address between transfers
+               0x2: no address increment between transfers
                0x3: reserved
         -bit 10-11 : data size (source and dest all use this parameter)
                0x0: Byte (8 bits)

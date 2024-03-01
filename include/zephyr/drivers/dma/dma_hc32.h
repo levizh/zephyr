@@ -26,12 +26,12 @@
 /* ref dma.h */
 
 /* 0 -> MEM_TO_MEM, 1 -> MEM_TO_PERIPH, 2 -> PERIPH_TO_MEM */
-#define HC32_DMA_CONFIG_DIRECTION(config)			  ((config >> 4) & 0x3)
+#define HC32_DMA_CONFIG_DIRECTION(config)             ((config >> 4) & 0x3)
 /* 0 -> inc, 1 -> dec, 2 -> no change */
-#define HC32_DMA_CONFIG_SOURCE_ADDR_INC(config)		  ((config >> 6) & 0x3)
-#define HC32_DMA_CONFIG_DEST_ADDR_INC(config)	      ((config >> 8) & 0x3)
+#define HC32_DMA_CONFIG_SOURCE_ADDR_INC(config)       ((config >> 6) & 0x3)
+#define HC32_DMA_CONFIG_DEST_ADDR_INC(config)         ((config >> 8) & 0x3)
 /* 0 -> 1 byte, 1 -> 2 bytes, 2 -> 4 bytes */
-#define HC32_DMA_CONFIG_DATA_WIDTH(config)	          (1 << ((config >> 10) & 0x3))
+#define HC32_DMA_CONFIG_DATA_SIZE(config)             (1 << ((config >> 10) & 0x3))
 
 struct dma_hc32_config_user_data {
 	uint32_t slot; /* hc32 mcu uses this value to store the aos source that triggered the dma */

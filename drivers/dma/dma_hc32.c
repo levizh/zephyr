@@ -490,14 +490,14 @@ static int dma_hc32_init(const struct device *dev)
 
 
 #define AOS_CH_CONFIGURE(ch, inst) \
-	dma_hc32##inst##_data.channels[ch].aos_target = AOS_DMA_INST##inst##_CH##ch;\
-	dma_hc32##inst##_data.channels[ch].aos_source = EVT_SRC_AOS_STRG;
+	dma_hc32_##inst##_data.channels[ch].aos_target = AOS_DMA_INST##inst##_CH##ch;\
+	dma_hc32_##inst##_data.channels[ch].aos_source = EVT_SRC_AOS_STRG;
 
 #define CONFIGURE_ALL_AOS(inst, chs) LISTIFY(chs, AOS_CH_CONFIGURE, (), inst)
 
 
 #define DMA_FCG_CONFIGURE(clk, inst)  \
-		clock_control_on(DEVICE_DT_GET(HC32_CLOCK_CONTROL_NODE), &dma_hc32##inst##_fcg_config[clk]);
+		clock_control_on(DEVICE_DT_GET(HC32_CLOCK_CONTROL_NODE), &dma_hc32_##inst##_fcg_config[clk]);
 
 #define CONFIGURE_ALL_FCGS(inst, clks) LISTIFY(clks, DMA_FCG_CONFIGURE, (), inst)
 
@@ -505,41 +505,41 @@ static int dma_hc32_init(const struct device *dev)
 #define HC32_DMA_INIT(inst)                                                    \
 	DEF_ALL_IRQ_HANDLE(inst, DMA_CHANNELS(inst))							\
 	static struct hc32_modules_clock_sys 								\
-		dma_hc32##inst##_fcg_config[DT_INST_NUM_CLOCKS(inst)] = HC32_MODULES_CLOCKS(DT_DRV_INST(inst)); \
+		dma_hc32_##inst##_fcg_config[DT_INST_NUM_CLOCKS(inst)] = HC32_MODULES_CLOCKS(DT_DRV_INST(inst)); \
 	static struct dma_hc32_channel                                         \
-		dma_hc32##inst##_channels[DMA_CHANNELS(inst)];   \
+		dma_hc32_##inst##_channels[DMA_CHANNELS(inst)];   \
 	ATOMIC_DEFINE(dma_hc32_atomic##inst, DMA_CHANNELS(inst));                       \
-	static struct dma_hc32_data dma_hc32##inst##_data = {                  \
+	static struct dma_hc32_data dma_hc32_##inst##_data = {                  \
 		.ctx =  {                                                      \
 			.magic = DMA_MAGIC,                                    \
 			.atomic = dma_hc32_atomic##inst,                       \
 			.dma_channels = DMA_CHANNELS(inst),      \
 		},                                                             \
-		.channels = dma_hc32##inst##_channels,                         \
+		.channels = dma_hc32_##inst##_channels,                         \
 	};                                                                     \
-	static void dma_hc32##inst##_fcg_configure(void)                       \
+	static void dma_hc32_##inst##_fcg_configure(void)                       \
 	{                                                                      \
 		CONFIGURE_ALL_FCGS(inst, DT_INST_NUM_CLOCKS(inst));     		 \
 	}                                                                      \
-	static void dma_hc32##inst##_irq_configure(void)                       \
+	static void dma_hc32_##inst##_irq_configure(void)                       \
 	{                                                                      \
 		CONFIGURE_ALL_IRQS(inst, DMA_CHANNELS(inst));      \
 	}                                                                      \
-	static void dma_hc32##inst##_aos_configure(void)                       \
+	static void dma_hc32_##inst##_aos_configure(void)                       \
 	{                                                                      \
 		CONFIGURE_ALL_AOS(inst, DMA_CHANNELS(inst));                             \
 	}                                                                      \
-	static const struct dma_hc32_config dma_hc32##inst##_config = {        \
+	static const struct dma_hc32_config dma_hc32_##inst##_config = {        \
 		.base = DT_INST_REG_ADDR(inst),                                 \
 		.channels = DMA_CHANNELS(inst),                  \
-		.fcg_configure = dma_hc32##inst##_fcg_configure,               \
-		.irq_configure = dma_hc32##inst##_irq_configure,               \
-		.aos_configure = dma_hc32##inst##_aos_configure,                    \
+		.fcg_configure = dma_hc32_##inst##_fcg_configure,               \
+		.irq_configure = dma_hc32_##inst##_irq_configure,               \
+		.aos_configure = dma_hc32_##inst##_aos_configure,                    \
 	};                                                                     \
                                                                                \
 	DEVICE_DT_INST_DEFINE(inst, &dma_hc32_init, NULL,                      \
-			      &dma_hc32##inst##_data,                          \
-			      &dma_hc32##inst##_config, POST_KERNEL,           \
+			      &dma_hc32_##inst##_data,                          \
+			      &dma_hc32_##inst##_config, PRE_KERNEL_1,           \
 			      CONFIG_DMA_INIT_PRIORITY, &dma_hc32_driver_api);
 
 

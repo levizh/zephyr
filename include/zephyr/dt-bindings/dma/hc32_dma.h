@@ -8,13 +8,6 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_HC32_DMA_H_
 
 
-// #if defined(HC32F460)
-#include <zephyr/dt-bindings/dma/hc32f460_evt.h>
-// #else
-// #error "unsupported chip"
-// #endif
-
-
 /* macros for channel-cfg */
 /* direction defined on bits 4-5 */
 #define HC32_DMA_CH_CFG_DIRECTION(val)       ((val & 0x3) << 4)

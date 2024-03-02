@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/clock/hc32f4_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/hc32-intc.h>
 #include <zephyr/dt-bindings/dma/hc32_dma.h>
-#include <zephyr/dt-bindings/dma/hc32f460_evt.h>
+#include <zephyr/dt-bindings/interrupt-controller/hc32f460-evt.h>
 
  / {
 	cpus {

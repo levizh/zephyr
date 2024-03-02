@@ -7,7 +7,7 @@ description: |
   a phandle to the DMA controller plus the following four integer cells:
     1. channel: the dma channel from 0 to <dma-requests>
     2. slot: DMA triger source, which is the event source number
-       this value please ref UM INTC chapter
+       this value please ref RM INTC chapter
     3. channel-config: A 32bit mask specifying the DMA channel configuration
     which is device dependent:
         -bit 4-5 : Direction  (see dma.h)
@@ -62,7 +62,7 @@ properties:
 
   intcs:
     type: phandle-array
-    required: true
+    required: false
 
   "#dma-cells":
     const: 3

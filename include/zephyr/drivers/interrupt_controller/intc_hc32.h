@@ -34,7 +34,6 @@ void hc32_extint_disable(int port, int pin);
 void hc32_extint_trigger(int pin, int trigger);
 int  hc32_extint_set_callback(int pin, hc32_extint_callback_t cb, void *user);
 void hc32_extint_unset_callback(int pin);
-void hc32_extint_get_irq_info(int pin, int *irqn, int *intsrc);
 
 
 /* intc config */

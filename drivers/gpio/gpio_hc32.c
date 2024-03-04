@@ -202,7 +202,6 @@ static int gpio_hc32_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_hc32_config *cfg = dev->config;
 	uint8_t port = cfg->port;
 	struct gpio_hc32_data *data = dev->data;
-	int irqn, intsrc;
 	int err = 0;
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
@@ -215,16 +214,11 @@ static int gpio_hc32_pin_interrupt_configure(const struct device *dev,
 	}
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
-	/* get irqn and intsrc for this pin */
-	hc32_extint_get_irq_info(pin, &irqn, &intsrc);
-
 	switch (mode) {
 	case GPIO_INT_DISABLE:
 		hc32_extint_disable(port, pin);
 		hc32_extint_unset_callback(pin);
 		hc32_extint_trigger(pin, HC32_EXTINT_TRIG_FALLING);
-		err = hc32_intc_irq_signout(irqn);
-		return err;
 		break;
 
 	case GPIO_INT_MODE_LEVEL:
@@ -254,7 +248,6 @@ static int gpio_hc32_pin_interrupt_configure(const struct device *dev,
 	}
 
 	err = hc32_extint_set_callback(pin, gpio_hc32_isr, data);
-	err |= hc32_intc_irq_signin(irqn, intsrc);
 	hc32_extint_enable(port, pin);
 	return err;
 }

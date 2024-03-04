@@ -7,5 +7,6 @@ config INTC_HC32
 	default y
 	depends on DT_HAS_XHSC_HC32_INTC_ENABLED
 	select HC32_LL_INTERRUPTS
+	select HC32_LL_INTERRUPTS_SHARE
 	help
 	  Enable INTC driver for HC32 line of MCUs

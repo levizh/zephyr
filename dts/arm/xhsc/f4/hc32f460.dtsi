@@ -213,8 +213,7 @@
 						INT_SRC_PORT_EIRQ12 INT_SRC_PORT_EIRQ13
 						INT_SRC_PORT_EIRQ14 INT_SRC_PORT_EIRQ15>;
 			extint-chs = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15>;
-			// intcs = <&intc HC32_EXTINT0_IRQ_NUM INT_SRC_PORT_EIRQ0>,
-			//         <&intc HC32_EXTINT1_IRQ_NUM INT_SRC_PORT_EIRQ1>;
+			status = "okay";
 		};
 
 		dma1: dma@40053000 {
@@ -289,6 +288,12 @@
             interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
             interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
             enintsrc = <293>, <294>, <295>, <296>, <297>;
+			status = "disabled";
+		};
+
+        wdt: watchdog@40049000 {
+			compatible = "xhsc,hc32-watchdog";
+			reg = <0x40049000 0x400>;
 			status = "disabled";
 		};
 	};

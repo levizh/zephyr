@@ -1,3 +1,6 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
 description: XHSC HC32 family Interrupt Controller
 
 compatible: "xhsc,hc32-intc"
@@ -21,7 +24,7 @@ properties:
 
   int-srcs:
     type: array
-    required: true
+    required: false
     description: Select interrupt trigger source for each interrupt vector.
 
   extint-chs:
@@ -40,4 +43,3 @@ properties:
 intc-cells:
   - irqn
   - int_src
-

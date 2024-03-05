@@ -219,6 +219,7 @@ static int gpio_hc32_pin_interrupt_configure(const struct device *dev,
 		hc32_extint_disable(port, pin);
 		hc32_extint_unset_callback(pin);
 		hc32_extint_trigger(pin, HC32_EXTINT_TRIG_FALLING);
+		return 0;
 		break;
 
 	case GPIO_INT_MODE_LEVEL:

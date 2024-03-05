@@ -261,7 +261,7 @@ static int dma_hc32_configure(const struct device *dev, uint32_t channel,
 	if (dma_cfg_user_data != NULL) {
 		data->channels[channel].aos_source = dma_cfg_user_data->slot;
 	} else {
-		LOG_WRN("dma_config->user_data is NULL !");
+		LOG_WRN("hc32 dma should use config->user_data to select trig source, but is NULL !");
 	}
 	if (0 != dma_hc32_get_aos_target(DMAx, channel,
 					 &data->channels[channel].aos_target)) {

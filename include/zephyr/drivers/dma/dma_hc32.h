@@ -35,6 +35,7 @@
 
 struct dma_hc32_config_user_data {
 	uint32_t slot; /* hc32 mcu uses this value to store the aos source that triggered the dma */
+	void *user_data; /* private data from DMA client */
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_HC32_H_ */

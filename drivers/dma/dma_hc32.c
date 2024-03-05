@@ -161,7 +161,7 @@ static int dma_hc32_configure(const struct device *dev, uint32_t channel,
 
 	if (dma_cfg->source_burst_length > DMA_MCU_MAX_BLOCK_SIZE) {
 		LOG_ERR("burst_length too large.");
-		return -EINVAL
+		return -EINVAL;
 	}
 
 	/* block_cfg parameters check */

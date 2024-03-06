@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @brief Driver for UART port on HC32 family processor.
- *
+ * @brief Driver for interrupt/event controller in HC32 MCUs
  */
 
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_HC32_H_
@@ -54,27 +53,21 @@ struct uart_hc32_config {
 	/* USART instance */
 	CM_USART_TypeDef *usart;
 	/* clock subsystem driving this peripheral */
-	const struct hc32_pclken *pclken;
-	/* number of clock subsystems */
-	size_t pclk_len;
-	/* switch to enable single wire / half duplex feature */
-	bool single_wire;
+	const struct hc32_modules_clock_sys *clk_cfg;
 	/* pin muxing */
-	const struct pinctrl_dev_config *pcfg;
+	const struct pinctrl_dev_config *pin_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
     uart_irq_config_func_t irq_config_func;
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 #ifdef CONFIG_UART_ASYNC_API
-struct uart_dma_stream {
+struct hc32_dma_cfg {
 	const struct device *dma_dev;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
-	uint8_t priority;
-	bool src_addr_increment;
-	bool dst_addr_increment;
-	int fifo_threshold;
+	uint16_t src_addr_increment;
+	uint16_t dst_addr_increment;
 	struct dma_block_config blk_cfg;
 	uint8_t *buffer;
 	size_t buffer_length;
@@ -83,12 +76,13 @@ struct uart_dma_stream {
 	int32_t timeout;
 	struct k_work_delayable timeout_work;
 	bool enabled;
+	struct dma_hc32_config_user_data user_cfg;
 };
 #endif
 
 struct hc32_usart_cb_data {
     /** Callback function */
-    uart_irq_callback_user_data_t cb;
+    uart_irq_callback_user_data_t user_cb;
     /** User data. */
     void *user_data;
 };
@@ -99,16 +93,16 @@ struct uart_hc32_data {
 	const struct device *clock;
 	/* uart config */
 	struct uart_config *uart_cfg;
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	struct hc32_usart_cb_data user_cb[UART_INT_NUM];
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
+	struct hc32_usart_cb_data cb[UART_INT_NUM];
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
 	const struct device *uart_dev;
 	uart_callback_t async_cb;
 	void *async_user_data;
-	struct uart_dma_stream dma_rx;
-	struct uart_dma_stream dma_tx;
+	struct hc32_dma_cfg dma_rx;
+	struct hc32_dma_cfg dma_tx;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif

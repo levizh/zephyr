@@ -1,7 +1,10 @@
-# HC32 UART configuration
-
-# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Kconfig.defconfig.series - xhsc hc32f460 configuration
+# options
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
 # SPDX-License-Identifier: Apache-2.0
+#
 
 config UART_EI_INTERRUPT_DRIVEN
 	bool "UART error Interrupt support"
@@ -55,14 +58,14 @@ config UART_HC32
 	select SERIAL_HAS_DRIVER
     select HC32_LL_USART
 	select HC32_LL_FCG
-	select SERIAL_SUPPORT_INTERRUPT
+	# interrupt function depend on intc module
+	select SERIAL_SUPPORT_INTERRUPT if DT_HAS_XHSC_HC32_INTC_ENABLED
+	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
 	# the ASYNC implementation requires a DMA controller
-	select SERIAL_SUPPORT_ASYNC                     \
-		if DT_HAS_XHSC_HC32_DMA_V1_ENABLED ||       \
-		   DT_HAS_XHSC_HC32_DMA_V2_ENABLED ||       \
-		   DT_HAS_XHSC_HC32_DMA_V2BIS_ENABLED
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_XHSC_HC32_DMA_ENABLED
+	select UART_ASYNC_API if SERIAL_SUPPORT_ASYNC
 	select DMA if UART_ASYNC_API
-	select RESET
+	# select RESET
 	select INTC_HC32
     select UART_EI_INTERRUPT_DRIVEN  if UART_INTERRUPT_DRIVEN
     select UART_RI_INTERRUPT_DRIVEN  if UART_INTERRUPT_DRIVEN

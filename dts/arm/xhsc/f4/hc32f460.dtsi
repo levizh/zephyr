@@ -261,32 +261,36 @@
 			compatible = "xhsc,hc32-uart";
 			reg = <0x4001d000 0x400>;
 			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
-            interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
+			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
 			enintsrc = <278>, <279>, <280>, <281>, <283>;
-            status = "disabled";
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART1>;
+			status = "disabled";
 		};
 		usart2: serial@4001d400 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x4001d400 0x400>;
-			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
-            interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
-            enintsrc = <283>, <284>, <285>, <286>, <287>;
+			interrupts = <10 0>, <11 0>, <12 0>, <13 0>, <14 0>;
+			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
+			enintsrc = <283>, <284>, <285>, <286>, <287>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART2>;
 			status = "disabled";
 		};
 		usart3: serial@40021000 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x40021000 0x400>;
 			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
-			interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
-            enintsrc = <288>, <289>, <290>, <291>, <292>;
-            status = "disabled";
+			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
+			enintsrc = <288>, <289>, <290>, <291>, <292>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART3>;
+			status = "disabled";
 		};
 		usart4: serial@40021400 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x40021400 0x400>;
 			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
-			interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
+			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
 			enintsrc = <293>, <294>, <295>, <296>, <297>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART4>;
 			status = "disabled";
 		};
 		wdt: watchdog@40049000 {

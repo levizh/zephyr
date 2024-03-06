@@ -183,25 +183,41 @@
 #endif
 #endif /* HC32_USING_UART4 */
 
-#if defined(HC32_USING_SPI1)
 #define HC32_SPI1_ERR_IRQ_NUM            INT008_IRQn
 #define HC32_SPI1_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
-#endif
 
-#if defined(HC32_USING_SPI2)
-#define HC32_SPI2_ERR_IRQ_NUM            INT009_IRQn
+#define HC32_SPI1_RBF_IRQ_NUM            INT009_IRQn
+#define HC32_SPI1_RBF_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI1_TBE_IRQ_NUM            INT010_IRQn
+#define HC32_SPI1_TBE_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI2_ERR_IRQ_NUM            INT011_IRQn
 #define HC32_SPI2_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
-#endif
 
-#if defined(HC32_USING_SPI3)
-#define HC32_SPI3_ERR_IRQ_NUM            INT010_IRQn
+#define HC32_SPI2_RBF_IRQ_NUM            INT012_IRQn
+#define HC32_SPI2_RBF_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI2_TBE_IRQ_NUM            INT013_IRQn
+#define HC32_SPI2_TBE_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI3_ERR_IRQ_NUM            INT014_IRQn
 #define HC32_SPI3_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
-#endif
 
-#if defined(HC32_USING_SPI4)
-#define HC32_SPI4_ERR_IRQ_NUM            INT011_IRQn
+#define HC32_SPI3_RBF_IRQ_NUM            INT015_IRQn
+#define HC32_SPI3_RBF_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI3_TBE_IRQ_NUM            INT016_IRQn
+#define HC32_SPI3_TBE_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI4_ERR_IRQ_NUM            INT017_IRQn
 #define HC32_SPI4_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
-#endif
+
+#define HC32_SPI4_RBF_IRQ_NUM            INT018_IRQn
+#define HC32_SPI4_RBF_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+
+#define HC32_SPI4_TBE_IRQ_NUM            INT019_IRQn
+#define HC32_SPI4_TBE_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 
 #if defined(HC32_USING_CAN1)
 #define HC32_CAN1_IRQ_NUM                INT126_IRQn

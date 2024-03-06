@@ -42,17 +42,16 @@
 	 * contiguous block in the memory map, however misaligned accesses
 	 * across the 0x2000_0000 boundary are not supported in the Arm
 	 * Cortex-M4 architecture.*/
-/* 	sramH: memory@1fff8000 {
+ 	sramH: memory@1fff8000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x1fff8000 DT_SIZE_K(32)>;
-	};*/
+	};
 
-	sram0: memory@1fff8000 {
+	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-		reg = <0x1fff8000 DT_SIZE_K(188)>;
-			 // <0x20000000 DT_SIZE_K(156)>;
+		reg = <0x20000000 DT_SIZE_K(156)>;
 	};
 
 	sramB: memory@200F0000 {
@@ -266,7 +265,7 @@
 			enintsrc = <278>, <279>, <280>, <281>, <283>;
             status = "disabled";
 		};
-        usart2: serial@4001d400 {
+		usart2: serial@4001d400 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x4001d400 0x400>;
 			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
@@ -274,7 +273,7 @@
             enintsrc = <283>, <284>, <285>, <286>, <287>;
 			status = "disabled";
 		};
-        usart3: serial@40021000 {
+		usart3: serial@40021000 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x40021000 0x400>;
 			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
@@ -282,19 +281,81 @@
             enintsrc = <288>, <289>, <290>, <291>, <292>;
             status = "disabled";
 		};
-        usart4: serial@40021400 {
+		usart4: serial@40021400 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x40021400 0x400>;
-            interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
-            interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
-            enintsrc = <293>, <294>, <295>, <296>, <297>;
+			interrupts = <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
+			interrupt-names = "ei", "ri", "TI", "TCI", "RTO";
+			enintsrc = <293>, <294>, <295>, <296>, <297>;
 			status = "disabled";
 		};
-
-        wdt: watchdog@40049000 {
+		wdt: watchdog@40049000 {
 			compatible = "xhsc,hc32-watchdog";
 			reg = <0x40049000 0x400>;
 			status = "disabled";
+		};
+		spi1: spi@4001c000 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 16>;
+			interrupts = <HC32_SPI1_ERR_IRQ_NUM  HC32_SPI1_ERR_IRQ_PRIO>,
+					 <HC32_SPI1_RBF_IRQ_NUM  HC32_SPI1_RBF_IRQ_PRIO>,
+					 <HC32_SPI1_TBE_IRQ_NUM  HC32_SPI1_TBE_IRQ_PRIO>;
+			interrupt-names = "ERR", "SPRI", "SPTI";
+			intcs = <&intc HC32_SPI1_ERR_IRQ_NUM  INT_SRC_SPI1_SPEI>,
+				<&intc HC32_SPI1_RBF_IRQ_NUM  INT_SRC_SPI1_SPRI>,
+				<&intc HC32_SPI1_TBE_IRQ_NUM  INT_SRC_SPI1_SPTI>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi2: spi@4001c400 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 17>;
+			interrupts = <HC32_SPI2_ERR_IRQ_NUM  HC32_SPI2_ERR_IRQ_PRIO>,
+					 <HC32_SPI2_RBF_IRQ_NUM  HC32_SPI2_RBF_IRQ_PRIO>,
+					 <HC32_SPI2_TBE_IRQ_NUM  HC32_SPI2_TBE_IRQ_PRIO>;
+			interrupt-names = "ERR", "SPRI", "SPTI";
+			intcs = <&intc HC32_SPI2_ERR_IRQ_NUM  INT_SRC_SPI2_SPEI>,
+				<&intc HC32_SPI2_RBF_IRQ_NUM  INT_SRC_SPI2_SPRI>,
+				<&intc HC32_SPI2_TBE_IRQ_NUM  INT_SRC_SPI2_SPTI>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi3: spi@40020000 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 18>;
+			interrupts = <HC32_SPI3_ERR_IRQ_NUM  HC32_SPI3_ERR_IRQ_PRIO>,
+					 <HC32_SPI3_RBF_IRQ_NUM  HC32_SPI3_RBF_IRQ_PRIO>,
+					 <HC32_SPI3_TBE_IRQ_NUM  HC32_SPI3_TBE_IRQ_PRIO>;
+			interrupt-names = "ERR", "SPRI", "SPTI";
+			intcs = <&intc HC32_SPI3_ERR_IRQ_NUM  INT_SRC_SPI3_SPEI>,
+				<&intc HC32_SPI3_RBF_IRQ_NUM  INT_SRC_SPI3_SPRI>,
+				<&intc HC32_SPI3_TBE_IRQ_NUM  INT_SRC_SPI3_SPTI>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi4: spi@40020400 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 19>;
+			interrupts = <HC32_SPI4_ERR_IRQ_NUM  HC32_SPI4_ERR_IRQ_PRIO>,
+					 <HC32_SPI4_RBF_IRQ_NUM  HC32_SPI4_RBF_IRQ_PRIO>,
+					 <HC32_SPI4_TBE_IRQ_NUM  HC32_SPI4_TBE_IRQ_PRIO>;
+			interrupt-names = "ERR", "SPRI", "SPTI";
+			intcs = <&intc HC32_SPI4_ERR_IRQ_NUM  INT_SRC_SPI4_SPEI>,
+				<&intc HC32_SPI4_RBF_IRQ_NUM  INT_SRC_SPI4_SPRI>,
+				<&intc HC32_SPI4_TBE_IRQ_NUM  INT_SRC_SPI4_SPTI>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

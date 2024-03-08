@@ -49,6 +49,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		watchdog0 = &wdt;
 	};
 };
 &gpioa {
@@ -107,4 +108,8 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+};
+
+&wdt {
+    status = "okay";
 };

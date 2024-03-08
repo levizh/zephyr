@@ -302,7 +302,7 @@ static int dma_hc32_configure(const struct device *dev, uint32_t channel,
 	/* only TC enable, BTC disable */
 	DMA_TransCompleteIntCmd(DMAx, DMA_INT_BTC_CH0 << channel, DISABLE);
 
-	if (dma_cfg->error_callback_en == 0) {
+	if (dma_cfg->error_callback_en != 0) {
 		DMA_ErrIntCmd(DMAx, (DMA_INT_REQ_ERR_CH0 << channel) | (DMA_INT_TRANS_ERR_CH0 <<
 									channel), DISABLE);
 	}

@@ -361,6 +361,19 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		rtc: rtc@4004c000 {
+			compatible = "xhsc,hc32-rtc";
+			reg = <0x4004c000 0x400>;
+			interrupts = <HC32_RTC_ALARM_IRQ_NUM HC32_RTC_ALARM_IRQ_PRIO>,
+						 <HC32_RTC_PRD_IRQ_NUM HC32_RTC_PRD_IRQ_PRIO>;
+			interrupt-names = "ALM", "PRD";
+			intcs = <&intc HC32_RTC_ALARM_IRQ_NUM INT_SRC_RTC_ALM>,
+					<&intc HC32_RTC_PRD_IRQ_NUM INT_SRC_RTC_PRD>;
+			prescaler = <32768>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
 	};
 };
 

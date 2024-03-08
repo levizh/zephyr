@@ -234,10 +234,12 @@
 #define HC32_SDIO2_IRQ_PRIO              DDL_IRQ_PRIO_DEFAULT
 #endif /* HC32_USING_SDIO2 */
 
-#if defined(RT_USING_ALARM)
+/* RTC */
 #define HC32_RTC_ALARM_IRQ_NUM           INT044_IRQn
 #define HC32_RTC_ALARM_IRQ_PRIO          DDL_IRQ_PRIO_DEFAULT
-#endif/* RT_USING_ALARM */
+
+#define HC32_RTC_PRD_IRQ_NUM             INT045_IRQn
+#define HC32_RTC_PRD_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 
 #if defined(HC32_USING_USBD) || defined(HSP_USING_USBH)
 #define HC32_USB_GLB_IRQ_NUM             INT003_IRQn

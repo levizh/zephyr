@@ -448,26 +448,16 @@ static void uart_hc32_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_hc32_config *config = dev->config;
 
-#ifdef CONFIG_UART_TI_INTERRUPT_DRIVEN
-	USART_FuncCmd(config->usart, USART_INT_TX_EMPTY, ENABLE);
-#endif /* CONFIG_UART_TI_INTERRUPT_DRIVEN */
-
-#ifdef CONFIG_UART_TCI_INTERRUPT_DRIVEN
-	USART_FuncCmd(config->usart, USART_INT_TX_CPLT, ENABLE);
-#endif /* CONFIG_UART_TCI_INTERRUPT_DRIVEN */
+	USART_FuncCmd(config->usart,
+		USART_INT_TX_EMPTY | USART_INT_TX_CPLT, ENABLE);
 }
 
 static void uart_hc32_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_hc32_config *config = dev->config;
 
-#ifdef CONFIG_UART_TI_INTERRUPT_DRIVEN
-	USART_FuncCmd(config->usart, USART_INT_TX_EMPTY, DISABLE);
-#endif /* CONFIG_UART_TI_INTERRUPT_DRIVEN */
-
-#ifdef CONFIG_UART_TCI_INTERRUPT_DRIVEN
-	USART_FuncCmd(config->usart, USART_INT_TX_CPLT, DISABLE);
-#endif /* CONFIG_UART_TCI_INTERRUPT_DRIVEN */
+	USART_FuncCmd(config->usart,
+		USART_INT_TX_EMPTY | USART_INT_TX_CPLT, DISABLE);
 }
 
 static int uart_hc32_irq_tx_ready(const struct device *dev)
@@ -534,41 +524,32 @@ static int uart_hc32_irq_update(const struct device *dev)
 	return 1;
 }
 
+/*
+  user may use void *user_data = x to specify irq type, the x may be:
+  0：usart_hc32f4_rx_error_isr
+  1：usart_hc32f4_rx_full_isr
+  2：usart_hc32f4_tx_empty_isr
+  3：usart_hc32f4_tx_complete_isr
+  4：usart_hc32f4_rx_timeout_isr
+  others or user_data = NULL：set cb for all interrupt handlers
+*/
 static void uart_hc32_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
-					void *cb_data)
+					void *user_data)
 {
+	uint32_t i;
 	struct uart_hc32_data *data = dev->data;
 
-#if defined (CONFIG_UART_EI_INTERRUPT_DRIVEN)
-	data->cb[UART_INT_IDX_EI].user_cb = cb;
-	data->cb[UART_INT_IDX_EI].user_data = cb_data;
-#endif
-
-#if defined (CONFIG_UART_TI_INTERRUPT_DRIVEN)
-	data->cb[UART_INT_IDX_RI].user_cb = cb;
-	data->cb[UART_INT_IDX_RI].user_data = cb_data;
-#endif
-
-#if defined (CONFIG_UART_TI_INTERRUPT_DRIVEN)
-	data->cb[UART_INT_IDX_TI].user_cb = cb;
-	data->cb[UART_INT_IDX_TI].user_data = cb_data;
-#endif
-
-#if defined (CONFIG_UART_TCI_INTERRUPT_DRIVEN)
-	data->cb[UART_INT_IDX_TCI].user_cb = cb;
-	data->cb[UART_INT_IDX_TCI].user_data = cb_data;
-#endif
-
-#if defined (CONFIG_UART_RTO_INTERRUPT_DRIVEN)
-	data->cb[UART_INT_IDX_RTO].user_cb = cb;
-	data->cb[UART_INT_IDX_RTO].user_data = cb_data;
-#endif
-
-#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
-	data->async_cb = NULL;
-	data->async_user_data = NULL;
-#endif
+	if ((user_data == NULL) || (*(uint32_t *)user_data >= UART_INT_NUM)) {
+		for (i = 0; i< UART_INT_NUM; i++) {
+			data->cb[i].user_cb = cb;
+			data->cb[i].user_data = user_data;
+		}
+	} else {
+		i = *(uint32_t *)user_data;
+		data->cb[i].user_cb = cb;
+		data->cb[i].user_data = user_data;
+	}
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -1303,86 +1284,18 @@ static int uart_hc32_init(const struct device *dev)
 #endif /* CONFIG_UART_ASYNC_API */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
-#ifdef CONFIG_UART_EI_INTERRUPT_DRIVEN
-#define USART_EI_IRQ_CONFIG(index)											\
+#define USART_IRQ_ISR_CONFIG(isr_name_prefix, isr_idx, index)				\
 	IRQ_CONNECT(															\
-		DT_INST_IRQ_BY_IDX(index, 0, irq),									\
-		DT_INST_IRQ_BY_IDX(index, 0, priority),								\
-		DT_CAT(usart_hc32_rx_error_isr_, index),							\
+		DT_INST_IRQ_BY_IDX(index, isr_idx, irq),							\
+		DT_INST_IRQ_BY_IDX(index, isr_idx, priority),						\
+		DT_CAT3(isr_name_prefix, _, index),									\
 		DEVICE_DT_INST_GET(index),											\
 		0);																	\
 	INTC_SetIntSrc(															\
-		DT_INST_IRQ_BY_IDX(index, 0, irq),									\
-		DT_INST_PROP_BY_IDX(index, enintsrc, 0));							\
-	irq_enable(DT_INST_IRQ_BY_IDX(index, 0, irq));
-#else /* CONFIG_UART_EI_INTERRUPT_DRIVEN */
-#define USART_EI_IRQ_CONFIG(index)
-#endif /* CONFIG_UART_EI_INTERRUPT_DRIVEN */
+		DT_INST_IRQ_BY_IDX(index, isr_idx, irq),							\
+		DT_INST_PROP_BY_IDX(index, enintsrc, isr_idx));						\
+	irq_enable(DT_INST_IRQ_BY_IDX(index, isr_idx, irq));
 
-#ifdef CONFIG_UART_RI_INTERRUPT_DRIVEN
-#define USART_RI_IRQ_CONFIG(index)											\
-	IRQ_CONNECT(															\
-		DT_INST_IRQ_BY_IDX(index, 1, irq),									\
-		DT_INST_IRQ_BY_IDX(index, 1, priority),								\
-		DT_CAT(usart_hc32_rx_full_isr_, index),								\
-		DEVICE_DT_INST_GET(index),											\
-		0);																	\
-	INTC_SetIntSrc(															\
-		DT_INST_IRQ_BY_IDX(index, 1, irq), 									\
-		DT_INST_PROP_BY_IDX(index, enintsrc, 1)); 							\
-	irq_enable(DT_INST_IRQ_BY_IDX(index, 1, irq));
-#else /* CONFIG_UART_RI_INTERRUPT_DRIVEN */
-#define USART_RI_IRQ_CONFIG(index)
-#endif /* CONFIG_UART_RI_INTERRUPT_DRIVEN */
-
-#ifdef CONFIG_UART_TI_INTERRUPT_DRIVEN
-#define USART_TI_IRQ_CONFIG(index)											\
-	IRQ_CONNECT(															\
-		DT_INST_IRQ_BY_IDX(index, 2, irq),									\
-		DT_INST_IRQ_BY_IDX(index, 2, priority),								\
-		DT_CAT(usart_hc32_tx_empty_isr_, index),							\
-		DEVICE_DT_INST_GET(index),											\
-		0);																	\
-	INTC_SetIntSrc(															\
-		DT_INST_IRQ_BY_IDX(index, 2, irq), 									\
-		DT_INST_PROP_BY_IDX(index, enintsrc, 2)); 							\
-	irq_enable(DT_INST_IRQ_BY_IDX(index, 2, irq));
-#else /* CONFIG_UART_TI_INTERRUPT_DRIVEN */
-#define USART_TI_IRQ_CONFIG(index)
-#endif /* CONFIG_UART_TI_INTERRUPT_DRIVEN */
-
-#ifdef CONFIG_UART_TCI_INTERRUPT_DRIVEN
-#define USART_TCI_IRQ_CONFIG(index)											\
-	IRQ_CONNECT(															\
-		DT_INST_IRQ_BY_IDX(index, 3, irq),									\
-		DT_INST_IRQ_BY_IDX(index, 3, priority),								\
-		DT_CAT(usart_hc32_tx_complete_isr_, index),							\
-		DEVICE_DT_INST_GET(index),											\
-		0);																	\
-	INTC_SetIntSrc(															\
-		DT_INST_IRQ_BY_IDX(index, 3, irq), 									\
-		DT_INST_PROP_BY_IDX(index, enintsrc, 3)); 							\
-	irq_enable(DT_INST_IRQ_BY_IDX(index, 3, irq));
-#else /* CONFIG_UART_TCI_INTERRUPT_DRIVEN */
-#define USART_TCI_IRQ_CONFIG(index)
-#endif /* CONFIG_UART_TCI_INTERRUPT_DRIVEN */
-
-#ifdef CONFIG_UART_RTO_INTERRUPT_DRIVEN
-#define USART_RTO_IRQ_CONFIG(index)											\
-	IRQ_CONNECT(															\
-		DT_INST_IRQ_BY_IDX(index, 4, irq),									\
-		DT_INST_IRQ_BY_IDX(index, 4, priority),								\
-		DT_CAT(usart_hc32_rx_timeout_isr_, index),							\
-		DEVICE_DT_INST_GET(index),											\
-		0);																	\
-	INTC_SetIntSrc(															\
-		DT_INST_IRQ_BY_IDX(index, 4, irq), 									\
-		DT_INST_PROP_BY_IDX(index, enintsrc, 4));							\
-	irq_enable(DT_INST_IRQ_BY_IDX(index, 4, irq));
-#else /* CONFIG_UART_RTO_INTERRUPT_DRIVEN */
-#define USART_RTO_IRQ_CONFIG(index)
-#endif /* CONFIG_UART_RTO_INTERRUPT_DRIVEN */
 
 #define HC32_UART_IRQ_HANDLER_DECL(index)									\
 	static void usart_hc32_config_func_##index(const struct device *dev);	\
@@ -1392,7 +1305,7 @@ static int uart_hc32_init(const struct device *dev)
 	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);\
 	static void	usart_hc32_rx_timeout_isr_##index(const struct device *dev)
 
-#define HC32_UART_IRQ_HANDLER(index)										\
+#define HC32_UART_IRQ_HANDLER_DEF(index)									\
 	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
 	{																		\
 		struct uart_hc32_data *const data = dev->data;						\
@@ -1446,16 +1359,16 @@ static int uart_hc32_init(const struct device *dev)
 																			\
 	static void usart_hc32_config_func_##index(const struct device *dev)	\
 	{																		\
-		USART_EI_IRQ_CONFIG(index)											\
-		USART_RI_IRQ_CONFIG(index)											\
-		USART_TI_IRQ_CONFIG(index)											\
-		USART_TCI_IRQ_CONFIG(index)											\
-		USART_RTO_IRQ_CONFIG(index)											\
+		USART_IRQ_ISR_CONFIG(usart_hc32_rx_error_isr, 0, index)				\
+		USART_IRQ_ISR_CONFIG(usart_hc32_rx_full_isr, 1, index)				\
+		USART_IRQ_ISR_CONFIG(usart_hc32_tx_empty_isr, 2, index)				\
+		USART_IRQ_ISR_CONFIG(usart_hc32_tx_complete_isr, 3, index)			\
+		USART_IRQ_ISR_CONFIG(usart_hc32_rx_timeout_isr, 4, index)			\
 	}
 
 #else /* CONFIG_UART_INTERRUPT_DRIVEN */
 #define HC32_UART_IRQ_HANDLER_DECL(index)
-#define HC32_UART_IRQ_HANDLER(index)
+#define HC32_UART_IRQ_HANDLER_DEF(index)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define HC32_UART_CLOCK_DECL(index)									\
@@ -1496,6 +1409,6 @@ static const struct hc32_modules_clock_sys uart_fcg_config_##index[]\
 				&uart_hc32_data_##index, &uart_hc32_cfg_##index,	\
 				PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,			\
 				&uart_hc32_driver_api);								\
-	HC32_UART_IRQ_HANDLER(index)
+	HC32_UART_IRQ_HANDLER_DEF(index)
 
 DT_INST_FOREACH_STATUS_OKAY(HC32_UART_INIT)

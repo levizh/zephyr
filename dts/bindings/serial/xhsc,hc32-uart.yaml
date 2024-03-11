@@ -1,5 +1,31 @@
-description: HC32 UART
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
 
 compatible: "xhsc,hc32-uart"
 
-include: xhsc,hc32-uart-base.yaml
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  intcs:
+    type: phandle-array
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+description: HC32 USART controller

@@ -366,11 +366,10 @@ static int dma_hc32_reload(const struct device *dev, uint32_t channel,
 
 	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
 		DMA_SetBlockSize(DMAx, channel, u32TransSize);
+		DMA_SetTransCount(DMAx, channel, 1U);
 	} else {
 		DMA_SetTransCount(DMAx, channel, u32TransSize);
 	}
-
-	(void)DMA_ChCmd(DMAx, channel, ENABLE);
 
 	return 0;
 }
@@ -380,6 +379,7 @@ static int dma_hc32_start(const struct device *dev, uint32_t channel)
 	const struct dma_hc32_config *cfg = dev->config;
 	struct dma_hc32_data *data = dev->data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
+	unsigned int key;
 
 	if (channel >= cfg->channels) {
 		LOG_ERR("start channel must be < %" PRIu32 " (%" PRIu32 ")",
@@ -390,15 +390,16 @@ static int dma_hc32_start(const struct device *dev, uint32_t channel)
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
 
+	key = irq_lock();
 	(void)DMA_ChCmd(DMAx, channel, ENABLE);
 	data->channels[channel].busy = true;
-
 	if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
 		AOS_SW_Trigger();
 		if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
 			data->channels[channel].m2m_trigcnt--;
 		}
 	}
+	irq_unlock(key);
 
 	return 0;
 }
@@ -489,6 +490,7 @@ static void dma_hc32_tc_irq_handler(const struct device *dev, int channel)
 	struct dma_hc32_data *data = dev->data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
 	uint32_t u32TransSize;
+	unsigned int key;
 
 	if (SET == DMA_GetTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel)) {
 		DMA_ClearTransCompleteStatus(DMAx, DMA_FLAG_TC_CH0 << channel);
@@ -506,12 +508,15 @@ static void dma_hc32_tc_irq_handler(const struct device *dev, int channel)
 					u32TransSize = DMA_MCU_MAX_BLOCK_SIZE;
 				}
 				DMA_SetBlockSize(DMAx, channel, u32TransSize);
-				(void)DMA_ChCmd(DMAx, channel, ENABLE);
+				DMA_SetTransCount(DMAx, channel, 1U);
 
+				key = irq_lock();
+				(void)DMA_ChCmd(DMAx, channel, ENABLE);
 				if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
 					AOS_SW_Trigger();
 					data->channels[channel].m2m_trigcnt--;
 				}
+				irq_unlock(key);
 			}
 		} else {
 			data->channels[channel].busy = false;

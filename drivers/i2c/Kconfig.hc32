@@ -1,0 +1,24 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_HC32
+	bool "HC32 I2C driver"
+	default y
+	select HC32_LL_I2C
+	help
+	  Enable I2C support on the HC32 SoCs
+
+if I2C_HC32
+
+config I2C_HC32_INTERRUPT
+	bool "HC32 MCU I2C Interrupt Support"
+	default y
+	help
+	  Enable Interrupt support for the I2C Driver
+
+config I2C_HC32_DMA
+	bool "HC32 MCU I2C DMA Support"
+	default n
+	help
+	  Enable DMA support for the I2C Driver
+endif # I2C_HC32

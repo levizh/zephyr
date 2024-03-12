@@ -11,54 +11,53 @@
 
 
 /* Ext ch0 */
-#define HC32_EXTINT0_IRQ_NUM             INT022_IRQn
+#define HC32_EXTINT0_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT0_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch1 */
-#define HC32_EXTINT1_IRQ_NUM             INT023_IRQn
+#define HC32_EXTINT1_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT1_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch2 */
-#define HC32_EXTINT2_IRQ_NUM             INT024_IRQn
+#define HC32_EXTINT2_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT2_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch3 */
-#define HC32_EXTINT3_IRQ_NUM             INT025_IRQn
+#define HC32_EXTINT3_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT3_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch4 */
-#define HC32_EXTINT4_IRQ_NUM             INT026_IRQn
+#define HC32_EXTINT4_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT4_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch5 */
-#define HC32_EXTINT5_IRQ_NUM             INT027_IRQn
+#define HC32_EXTINT5_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT5_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch6 */
-#define HC32_EXTINT6_IRQ_NUM             INT028_IRQn
+#define HC32_EXTINT6_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT6_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch7 */
-#define HC32_EXTINT7_IRQ_NUM             INT029_IRQn
+#define HC32_EXTINT7_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT7_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch8 */
-#define HC32_EXTINT8_IRQ_NUM             INT030_IRQn
+#define HC32_EXTINT8_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT8_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch9 */
-#define HC32_EXTINT9_IRQ_NUM             INT031_IRQn
+#define HC32_EXTINT9_IRQ_NUM             INT128_IRQn
 #define HC32_EXTINT9_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 /* Ext ch10 */
-#define HC32_EXTINT10_IRQ_NUM            INT032_IRQn
+#define HC32_EXTINT10_IRQ_NUM            INT128_IRQn
 #define HC32_EXTINT10_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* Ext ch11 */
-#define HC32_EXTINT11_IRQ_NUM            INT033_IRQn
+#define HC32_EXTINT11_IRQ_NUM            INT128_IRQn
 #define HC32_EXTINT11_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* Ext ch12 */
-#define HC32_EXTINT12_IRQ_NUM            INT034_IRQn
+#define HC32_EXTINT12_IRQ_NUM            INT128_IRQn
 #define HC32_EXTINT12_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* Ext ch13 */
-#define HC32_EXTINT13_IRQ_NUM            INT035_IRQn
+#define HC32_EXTINT13_IRQ_NUM            INT128_IRQn
 #define HC32_EXTINT13_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* Ext ch14 */
-#define HC32_EXTINT14_IRQ_NUM            INT036_IRQn
+#define HC32_EXTINT14_IRQ_NUM            INT128_IRQn
 #define HC32_EXTINT14_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* Ext ch15 */
-#define HC32_EXTINT15_IRQ_NUM            INT037_IRQn
+#define HC32_EXTINT15_IRQ_NUM            INT128_IRQn
 #define HC32_EXTINT15_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
-
 
 /* DMA1 ch0 */
 #define HC32_DMA1_CH0_IRQ_NUM            INT038_IRQn

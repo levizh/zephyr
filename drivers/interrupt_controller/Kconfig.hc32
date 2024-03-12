@@ -10,3 +10,13 @@ config INTC_HC32
 	select HC32_LL_INTERRUPTS_SHARE
 	help
 	  Enable INTC driver for HC32 line of MCUs
+
+if INTC_HC32
+
+config INTC_USE_SHARE_INTERRUPT
+	bool "INTC used share interrupt"
+	default y
+	help
+      INTC respond to irq handlers with share interrupt.
+
+endif # INTC_HC32

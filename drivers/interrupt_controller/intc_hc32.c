@@ -26,10 +26,6 @@ LOG_MODULE_REGISTER(intc_hc32);
 #define INTC_EXTINT_NUM                 DT_PROP(DT_NODELABEL(intc), extint_nums)
 #define INTC_EXTINT_IRQN_DEFAULT        0xFF
 
-#if defined(HC32F460)
-#define INTC_MAX_CUSTOM_IRQN            INT128_IRQn
-#endif
-
 
 static IRQn_Type extint_irq_table[INTC_EXTINT_NUM] = {[0 ... INTC_EXTINT_NUM - 1] = INTC_EXTINT_IRQN_DEFAULT};
 
@@ -43,83 +39,98 @@ struct hc32_extint_cb {
 struct hc32_extint_data {
 	/* callbacks */
 	struct hc32_extint_cb cb[INTC_EXTINT_NUM];
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	uint32_t extint_table;
+#endif
 };
-
-/** @brief extint irq info */
-struct hc32_extint_info {
-	int irqn;
-	uint8_t ch;
-};
-
 
 /**
  * @brief EXTINT ISR handler
  */
-static void hc32_extint_isr(const void *extint_info)
+static void hc32_extint_isr(const void *arg)
 {
 	const struct device *dev = DEVICE_DT_GET(INTC_NODE);
 	struct hc32_extint_data *data = dev->data;
-	const struct hc32_extint_info *info = extint_info;
+
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
 	uint32_t ch_idx;
 
-#if defined(HC32F460)
-	if (info->irqn >= INTC_MAX_CUSTOM_IRQN) {
-		for (ch_idx = 0; ch_idx <= INTC_EXTINT_NUM; ch_idx++) {
-			if (SET == EXTINT_GetExtIntStatus(BIT(ch_idx))) {
-				EXTINT_ClearExtIntStatus(BIT(ch_idx));
-				/* run callback only if one is registered */
-				if (data->cb[ch_idx].cb != NULL) {
-					data->cb[ch_idx].cb(ch_idx, data->cb[ch_idx].user);
-				}
+	ARG_UNUSED(arg);
+	for (ch_idx = 0; ch_idx <= INTC_EXTINT_NUM; ch_idx++) {
+		if (SET == EXTINT_GetExtIntStatus(BIT(ch_idx))) {
+			EXTINT_ClearExtIntStatus(BIT(ch_idx));
+			/* run callback only if one is registered */
+			if (data->cb[ch_idx].cb != NULL) {
+				data->cb[ch_idx].cb(ch_idx, data->cb[ch_idx].user);
 			}
 		}
-	} else {
-		if (SET == EXTINT_GetExtIntStatus(BIT((uint32_t)info->ch))) {
-			EXTINT_ClearExtIntStatus(BIT((uint32_t)info->ch));
-			/* run callback only if one is registered */
-			if (data->cb[info->ch].cb != NULL) {
-				data->cb[info->ch].cb(info->ch, data->cb[info->ch].user);
-			}
+	}
+#else
+	uint32_t ch = *(uint8_t *)arg;
+
+	if (SET == EXTINT_GetExtIntStatus(BIT(ch))) {
+		EXTINT_ClearExtIntStatus(BIT(ch));
+		/* run callback only if one is registered */
+		if (data->cb[ch].cb != NULL) {
+			data->cb[ch].cb(ch, data->cb[ch].user);
 		}
 	}
 #endif
 }
 
 /* Configure irq information */
-static void hc32_config_irq_table(uint8_t ch, int irqn, int intsrc)
+static void hc32_irq_config(uint8_t ch, int irqn, int intsrc)
 {
 	/* fill irq table */
 	extint_irq_table[ch] = (IRQn_Type)irqn;
-
-#if defined(HC32F460)
-	if (irqn >= INTC_MAX_CUSTOM_IRQN) {
-		INTC_ShareIrqCmd(intsrc, ENABLE);
-	} else {
-		hc32_intc_irq_signin(irqn, intsrc);
-	}
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	INTC_ShareIrqCmd(intsrc, ENABLE);
+#else
+	hc32_intc_irq_signin(irqn, intsrc);
 #endif
 }
 
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+#define HC32_EXTINT_INIT_SHARE(node_id, interrupts, idx)        \
+	static const uint8_t hc32_extint_ch_##idx =                 \
+	        DT_PROP_BY_IDX(node_id, extint_chs, idx);           \
+	hc32_irq_config(hc32_extint_ch_##idx,			            \
+			DT_IRQ_BY_IDX(node_id, idx, irq), 				    \
+			DT_PROP_BY_IDX(node_id, int_srcs, idx));		    \
+
+#else
+
 #define HC32_EXTINT_INIT(node_id, interrupts, idx)			    \
-	static const struct hc32_extint_info extint_info_##idx = {  \
-		DT_IRQ_BY_IDX(node_id, idx, irq),                       \
-		DT_PROP_BY_IDX(node_id, extint_chs, idx) 		        \
-	};                                                          \
-	hc32_config_irq_table(extint_info_##idx.ch,			        \
+	static const uint8_t hc32_extint_ch_##idx =                 \
+	        DT_PROP_BY_IDX(node_id, extint_chs, idx);           \
+	hc32_irq_config(hc32_extint_ch_##idx,			            \
 			DT_IRQ_BY_IDX(node_id, idx, irq), 				    \
 			DT_PROP_BY_IDX(node_id, int_srcs, idx));		    \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq),			    \
 			DT_IRQ_BY_IDX(node_id, idx, priority),			    \
-			hc32_extint_isr, &extint_info_##idx ,			    \
+			hc32_extint_isr, &hc32_extint_ch_##idx,			    \
 			0);
+#endif
 
 /**
  * @brief initialize intc device driver
  */
 static int hc32_intc_init(const struct device *dev)
 {
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	struct hc32_extint_data *data = dev->data;
+
+	data->extint_table = 0;
+	DT_FOREACH_PROP_ELEM(DT_NODELABEL(intc), interrupt_names,
+			     HC32_EXTINT_INIT_SHARE);
+	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_NODELABEL(intc), 0, irq),
+		    DT_IRQ_BY_IDX(DT_NODELABEL(intc), 0, priority),
+		    hc32_extint_isr, NULL, 0);
+#else
 	ARG_UNUSED(dev);
-	DT_FOREACH_PROP_ELEM(DT_NODELABEL(intc), interrupt_names, HC32_EXTINT_INIT);
+	DT_FOREACH_PROP_ELEM(DT_NODELABEL(intc), interrupt_names,
+			     HC32_EXTINT_INIT);
+#endif
 
 	return 0;
 }
@@ -135,11 +146,14 @@ DEVICE_DT_DEFINE(INTC_NODE, &hc32_intc_init,
 void hc32_extint_enable(int port, int pin)
 {
 	int irqnum = 0;
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	const struct device *const dev = DEVICE_DT_GET(INTC_NODE);
+	struct hc32_extint_data *data = dev->data;
+#endif
 
 	if (pin >= INTC_EXTINT_NUM) {
 		__ASSERT_NO_MSG(pin);
 	}
-
 	/* Get matching extint irq number from irq_table */
 	irqnum = extint_irq_table[pin];
 	if (irqnum == INTC_EXTINT_IRQN_DEFAULT) {
@@ -148,18 +162,29 @@ void hc32_extint_enable(int port, int pin)
 
 	/* Enable requested pin interrupt */
 	GPIO_ExtIntCmd((uint8_t)port, BIT((uint32_t)pin), ENABLE);
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	if (0 == data->extint_table) {
+		/* Enable extint irq interrupt */
+		irq_enable(irqnum);
+	}
+	SET_REG32_BIT(data->extint_table, BIT((uint32_t)pin));
+#else
 	/* Enable extint irq interrupt */
 	irq_enable(irqnum);
+#endif
 }
 
 void hc32_extint_disable(int port, int pin)
 {
 	int irqnum = 0;
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	const struct device *const dev = DEVICE_DT_GET(INTC_NODE);
+	struct hc32_extint_data *data = dev->data;
+#endif
 
 	if (pin >= INTC_EXTINT_NUM) {
 		__ASSERT_NO_MSG(pin);
 	}
-
 	/* Get matching extint irq number from irq_table */
 	irqnum = extint_irq_table[pin];
 	if (irqnum == INTC_EXTINT_IRQN_DEFAULT) {
@@ -168,8 +193,16 @@ void hc32_extint_disable(int port, int pin)
 
 	/* Disable requested pin interrupt */
 	GPIO_ExtIntCmd((uint8_t)port, BIT((uint32_t)pin), DISABLE);
+#if defined(CONFIG_INTC_USE_SHARE_INTERRUPT)
+	CLR_REG32_BIT(data->extint_table, BIT((uint32_t)pin));
+	if (0 == data->extint_table) {
+		/* Disable extint irq interrupt */
+		irq_disable(irqnum);
+	}
+#else
 	/* Disable extint irq interrupt */
 	irq_disable(irqnum);
+#endif
 }
 
 void hc32_extint_trigger(int pin, int trigger)
@@ -214,7 +247,6 @@ int  hc32_extint_set_callback(int pin, hc32_extint_callback_t cb, void *user)
 	if ((data->cb[pin].cb == cb) && (data->cb[pin].user == user)) {
 		return 0;
 	}
-
 	/* if callback already exists/maybe-running return busy */
 	if (data->cb[pin].cb != NULL) {
 		return -EBUSY;

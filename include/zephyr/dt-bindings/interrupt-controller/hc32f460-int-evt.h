@@ -184,9 +184,9 @@
 #define DDL_IRQ_PRIO_12                 (12U)
 #define DDL_IRQ_PRIO_13                 (13U)
 #define DDL_IRQ_PRIO_14                 (14U)
-#define DDL_IRQ_PRIO_15                 (15U)
+// #define DDL_IRQ_PRIO_15                 (15U)   /* kernal used */
 
-#define DDL_IRQ_PRIO_DEFAULT            (DDL_IRQ_PRIO_07)
+#define DDL_IRQ_PRIO_DEFAULT            (DDL_IRQ_PRIO_14)
 
 
 /**

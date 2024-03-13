@@ -96,4 +96,6 @@ source "drivers/counter/Kconfig.rpi_pico"
 
 source "drivers/counter/Kconfig.hc32_timer"
 
+source "drivers/counter/Kconfig.hc32_rtc"
+
 endif # COUNTER

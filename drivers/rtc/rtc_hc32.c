@@ -10,7 +10,6 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-//#include <zephyr/drivers/rtc/rtc_hc32.h>
 #include <zephyr/drivers/interrupt_controller/intc_hc32.h>
 #include <zephyr/drivers/clock_control/hc32_clock_control.h>
 #include <zephyr/kernel.h>
@@ -31,8 +30,7 @@ LOG_MODULE_REGISTER(rtc_hc32, CONFIG_RTC_LOG_LEVEL);
 
 
 struct rtc_hc32_config {
-	uint32_t async_prescaler;
-	uint32_t sync_prescaler;
+	uint8_t clk_src;
 };
 
 struct rtc_hc32_data {
@@ -73,49 +71,6 @@ static void rtc_hc32_prd_irq_handler(const struct device *dev)
 	}
 }
 #endif
-
-static void rtc_hc32_disable_ints(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	if (ENABLE == RTC_GetCounterState()) {
-		/* RTC is running, disable alarm/period ints */
-		RTC_IntCmd(RTC_INT_ALL, DISABLE);
-	}
-}
-
-static int rtc_hc32_configure(const struct device *dev)
-{
-	stc_rtc_init_t stcRtcInit;
-	int err = 0;
-	ARG_UNUSED(dev);
-
-	/* RTC stopped */
-	if (DISABLE == RTC_GetCounterState()) {
-		/* Reset RTC counter */
-		if (LL_ERR_TIMEOUT == RTC_DeInit()) {
-			LOG_ERR("Reset RTC failed!");
-			err = -EIO;
-		} else {
-			/* Stop RTC */
-			RTC_Cmd(DISABLE);
-			/* Configure structure initialization */
-			(void)RTC_StructInit(&stcRtcInit);
-
-			/* Configuration RTC structure */
-			stcRtcInit.u8ClockSrc   = RTC_CLK_SRC_LRC;
-			stcRtcInit.u8HourFormat = RTC_HOUR_FMT_24H;
-			stcRtcInit.u8IntPeriod  = RTC_INT_PERIOD_INVD;
-			(void)RTC_Init(&stcRtcInit);
-
-			/* Enable period interrupt */
-			RTC_ClearStatus(RTC_FLAG_CLR_ALL);
-			/* Startup RTC count */
-			RTC_Cmd(ENABLE);
-		}
-	}
-
-	return err;
-}
 
 static int rtc_hc32_set_time(const struct device *dev,
 			     const struct rtc_time *timeptr)
@@ -407,7 +362,8 @@ static int rtc_hc32_set_calibration(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	return 0;
+	LOG_ERR("rtc calibration not support now.");
+	return -ENOTSUP;
 }
 
 static int rtc_hc32_get_calibration(const struct device *dev,
@@ -415,28 +371,112 @@ static int rtc_hc32_get_calibration(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	return 0;
+	LOG_ERR("rtc calibration not support now.");
+	return -ENOTSUP;
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
-static int rtc_hc32_init(const struct device *dev)
+static void rtc_hc32_disable_ints(const struct device *dev)
 {
-	const struct rtc_hc32_config *cfg = dev->config;
-	struct rtc_hc32_data *data = dev->data;
+	ARG_UNUSED(dev);
+	if (ENABLE == RTC_GetCounterState()) {
+		/* RTC is running, disable alarm/period ints */
+		RTC_IntCmd(RTC_INT_ALL, DISABLE);
+	}
+}
+
+static int rtc_hc32_calendar_init_Config(void)
+{
+	stc_rtc_date_t stcRtcDate;
+	stc_rtc_time_t stcRtcTime;
 	int err = 0;
 
-	ARG_UNUSED(cfg);
+	/* 2000-01-01 00:00:00 Saturday */
 
-	// if (!device_is_ready(clk)) {
-	// 	LOG_ERR("clock control device not ready");
-	// 	return -ENODEV;
-	// }
+	/* Date configuration */
+	stcRtcDate.u8Year    = 00U;
+	stcRtcDate.u8Month   = RTC_MONTH_JANUARY;
+	stcRtcDate.u8Day     = 01U;
+	stcRtcDate.u8Weekday = RTC_WEEKDAY_SATURDAY;
 
-	/* Enable RTC bus clock */
-	// if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
-	// 	LOG_ERR("clock op failed\n");
-	// 	return -EIO;
-	// }
+	/* Time configuration */
+	stcRtcTime.u8Hour   = 00U;
+	stcRtcTime.u8Minute = 00U;
+	stcRtcTime.u8Second = 00U;
+	stcRtcTime.u8AmPm   = RTC_HOUR_24H;
+
+	if (LL_OK != RTC_SetDate(RTC_DATA_FMT_DEC, &stcRtcDate)) {
+		LOG_ERR("Set Date failed!\r\n");
+		err = -EIO;
+	}
+
+	if (LL_OK != RTC_SetTime(RTC_DATA_FMT_DEC, &stcRtcTime)) {
+		LOG_ERR("Set Time failed!\r\n");
+		err = -EIO;
+	}
+
+	return err;
+}
+
+#if DT_SAME_NODE(DT_CLOCKS_CTLR(DT_DRV_INST(0)), DT_NODELABEL(clk_lrc))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_lrc), okay)
+#define HC32_DT_RTC_CLK_SRC      (RTC_CLK_SRC_LRC)
+#else
+#error "rtc clk select lrc, but lrc disable in dts."
+#endif
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(DT_DRV_INST(0)), DT_NODELABEL(clk_xtal32))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(clk_xtal32), okay)
+#define HC32_DT_RTC_CLK_SRC      (RTC_CLK_SRC_XTAL32)
+#else
+#error "rtc clk select xtal32, but xtal32 disable in dts."
+#endif
+#else
+#error "please select correct rtc clk src in dts."
+#endif
+
+static int rtc_hc32_configure(const struct device *dev)
+{
+	stc_rtc_init_t stcRtcInit;
+	int err = 0;
+	ARG_UNUSED(dev);
+
+	/* RTC stopped */
+	if (DISABLE == RTC_GetCounterState()) {
+		/* Reset RTC counter */
+		if (LL_ERR_TIMEOUT == RTC_DeInit()) {
+			LOG_ERR("Reset RTC failed!");
+			err = -EIO;
+		} else {
+			/* Stop RTC */
+			RTC_Cmd(DISABLE);
+			/* Configure structure initialization */
+			(void)RTC_StructInit(&stcRtcInit);
+
+			/* Configuration RTC structure */
+			stcRtcInit.u8ClockSrc   = HC32_DT_RTC_CLK_SRC;
+			stcRtcInit.u8HourFormat = RTC_HOUR_FMT_24H;
+			stcRtcInit.u8IntPeriod  = RTC_INT_PERIOD_INVD;
+			(void)RTC_Init(&stcRtcInit);
+
+			err = rtc_hc32_calendar_init_Config();
+			if (err) {
+				return err;
+			}
+
+			/* Enable period interrupt */
+			RTC_ClearStatus(RTC_FLAG_CLR_ALL);
+			/* Startup RTC count */
+			RTC_Cmd(ENABLE);
+		}
+	}
+
+	return err;
+}
+
+static int rtc_hc32_init(const struct device *dev)
+{
+	struct rtc_hc32_data *data = dev->data;
+	int err = 0;
 
 	rtc_hc32_disable_ints(dev);
 
@@ -470,9 +510,7 @@ struct rtc_driver_api rtc_hc32_driver_api = {
 };
 
 static const struct rtc_hc32_config rtc_config = {
-	/* prescaler values */
-	.async_prescaler = 0x7F,
-	.sync_prescaler = 0x00FF,
+	.clk_src = HC32_DT_RTC_CLK_SRC,
 };
 
 static struct rtc_hc32_data rtc_data;

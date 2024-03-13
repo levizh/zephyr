@@ -55,28 +55,32 @@
 &gpioa {
 	status = "okay";
 };
-	
+
 &gpiob {
 	status = "okay";
 };
-	
+
 &gpioc {
 	status = "okay";
 };
-	
+
 &gpiod {
 	status = "okay";
 };
-	
+
 &gpioe {
 	status = "okay";
 };
-	
+
 &gpioh {
 	status = "okay";
 };
 
 &clk_xtal {
+	status = "okay";
+};
+
+&clk_xtal32 {
 	status = "okay";
 };
 

@@ -76,6 +76,12 @@
 				clock-frequency = < 8000000 >;
 			};
 
+			clk_xtal32: clock_xtal32 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 32768 >;
+			};
+
 			clk_hrc: clock_hrc {
 				#clock-cells = <0>;
 				compatible = "fixed-clock";
@@ -402,7 +408,7 @@
 			interrupt-names = "ALM", "PRD";
 			intcs = <&intc HC32_RTC_ALARM_IRQ_NUM INT_SRC_RTC_ALM>,
 					<&intc HC32_RTC_PRD_IRQ_NUM INT_SRC_RTC_PRD>;
-			prescaler = <32768>;
+			clocks = <&clk_lrc>;
 			alarms-count = <1>;
 			status = "disabled";
 		};

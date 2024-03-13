@@ -56,7 +56,7 @@ static void hc32_extint_isr(const void *arg)
 	uint32_t ch_idx;
 
 	ARG_UNUSED(arg);
-	for (ch_idx = 0; ch_idx <= INTC_EXTINT_NUM; ch_idx++) {
+	for (ch_idx = 0; ch_idx < INTC_EXTINT_NUM; ch_idx++) {
 		if (SET == EXTINT_GetExtIntStatus(BIT(ch_idx))) {
 			EXTINT_ClearExtIntStatus(BIT(ch_idx));
 			/* run callback only if one is registered */

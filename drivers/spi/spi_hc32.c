@@ -116,7 +116,8 @@ static int spi_hc32_configure(const struct device *dev,
 	SPI_DeInit((CM_SPI_TypeDef *)cfg->reg);
 	SPI_StructInit(&stcSpiInit);
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
+	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE)
+	    && (IS_ENABLED(CONFIG_SPI_SLAVE))) {
 		stcSpiInit.u32MasterSlave = SPI_SLAVE;
 	}
 
@@ -186,7 +187,16 @@ static int spi_hc32_configure(const struct device *dev,
 		return -EIO;
 	}
 
-	for (i = 0U; i <= HC32_SPI_PSC_MAX; i++) {
+#if defined (HC32F460) || defined (HC32F4A0)
+	if (SPI_SLAVE == stcSpiInit.u32MasterSlave) {
+		i = 2U;
+		bus_freq = bus_freq >> 2U;
+	} else {
+		i = 0U;
+	}
+#endif
+
+	for (; i <= HC32_SPI_PSC_MAX; i++) {
 		bus_freq = bus_freq >> 1U;
 		if (bus_freq <= config->frequency) {
 			stcSpiInit.u32BaudRatePrescaler = (i << SPI_CFG2_MBR_POS);
@@ -198,6 +208,11 @@ static int spi_hc32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 	stcSpiInit.u32WireMode = SPI_3_WIRE;
+#if defined (HC32F460) || defined (HC32F4A0)
+	if (SPI_SLAVE == stcSpiInit.u32MasterSlave) {
+		stcSpiInit.u32WireMode = SPI_4_WIRE;
+	}
+#endif
 	err = SPI_Init((CM_SPI_TypeDef *)cfg->reg, &stcSpiInit);
 
 	if (config->operation & SPI_MODE_LOOP) {
@@ -521,8 +536,10 @@ static void spi_hc32_complete(const struct device *dev, int status)
 	SPI_IntCmd((CM_SPI_TypeDef *)cfg->reg,
 		   (SPI_INT_ERR | SPI_INT_RX_BUF_FULL), DISABLE);
 #endif
-	while (SPI_GetStatus((CM_SPI_TypeDef *)cfg->reg, SPI_FLAG_IDLE) != SET) {
-		/* NOP, wait for spi completing data transmission  */
+	if (!spi_context_is_slave(&data->ctx)) {
+		while (SPI_GetStatus((CM_SPI_TypeDef *)cfg->reg, SPI_FLAG_IDLE) != SET) {
+			/* NOP, wait for spi completing data transmission  */
+		}
 	}
 	spi_context_cs_control(&data->ctx, false);
 	SPI_Cmd((CM_SPI_TypeDef *)cfg->reg, DISABLE);
@@ -533,10 +550,6 @@ static void spi_hc32_complete(const struct device *dev, int status)
 	/* for OVRERF, MUST read reg then write 0 to clear */
 	SPI_GetStatus((CM_SPI_TypeDef *)cfg->reg, SPI_HC32_ERR_MASK);
 	SPI_ClearStatus((CM_SPI_TypeDef *)cfg->reg, SPI_HC32_ERR_MASK);
-
-#ifdef CONFIG_SPI_HC32_DMA
-	/* TODO: */
-#endif
 
 #ifdef CONFIG_SPI_HC32_INTERRUPT
 	spi_context_complete(&data->ctx, dev, status);
@@ -616,6 +629,11 @@ static int transceive_dma(const struct device *dev,
 	dma_stop(data->dma_tx.dev, data->dma_tx.channel);
 	dma_stop(data->dma_rx.dev, data->dma_rx.channel);
 	spi_hc32_complete(dev, ret);
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && !ret) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
 
 error:
 	spi_context_release(&data->ctx, ret);
@@ -656,11 +674,11 @@ static int transceive(const struct device *dev,
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
+	/* clear all flags */
+	SPI_ClearStatus((CM_SPI_TypeDef *)cfg->reg, SPI_HC32_ERR_MASK);
 	spi_context_cs_control(&data->ctx, true);
 
 #ifdef CONFIG_SPI_HC32_INTERRUPT
-	/* clear all flags */
-	SPI_ClearStatus((CM_SPI_TypeDef *)cfg->reg, SPI_HC32_ERR_MASK);
 	SPI_IntCmd((CM_SPI_TypeDef *)cfg->reg,
 		   (SPI_INT_ERR | SPI_INT_RX_BUF_FULL), ENABLE);
 	/* enable spi */
@@ -678,7 +696,14 @@ static int transceive(const struct device *dev,
 		}
 	} while (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx));
 	spi_hc32_complete(dev, ret);
-#endif
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(&data->ctx) && !ret) {
+		ret = data->ctx.recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
+#endif /* CONFIG_SPI_HC32_INTERRUPT */
 
 error:
 	spi_context_release(&data->ctx, ret);
@@ -711,18 +736,9 @@ static int spi_hc32_transceive_async(const struct device *dev,
 				     spi_callback_t cb,
 				     void *userdata)
 {
-#ifdef CONFIG_SPI_HC32_DMA
-	struct spi_hc32_data *data = dev->data;
-
-	if ((data->dma_tx.dev != NULL)
-	    && (data->dma_rx.dev != NULL)) {
-		return transceive_dma(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
-	}
-#endif /* CONFIG_SPI_HC32_DMA */
 	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif
-
 
 #ifdef CONFIG_SPI_HC32_INTERRUPT
 static void spi_hc32_isr(struct device *dev)

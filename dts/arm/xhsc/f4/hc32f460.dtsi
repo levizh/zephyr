@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/hc32f4_clock.h>
+#include <zephyr/dt-bindings/timer/hc32-timer.h>
 #include <zephyr/dt-bindings/interrupt-controller/hc32f460-intc.h>
 #include <zephyr/dt-bindings/dma/hc32_dma.h>
 
@@ -405,6 +406,181 @@
 			alarms-count = <1>;
 			status = "disabled";
 		};
+
+		timera1: timer@40015000 {
+			compatible = "xhsc,hc32-timer";
+			reg = <0x40015000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_1>;
+			interrupts = <HC32_TMRA1_OVF_IRQ_NUM HC32_TMRA1_OVF_IRQ_PRIO>,
+						 <HC32_TMRA1_UDF_IRQ_NUM HC32_TMRA1_UDF_IRQ_PRIO>,
+						 <HC32_TMRA1_CMP_IRQ_NUM HC32_TMRA1_CMP_IRQ_PRIO>;
+			interrupt-names = "ovf", "udf", "cmp";
+			intcs = <&intc HC32_TMRA1_OVF_IRQ_NUM INT_SRC_TMRA_1_OVF>,
+					<&intc HC32_TMRA1_UDF_IRQ_NUM INT_SRC_TMRA_1_UDF>,
+					<&intc HC32_TMRA1_CMP_IRQ_NUM INT_SRC_TMRA_1_CMP>;
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-counter";
+				max-ch = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timera2: timer@40015400 {
+			compatible = "xhsc,hc32-timer";
+			reg = <0x40015400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_2>;
+			interrupts = <HC32_TMRA2_OVF_IRQ_NUM HC32_TMRA2_OVF_IRQ_PRIO>,
+						 <HC32_TMRA2_UDF_IRQ_NUM HC32_TMRA2_UDF_IRQ_PRIO>,
+						 <HC32_TMRA2_CMP_IRQ_NUM HC32_TMRA2_CMP_IRQ_PRIO>;
+			interrupt-names = "ovf", "udf", "cmp";
+			intcs = <&intc HC32_TMRA2_OVF_IRQ_NUM INT_SRC_TMRA_2_OVF>,
+					<&intc HC32_TMRA2_UDF_IRQ_NUM INT_SRC_TMRA_2_UDF>,
+					<&intc HC32_TMRA2_CMP_IRQ_NUM INT_SRC_TMRA_2_CMP>;
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-counter";
+				max-ch = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timera3: timer@40015800 {
+			compatible = "xhsc,hc32-timer";
+			reg = <0x40015800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_3>;
+			interrupts = <HC32_TMRA3_OVF_IRQ_NUM HC32_TMRA3_OVF_IRQ_PRIO>,
+						 <HC32_TMRA3_UDF_IRQ_NUM HC32_TMRA3_UDF_IRQ_PRIO>,
+						 <HC32_TMRA3_CMP_IRQ_NUM HC32_TMRA3_CMP_IRQ_PRIO>;
+			interrupt-names = "ovf", "udf", "cmp";
+			intcs = <&intc HC32_TMRA3_OVF_IRQ_NUM INT_SRC_TMRA_3_OVF>,
+					<&intc HC32_TMRA3_UDF_IRQ_NUM INT_SRC_TMRA_3_UDF>,
+					<&intc HC32_TMRA3_CMP_IRQ_NUM INT_SRC_TMRA_3_CMP>;
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-counter";
+				max-ch = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timera4: timer@40015C00 {
+			compatible = "xhsc,hc32-timer";
+			reg = <0x40015C00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_4>;
+			interrupts = <HC32_TMRA4_OVF_IRQ_NUM HC32_TMRA4_OVF_IRQ_PRIO>,
+						 <HC32_TMRA4_UDF_IRQ_NUM HC32_TMRA4_UDF_IRQ_PRIO>,
+						 <HC32_TMRA4_CMP_IRQ_NUM HC32_TMRA4_CMP_IRQ_PRIO>;
+			interrupt-names = "ovf", "udf", "cmp";
+			intcs = <&intc HC32_TMRA4_OVF_IRQ_NUM INT_SRC_TMRA_4_OVF>,
+					<&intc HC32_TMRA4_UDF_IRQ_NUM INT_SRC_TMRA_4_UDF>,
+					<&intc HC32_TMRA4_CMP_IRQ_NUM INT_SRC_TMRA_4_CMP>;
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-counter";
+				max-ch = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timera5: timer@40016000 {
+			compatible = "xhsc,hc32-timer";
+			reg = <0x40016000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_5>;
+			interrupts = <HC32_TMRA5_OVF_IRQ_NUM HC32_TMRA5_OVF_IRQ_PRIO>,
+						 <HC32_TMRA5_UDF_IRQ_NUM HC32_TMRA5_UDF_IRQ_PRIO>,
+						 <HC32_TMRA5_CMP_IRQ_NUM HC32_TMRA5_CMP_IRQ_PRIO>;
+			interrupt-names = "ovf", "udf", "cmp";
+			intcs = <&intc HC32_TMRA5_OVF_IRQ_NUM INT_SRC_TMRA_5_OVF>,
+					<&intc HC32_TMRA5_UDF_IRQ_NUM INT_SRC_TMRA_5_UDF>,
+					<&intc HC32_TMRA5_CMP_IRQ_NUM INT_SRC_TMRA_5_CMP>;
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-counter";
+				max-ch = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timera6: timer@40016400 {
+			compatible = "xhsc,hc32-timer";
+			reg = <0x40016400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_6>;
+			interrupts = <HC32_TMRA6_OVF_IRQ_NUM HC32_TMRA6_OVF_IRQ_PRIO>,
+						 <HC32_TMRA6_UDF_IRQ_NUM HC32_TMRA6_UDF_IRQ_PRIO>,
+						 <HC32_TMRA6_CMP_IRQ_NUM HC32_TMRA6_CMP_IRQ_PRIO>;
+			interrupt-names = "ovf", "udf", "cmp";
+			intcs = <&intc HC32_TMRA6_OVF_IRQ_NUM INT_SRC_TMRA_6_OVF>,
+					<&intc HC32_TMRA6_UDF_IRQ_NUM INT_SRC_TMRA_6_UDF>,
+					<&intc HC32_TMRA6_CMP_IRQ_NUM INT_SRC_TMRA_6_CMP>;
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-counter";
+				max-ch = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
 	};
 };
 

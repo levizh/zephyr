@@ -587,6 +587,60 @@
 			};
 		};
 
+		i2c1: i2c1@4004e000 {
+			compatible = "xhsc,hc32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4004e000 DT_SIZE_K(1)>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1 
+								HC32_FCG1_PERIPH_I2C1>;
+			pinctrl-0 = <&i2c1_default>;
+			pinctrl-names = "default";
+			interrupts = < HC32_I2C1_EE_IRQ_NUM HC32_I2C1_EE_IRQ_PRIO >,
+						 < HC32_I2C1_TE_IRQ_NUM HC32_I2C1_TE_IRQ_PRIO >,
+						 < HC32_I2C1_TX_IRQ_NUM HC32_I2C1_TX_IRQ_PRIO >,
+						 < HC32_I2C1_RX_IRQ_NUM HC32_I2C1_RX_IRQ_PRIO >;
+			interrupt-names = "eei", "tei", "txi", "rxi";
+			intcs = <&intc HC32_I2C1_EE_IRQ_NUM INT_SRC_I2C1_EEI>,
+					<&intc HC32_I2C1_TE_IRQ_NUM INT_SRC_I2C1_TEI>,
+					<&intc HC32_I2C1_TX_IRQ_NUM INT_SRC_I2C1_TXI>,
+					<&intc HC32_I2C1_RX_IRQ_NUM INT_SRC_I2C1_RXI>;
+			dmas = <&dma1 0 INT_SRC_I2C1_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+					<&dma1 1 INT_SRC_I2C1_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+			dma-names = "tx_dma","rx_dma";
+			scl-gpios = <&gpioe 15 GPIO_OPEN_DRAIN>;
+			sda-gpios = <&gpiob 5 GPIO_OPEN_DRAIN>;
+			clock-frequency = < 100000 >;
+			status = "disabled";
+		};
+
+		i2c2: i2c2@4004e400 {
+			compatible = "xhsc,hc32-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4004e400 DT_SIZE_K(1)>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1 
+								HC32_FCG1_PERIPH_I2C2>;
+			pinctrl-0 = <&i2c2_default>;
+			pinctrl-names = "default";
+			interrupts = < HC32_I2C2_EE_IRQ_NUM HC32_I2C2_EE_IRQ_PRIO >,
+						 < HC32_I2C2_TE_IRQ_NUM HC32_I2C2_TE_IRQ_PRIO >,
+						 < HC32_I2C2_TX_IRQ_NUM HC32_I2C2_TX_IRQ_PRIO >,
+						 < HC32_I2C2_RX_IRQ_NUM HC32_I2C2_RX_IRQ_PRIO >;
+			interrupt-names = "eei", "tei", "txi", "rxi";
+			intcs = <&intc HC32_I2C2_EE_IRQ_NUM INT_SRC_I2C2_EEI>,
+					<&intc HC32_I2C2_TE_IRQ_NUM INT_SRC_I2C2_TEI>,
+					<&intc HC32_I2C2_TX_IRQ_NUM INT_SRC_I2C2_TXI>,
+					<&intc HC32_I2C2_RX_IRQ_NUM INT_SRC_I2C2_RXI>;
+			dmas = <&dma1 2 INT_SRC_I2C2_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+					<&dma1 3 INT_SRC_I2C2_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+			dma-names = "tx_dma","rx_dma";
+			scl-gpios = <&gpioe 15 GPIO_OPEN_DRAIN>;
+			sda-gpios = <&gpiob 5 GPIO_OPEN_DRAIN>;
+			clock-frequency = < 100000 >;
+			status = "disabled";
+		};
+
 		i2c3: i2c3@4004e800 {
 			compatible = "xhsc,hc32-i2c";
 			#address-cells = <1>;

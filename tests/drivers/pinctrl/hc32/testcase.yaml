@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.pinctrl.hc32:
+    tags:
+      - drivers
+      - pinctrl
+    platform_allow: hc32f460_evb
+

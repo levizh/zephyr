@@ -17,6 +17,15 @@ properties:
   intcs:
     type: phandle-array
 
+  dmas:
+    type: phandle-array
+
+  dma-names:
+    type: string-array
+    description: |
+      Names for the provided states. The number of names needs to match the
+      number of states.
+
   pinctrl-0:
     required: true
 

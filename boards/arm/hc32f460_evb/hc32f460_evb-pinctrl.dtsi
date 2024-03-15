@@ -28,14 +28,11 @@
 		};
 	};
 
-	i2c3_scl_pe15: i2c3_scl_pe15 {
-		group1 {
+	i2c3_default: i2c3_default {
+		i2c3_scl {
 			pinmux = <HC32_PINMUX('E', 15, FUNC, 49)>;
 		};
-	};
-
-	i2c3_sda_pb5: i2c3_sda_pb5 {
-		group1 {
+		i2c3_sda {
 			pinmux = <HC32_PINMUX('B', 5, FUNC, 48)>;
 		};
 	};

@@ -117,3 +117,14 @@
 &wdt {
     status = "okay";
 };
+
+&i2c3 {
+	status = "okay";
+	/* delete dma property once use interrupt transfer.
+	** dma-names must be named "tx_dma","rx_dma" while used dma transfer for i2c.
+	** example :
+	** dma-names = "tx_dma","rx_dma";
+	*/
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+};

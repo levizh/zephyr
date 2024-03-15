@@ -29,6 +29,20 @@
 #define GPIO_RD_WAIT GPIO_RD_WAIT0
 #endif
 
+#if HC32_XTAL_ENABLED
+#if ((HC32_XTAL_FREQ > 20000000) && (HC32_XTAL_FREQ <= 25000000))
+#define XTAL_DRV	CLK_XTAL_DRV_HIGH
+#elif (HC32_XTAL_FREQ > 16000000)
+#define XTAL_DRV	CLK_XTAL_DRV_MID
+#elif (HC32_XTAL_FREQ > 8000000)
+#define XTAL_DRV	CLK_XTAL_DRV_LOW
+#elif (HC32_XTAL_FREQ > 4000000)
+#define XTAL_DRV	CLK_XTAL_DRV_ULOW
+#else
+#error "xtal clock frequency not compatible"
+#endif
+#endif
+
 #define HC32_CLOCK_CONTROL_NAME "hc32-cc"
 
 struct hc32_modules_clock_config {

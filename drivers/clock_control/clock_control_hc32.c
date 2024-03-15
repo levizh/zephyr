@@ -13,6 +13,14 @@
 #define BSP_XTAL_IN_PIN                 (GPIO_PIN_01)
 #define BSP_XTAL_OUT_PIN                (GPIO_PIN_00)
 
+/**
+ * @defgroup EV_HC32F460_LQFP100_V2_XTAL32_CONFIG EV_HC32F460_LQFP100_V2 XTAL32 Configure definition
+ * @{
+ */
+#define BSP_XTAL32_PORT                 (GPIO_PORT_C)
+#define BSP_XTAL32_IN_PIN               (GPIO_PIN_15)
+#define BSP_XTAL32_OUT_PIN              (GPIO_PIN_14)
+
 static void hc32_clock_stale(uint32_t flag)
 {
 	uint32_t stable_time = 0;
@@ -32,11 +40,23 @@ static void hc32_clock_xtal_init(void)
 
 	(void)CLK_XtalStructInit(&stcXtalInit);
 	stcXtalInit.u8Mode = CLK_XTAL_MD_OSC;
-	stcXtalInit.u8Drv = CLK_XTAL_DRV_ULOW;
+	stcXtalInit.u8Drv = XTAL_DRV;
 	stcXtalInit.u8State = CLK_XTAL_ON;
 	stcXtalInit.u8StableTime = CLK_XTAL_STB_2MS;
 	(void)CLK_XtalInit(&stcXtalInit);
 	hc32_clock_stale(CLK_STB_FLAG_XTAL);
+}
+
+static void hc32_clock_xtal32_init(void)
+{
+	stc_clock_xtal32_init_t stcXtal32Init;
+
+	(void)CLK_Xtal32StructInit(&stcXtal32Init);
+	stcXtal32Init.u8State = CLK_XTAL32_ON;
+	stcXtal32Init.u8Drv = CONFIG_HC32_XTAL32_DRV;
+	stcXtal32Init.u8Filter = CLK_XTAL32_FILTER_ALL_MD;
+	GPIO_AnalogCmd(BSP_XTAL32_PORT, BSP_XTAL32_IN_PIN | BSP_XTAL32_OUT_PIN, ENABLE);
+	(void)CLK_Xtal32Init(&stcXtal32Init);
 }
 
 static void hc32_clock_hrc_init(void)
@@ -94,6 +114,9 @@ static void hc32_clk_conf(void)
 	}
 	if (IS_ENABLED(HC32_LRC_ENABLED)) {
 		hc32_clock_lrc_init();
+	}
+	if (IS_ENABLED(HC32_XTAL32_ENABLED)) {
+		hc32_clock_xtal32_init();
 	}
 }
 

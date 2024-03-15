@@ -78,22 +78,27 @@
 #define HC32_PLL_FREQ			DT_PROP(DT_NODELABEL(clk_pll), clock_frequency)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_xtal), xhsc_hc32_clock_xtal, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_xtal), fixed_clock, okay)
 #define HC32_XTAL_ENABLED	1
 #define HC32_XTAL_FREQ		DT_PROP(DT_NODELABEL(clk_xtal), clock_frequency)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hrc), xhsc_hc32_clock_hrc, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_xtal32), fixed_clock, okay)
+#define HC32_XTAL32_ENABLED	1
+#define HC32_XTAL32_FREQ	DT_PROP(DT_NODELABEL(clk_xtal32), clock_frequency)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hrc), fixed_clock, okay)
 #define HC32_HRC_ENABLED	1
 #define HC32_HRC_FREQ		DT_PROP(DT_NODELABEL(clk_hrc), clock_frequency)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_mrc), xhsc_hc32_clock_mrc, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_mrc), fixed_clock, okay)
 #define HC32_MRC_ENABLED	1
 #define HC32_MRC_FREQ		DT_PROP(DT_NODELABEL(clk_mrc), clock_frequency)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lrc), xhsc_hc32_clock_lrc, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lrc), fixed_clock, okay)
 #define HC32_LRC_ENABLED	1
 #define HC32_LRC_FREQ		DT_PROP(DT_NODELABEL(clk_lrc), clock_frequency)
 #endif

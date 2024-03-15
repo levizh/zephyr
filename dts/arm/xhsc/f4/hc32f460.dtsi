@@ -500,9 +500,9 @@
 			};
 		};
 
-		timera4: timer@40015C00 {
+		timera4: timer@40015c00 {
 			compatible = "xhsc,hc32-timer";
-			reg = <0x40015C00 0x400>;
+			reg = <0x40015c00 0x400>;
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_4>;
 			interrupts = <HC32_TMRA4_OVF_IRQ_NUM HC32_TMRA4_OVF_IRQ_PRIO>,
 						 <HC32_TMRA4_UDF_IRQ_NUM HC32_TMRA4_UDF_IRQ_PRIO>,

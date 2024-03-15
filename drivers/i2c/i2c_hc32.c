@@ -501,7 +501,7 @@ static int hc32_i2c_msg_transaction(const struct device *dev)
 		I2C_Cmd(i2c, DISABLE);
 	}
 
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_I2C_HC32_DMA */
 
@@ -626,6 +626,7 @@ static int hc32_hw_i2c_send_addr(const struct device *dev)
 static int i2c_hc32_transfer(const struct device *dev, struct i2c_msg *msg,
 					uint8_t num_msgs, uint16_t slave)
 {
+	int ret = 0;
 	uint32_t i;
 	struct i2c_hc32_data *data = dev->data;
 	struct i2c_msg *current, *next;
@@ -683,12 +684,16 @@ static int i2c_hc32_transfer(const struct device *dev, struct i2c_msg *msg,
 		} else {
 			data->dir = I2C_DIR_RX;
 		}
-		hc32_i2c_msg_transaction(dev);
+
+		ret = hc32_i2c_msg_transaction(dev);
+		if (0 != ret) {
+			break;
+		}
 	}
 
 	k_sem_give(&data->bus_mutex);
 
-	return 0;
+	return ret;
 }
 
 static const struct i2c_driver_api api_funcs = {

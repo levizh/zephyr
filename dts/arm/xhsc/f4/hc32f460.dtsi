@@ -667,6 +667,36 @@
 			clock-frequency = < 100000 >;
 			status = "disabled";
 		};
+
+		adc1: adc@40040000 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
+			interrupt-names = "EOCA", "EOCB";
+			interrupts = <HC32_ADC1_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT>,
+					<HC32_ADC1_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT>;
+			intcs = <&intc HC32_ADC1_EOCA_IRQ_NUM INT_SRC_ADC1_EOCA>,
+				<&intc HC32_ADC1_EOCB_IRQ_NUM INT_SRC_ADC1_EOCB>;
+			xhsc,prescaler = <1 1>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc2: adc@40040400 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
+			interrupt-names = "EOCA", "EOCB";
+			interrupts = <HC32_ADC2_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT>,
+				 <HC32_ADC2_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT>;
+			intcs = <&intc HC32_ADC2_EOCA_IRQ_NUM INT_SRC_ADC2_EOCA>,
+				<&intc HC32_ADC2_EOCB_IRQ_NUM INT_SRC_ADC2_EOCB>;
+			xhsc,prescaler = <1 1>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 

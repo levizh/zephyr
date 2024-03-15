@@ -11,7 +11,6 @@ config UART_HC32
 	depends on DT_HAS_XHSC_HC32_UART_ENABLED
 	select SERIAL_HAS_DRIVER
     select HC32_LL_USART
-	select HC32_LL_FCG
 	# interrupt function depend on intc module
 	select SERIAL_SUPPORT_INTERRUPT if DT_HAS_XHSC_HC32_INTC_ENABLED
 	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT

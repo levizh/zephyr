@@ -556,11 +556,6 @@ static void uart_hc32_irq_callback_set(const struct device *dev,
 
 #ifdef CONFIG_UART_ASYNC_API
 
-static int hc32_dma_intc_irq_signin(int irqn, int intsrc)
-{
-	return 0;
-}
-
 static inline void async_user_callback(struct uart_hc32_data *data,
 				struct uart_event *event)
 {
@@ -690,16 +685,18 @@ static int uart_hc32_async_callback_set(const struct device *dev,
 {
 	struct uart_hc32_data *data = dev->data;
 	uint8_t i = 0;
-
+#if CONFIG_UART_INTERRUPT_DRIVEN
 	for(i = 0; i < UART_INT_NUM; i++)
 	{
 		data->cb[i].user_cb = NULL;
 		data->cb[i].user_data = NULL;
 	}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
 	data->async_cb = callback;
 	data->async_user_data = user_data;
-#endif
+#endif/* CONFIG_UART_EXCLUSIVE_API_CALLBACKS */
 
 	return 0;
 }
@@ -797,7 +794,6 @@ void uart_hc32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 
 static void uart_hc32_dma_replace_buffer(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
 	struct uart_hc32_data *data = dev->data;
 
 	/* Replace the buffer and reload the DMA */
@@ -827,9 +823,6 @@ static void uart_hc32_dma_replace_buffer(const struct device *dev)
 void uart_hc32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 				   uint32_t channel, int status)
 {
-	// const struct device *uart_dev = user_data;
-	// struct uart_hc32_data *data = uart_dev->data;
-
 	struct dma_hc32_config_user_data *cfg = user_data;
 	struct device *uart_dev = cfg->user_data;
 	struct uart_hc32_data *data = uart_dev->data;
@@ -854,14 +847,12 @@ void uart_hc32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 	}
 }
 
-	// struct dma_hc32_config_user_data dma_user_cfg;
 static int uart_hc32_async_tx(const struct device *dev,
 		const uint8_t *tx_data, size_t buf_size, int32_t timeout)
 {
 	const struct uart_hc32_config *config = dev->config;
 	struct uart_hc32_data *data = dev->data;
 	CM_USART_TypeDef *USARTx = ((CM_USART_TypeDef *)config->usart);
-	// struct dma_hc32_config_user_data dma_user_cfg;
 	int ret;
 
 	if (data->dma_tx.dma_dev == NULL) {
@@ -917,14 +908,12 @@ static int uart_hc32_async_tx(const struct device *dev,
 	return 0;
 }
 
-// struct dma_hc32_config_user_data dma_user_cfg;
 static int uart_hc32_async_rx_enable(const struct device *dev,
 		uint8_t *rx_buf, size_t buf_size, int32_t timeout)
 {
 	const struct uart_hc32_config *config = dev->config;
 	struct uart_hc32_data *data = dev->data;
 	CM_USART_TypeDef *USARTx = ((CM_USART_TypeDef *)config->usart);
-	// struct dma_hc32_config_user_data dma_user_cfg;
 	int ret;
 
 	if (data->dma_rx.dma_dev == NULL) {
@@ -1043,7 +1032,6 @@ static int uart_hc32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 
 static int uart_hc32_async_init(const struct device *dev)
 {
-	// const struct uart_hc32_config *config = dev->config;
 	struct uart_hc32_data *data = dev->data;
 
 	data->uart_dev = dev;
@@ -1270,7 +1258,6 @@ static int uart_hc32_init(const struct device *dev)
 
 #ifdef CONFIG_UART_ASYNC_API
 /* If defined async, let dma deal with transmission */
-#define INTC_SetIntSrc hc32_dma_intc_irq_signin
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)						\
 	.dma_##dir = {															\
 		COND_CODE_1(														\
@@ -1279,7 +1266,6 @@ static int uart_hc32_init(const struct device *dev)
 			(NULL))															\
 	},
 #else
-#define INTC_SetIntSrc hc32_intc_irq_signin
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)
 #endif /* CONFIG_UART_ASYNC_API */
 
@@ -1291,7 +1277,7 @@ static int uart_hc32_init(const struct device *dev)
 		DT_CAT3(isr_name_prefix, _, index),									\
 		DEVICE_DT_INST_GET(index),											\
 		0);																	\
-	INTC_SetIntSrc(															\
+	hc32_intc_irq_signin(													\
 		DT_PHA_BY_IDX(DT_DRV_INST(index), intcs, isr_idx, irqn),			\
 		DT_PHA_BY_IDX(DT_DRV_INST(index), intcs, isr_idx, int_src));		\
 	irq_enable(DT_INST_IRQ_BY_IDX(index, isr_idx, irq));

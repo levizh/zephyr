@@ -783,8 +783,8 @@ static int i2c_hc32_init(const struct device *dev)
 					DT_IRQ_HANDLE_NAME(node_id, prop, idx),			\
 					DEVICE_DT_GET(node_id), 0);		\
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq));	\
-	hc32_intc_irq_signin(DT_PHA_BY_IDX(node_id, intcs, idx, irqn), \
-					DT_PHA_BY_IDX(node_id, intcs, idx, int_src));
+	hc32_intc_irq_signin(DT_INST_IRQ_BY_IDX(inst, idx, irq), \
+					DT_INST_IRQ_BY_IDX(inst, idx, int_src));
 
 #define HC32_I2C_IRQ_CONNECT_AND_ENABLE(index)				\
 	DT_FOREACH_PROP_ELEM_VARGS(DT_DRV_INST(index), \

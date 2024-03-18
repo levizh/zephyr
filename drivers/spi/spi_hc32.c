@@ -872,8 +872,8 @@ int spi_hc32_init(const struct device *dev)
 #define IDX_IRQ_CONFIGURE(idx, inst)                                                             \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq), DT_INST_IRQ_BY_IDX(inst, idx, priority), \
 			    spi_hc32_isr, DEVICE_DT_INST_GET(inst), 0);                                      \
-		hc32_intc_irq_signin(DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, idx, irqn),                 \
-						 DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, idx, int_src));                 \
+		hc32_intc_irq_signin(DT_INST_IRQ_BY_IDX(inst, idx, irq),                 \
+						 DT_INST_IRQ_BY_IDX(inst, idx, int_src));                 \
 		irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq));
 
 #define CONFIGURE_ALL_IRQS(inst, idxs)  LISTIFY(idxs, IDX_IRQ_CONFIGURE, (), inst)
@@ -882,7 +882,7 @@ int spi_hc32_init(const struct device *dev)
 #define HC32_IRQ_CONFIGURE(inst)                                         \
 	static void spi_hc32_irq_configure_##inst(void)                      \
 	{                                                                    \
-		CONFIGURE_ALL_IRQS(inst, DT_PROP_LEN(DT_DRV_INST(inst), intcs)); \
+		CONFIGURE_ALL_IRQS(inst, DT_NUM_IRQS(DT_DRV_INST(inst)));        \
 	}
 
 #define hc32_SPI_INIT(inst)                                             \

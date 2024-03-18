@@ -4,7 +4,7 @@
 
 description: HC32 PWM
 
-compatible: "xhsc,hc32-pwm"
+compatible: "xhsc,hc32-timera-pwm"
 
 include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
 

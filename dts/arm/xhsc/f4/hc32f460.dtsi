@@ -397,7 +397,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,hc32-pwm";
+				compatible = "xhsc,timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -424,7 +424,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,hc32-pwm";
+				compatible = "xhsc,timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -451,7 +451,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,hc32-pwm";
+				compatible = "xhsc,timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -478,7 +478,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,hc32-pwm";
+				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -505,7 +505,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,hc32-pwm";
+				compatible = "xhsc,timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -532,7 +532,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,hc32-pwm";
+				compatible = "xhsc,timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};

@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(spi_loopback);
 
 #ifdef CONFIG_DMA
 #define DMA_ENABLED_STR ", DMA enabled"
+#else /* CONFIG_DMA */
+#define DMA_ENABLED_STR
 #endif
 
 #define FRAME_SIZE (16)

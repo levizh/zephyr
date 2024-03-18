@@ -1278,8 +1278,8 @@ static int uart_hc32_init(const struct device *dev)
 		DEVICE_DT_INST_GET(index),											\
 		0);																	\
 	hc32_intc_irq_signin(													\
-		DT_PHA_BY_IDX(DT_DRV_INST(index), intcs, isr_idx, irqn),			\
-		DT_PHA_BY_IDX(DT_DRV_INST(index), intcs, isr_idx, int_src));		\
+		DT_INST_IRQ_BY_IDX(index, isr_idx, irq),							\
+		DT_INST_IRQ_BY_IDX(index, isr_idx, int_src));						\
 	irq_enable(DT_INST_IRQ_BY_IDX(index, isr_idx, irq));
 
 #define HC32_UART_IRQ_HANDLER_DECL(index)									\

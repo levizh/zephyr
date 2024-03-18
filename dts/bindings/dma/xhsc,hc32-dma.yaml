@@ -60,10 +60,6 @@ properties:
   interrupts:
     required: true
 
-  intcs:
-    type: phandle-array
-    required: false
-
   "#dma-cells":
     const: 3
 

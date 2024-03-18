@@ -29,5 +29,4 @@
 #define HC32_TMR_CNT_DIR_UP             0x0000U
 #define HC32_TMR_CNT_DIR_DOWN           0x0001U
 
-
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_TIMER_HC32_TIMER_H_ */

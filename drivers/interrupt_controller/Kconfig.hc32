@@ -11,12 +11,21 @@ config INTC_HC32
 	help
 	  Enable INTC driver for HC32 line of MCUs
 
-if INTC_HC32
 
-config INTC_USE_SHARE_INTERRUPT
-	bool "INTC used share interrupt"
+config INTC_EXTINT_HC32
+	bool "External Interrupt Controller (EXTINT) Driver for HC32 family of MCUs"
+	default y
+	depends on DT_HAS_XHSC_HC32_EXTINT_ENABLED
+	select HC32_LL_INTERRUPTS
+	help
+	  Enable EXTINT driver for HC32 line of MCUs
+
+if INTC_EXTINT_HC32
+
+config INTC_EXTINT_USE_SHARE_INTERRUPT
+	bool "INTC EXTINT used share interrupt"
 	default y
 	help
-      INTC respond to irq handlers with share interrupt.
+	  INTC EXTINT respond to irq handlers with share interrupt.
 
-endif # INTC_HC32
+endif # INTC_EXTINT_HC32

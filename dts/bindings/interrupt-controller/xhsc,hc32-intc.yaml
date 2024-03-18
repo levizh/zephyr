@@ -11,35 +11,10 @@ properties:
   reg:
     required: true
 
-  interrupts:
-    required: true
-
-  interrupt-names:
-    required: true
-
-  extint-nums:
-    type: int
-    required: true
-    description: Number of extint supported by the interrupt controller.
-
-  int-srcs:
-    type: array
-    required: false
-    description: Select interrupt trigger source for each interrupt vector.
-
-  extint-chs:
-    type: array
-    required: true
-    description: Description of the external channel for each interrupt vector.
-
-  "#intc-cells":
-    type: int
-    required: true
-    description: Number of items to expect in an interrupt specifier
-
   "#interrupt-cells":
-    const: 2
+    const: 3
 
-intc-cells:
-  - irqn
+interrupt-cells:
+  - irq
+  - priority
   - int_src

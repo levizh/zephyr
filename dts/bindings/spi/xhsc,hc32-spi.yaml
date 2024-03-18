@@ -17,10 +17,6 @@ properties:
   interrupt-names:
     required: true
 
-  intcs:
-    type: phandle-array
-    required: true
-
   clocks:
     required: true
 

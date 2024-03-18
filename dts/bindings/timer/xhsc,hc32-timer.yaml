@@ -15,11 +15,6 @@ properties:
   clocks:
     required: true
 
-  intcs:
-    type: phandle-array
-    required: false
-    description: Set interrupt event source.
-
   clock-division:
     type: int
     default: 0 # HC32_TMR_CNT_CLK_DIV1 - reset state

@@ -13,7 +13,3 @@ include:
 properties:
   reg:
     required: true
-
-  intcs:
-    type: phandle-array
-    required: false

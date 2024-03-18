@@ -18,10 +18,6 @@ properties:
   interrupt-names:
     required: true
 
-  intcs:
-    type: phandle-array
-    required: true
-
   pinctrl-0:
     required: true
 

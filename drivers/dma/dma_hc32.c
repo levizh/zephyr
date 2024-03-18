@@ -570,16 +570,16 @@ static int dma_hc32_init(const struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, ch, irq),                          \
 		    DT_INST_IRQ_BY_IDX(inst, ch, priority), dma_hc32_tc_irq_handler_##inst##_##ch,       \
 		    DEVICE_DT_INST_GET(inst), 0);                              \
-	hc32_intc_irq_signin(DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, ch, irqn), \
-						 DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, ch, int_src));\
+	hc32_intc_irq_signin(DT_INST_IRQ_BY_IDX(inst, ch, irq), \
+						 DT_INST_IRQ_BY_IDX(inst, ch, int_src));\
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, ch, irq));
 
 #define ERR_IRQ_CONFIGURE(inst)                                                 \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), irq),                          \
 		    DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), priority), dma_hc32_err_irq_handler_##inst,  \
 		    DEVICE_DT_INST_GET(inst), 0);                              \
-	hc32_intc_irq_signin(DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, DMA_CHANNELS(inst), irqn), \
-						 DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, DMA_CHANNELS(inst), int_src));\
+	hc32_intc_irq_signin(DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), irq), \
+						 DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), int_src));\
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, DMA_CHANNELS(inst), irq));
 
 #define CONFIGURE_ALL_IRQS(inst, chs) LISTIFY(chs, CH_IRQ_CONFIGURE, (), inst) \

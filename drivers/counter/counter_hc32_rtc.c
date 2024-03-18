@@ -407,8 +407,8 @@ static const struct counter_driver_api rtc_hc32_driver_api = {
 #define RTC_IRQ_CONFIG(inst, idx, irq_hander)                                               \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq), DT_INST_IRQ_BY_IDX(inst, idx, priority),\
 		    irq_hander, DEVICE_DT_INST_GET(inst), 0);                                       \
-	hc32_intc_irq_signin(DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, idx, irqn),                \
-			     DT_PHA_BY_IDX(DT_DRV_INST(inst), intcs, idx, int_src));                    \
+	hc32_intc_irq_signin(DT_INST_IRQ_BY_IDX(inst, idx, irq),                                \
+			     DT_INST_IRQ_BY_IDX(inst, idx, int_src));                                   \
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq));
 
 static void rtc_hc32_irq_config(const struct device *dev)

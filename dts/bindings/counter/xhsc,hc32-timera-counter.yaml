@@ -4,12 +4,12 @@
 
 description: HC32 counter
 
-compatible: "xhsc,hc32-counter"
+compatible: "xhsc,hc32-timera-counter"
 
 include: [base.yaml]
 
 properties:
-  max-ch:
+  ch-nums:
     type: int
     required: true
     description: Set max channel number.

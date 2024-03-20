@@ -4,7 +4,7 @@
 
 description: HC32 timer
 
-compatible: "xhsc,hc32-timer"
+compatible: "xhsc,hc32-timera"
 
 include: [base.yaml]
 

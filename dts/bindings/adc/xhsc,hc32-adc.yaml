@@ -1,0 +1,50 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "xhsc,hc32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  xhsc,prescaler:
+    type: array
+    required: true
+    description: |
+      ADC clock prescalers for PCLK2 and PCLK4:
+      Depending on the HC32 xhsc,adc-clock-source.
+      Only accept properations: PCLK4 : PCLK2 = 1:1, 2:1, 4:1, 8:1, 1:2, 1:4.
+      Here are using example as for import adc clocks(PCLK2, PCLK4):
+        <1 1>, <2 1>, etc.
+
+  xhsc,sequence-mode:
+    type: int
+    required: true
+    enum:
+      - 0 # Sequence A single and Sequence B invalid
+      - 1 # Sequence A loop and Sequence B invalid
+      - 2 # Sequence A single and Sequence B single
+      - 3 # Sequence A loop and Sequence B single
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

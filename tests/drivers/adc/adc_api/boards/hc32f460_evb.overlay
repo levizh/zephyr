@@ -1,0 +1,48 @@
+/ {
+	zephyr,user {
+		io-channels = <&adc1 0>, <&adc1 1>;
+	};
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+	};
+
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+	xhsc,prescaler = <1 1>;
+	xhsc,sequence-mode = <0>;
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&adc1 {
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+	};
+
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+	xhsc,prescaler = <1 1>;
+	xhsc,sequence-mode = <0>;
+	status = "okay";
+	dmas =  <&dma1 2 EVT_SRC_ADC1_EOCA (HC32_DMA_PERIPH_TO_MEMORY | \
+				HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | \
+				HC32_DMA_DATA_WIDTH_16BIT)>;
+	dma-names = "read";
+};

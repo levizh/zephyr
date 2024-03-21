@@ -1,0 +1,15 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 counter
+
+compatible: "xhsc,hc32-timer6-counter"
+
+include: [base.yaml]
+
+properties:
+  max-ch:
+    type: int
+    required: true
+    description: Set max channel number.

@@ -227,7 +227,7 @@
 						 <HC32_DMA1_CH2_IRQ_NUM HC32_DMA1_CH2_IRQ_PRIO INT_SRC_DMA1_TC2>,
 						 <HC32_DMA1_CH3_IRQ_NUM HC32_DMA1_CH3_IRQ_PRIO INT_SRC_DMA1_TC3>,
 						 <HC32_DMA1_ERR_IRQ_NUM HC32_DMA1_ERR_IRQ_PRIO INT_SRC_DMA1_ERR>;
-			interrupt-names = "TC0", "TC1", "TC2", "TC3", "ERR";
+			interrupt-names = "tc0", "tc1", "tc2", "tc3", "err";
 			dma-channels = <4>;
 			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>,
 					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA1>;
@@ -244,7 +244,7 @@
 						 <HC32_DMA2_CH2_IRQ_NUM HC32_DMA2_CH2_IRQ_PRIO INT_SRC_DMA2_TC2>,
 						 <HC32_DMA2_CH3_IRQ_NUM HC32_DMA2_CH3_IRQ_PRIO INT_SRC_DMA2_TC3>,
 						 <HC32_DMA2_ERR_IRQ_NUM HC32_DMA2_ERR_IRQ_PRIO INT_SRC_DMA2_ERR>;
-			interrupt-names = "TC0", "TC1", "TC2", "TC3", "ERR";
+			interrupt-names = "tc0", "tc1", "tc2", "tc3", "err";
 			dma-channels = <4>;
 			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>,
 					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA2>;
@@ -370,7 +370,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <HC32_RTC_ALARM_IRQ_NUM HC32_RTC_ALARM_IRQ_PRIO INT_SRC_RTC_ALM>,
 						 <HC32_RTC_PRD_IRQ_NUM   HC32_RTC_PRD_IRQ_PRIO   INT_SRC_RTC_PRD>;
-			interrupt-names = "ALM", "PRD";
+			interrupt-names = "alm", "prd";
 			clocks = <&clk_lrc>;
 			alarms-count = <1>;
 			status = "disabled";
@@ -535,6 +535,84 @@
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
+			};
+		};
+
+		timer61: timer@40018000 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR61_CMPA_IRQ_NUM HC32_TMR61_CMPA_IRQ_PRIO INT_SRC_TMR6_1_GCMP_A>,
+						 <HC32_TMR61_CMPB_IRQ_NUM HC32_TMR61_CMPB_IRQ_PRIO INT_SRC_TMR6_1_GCMP_B>,
+						 <HC32_TMR61_CMPC_IRQ_NUM HC32_TMR61_CMPC_IRQ_PRIO INT_SRC_TMR6_1_GCMP_C>,
+						 <HC32_TMR61_CMPD_IRQ_NUM HC32_TMR61_CMPD_IRQ_PRIO INT_SRC_TMR6_1_GCMP_D>,
+						 <HC32_TMR61_CMPE_IRQ_NUM HC32_TMR61_CMPE_IRQ_PRIO INT_SRC_TMR6_1_GCMP_E>,
+						 <HC32_TMR61_CMPF_IRQ_NUM HC32_TMR61_CMPF_IRQ_PRIO INT_SRC_TMR6_1_GCMP_F>,
+						 <HC32_TMR61_OVF_IRQ_NUM HC32_TMR61_OVF_IRQ_PRIO INT_SRC_TMR6_1_OVF>,
+						 <HC32_TMR61_UDF_IRQ_NUM HC32_TMR61_UDF_IRQ_PRIO INT_SRC_TMR6_1_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_460_45X_TMR6_CNT_CLK_DIV1024>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timer6-counter";
+				max-ch = <6>;
+				status = "disabled";
+			};
+		};
+
+		timer62: timer@40018400 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR62_CMPA_IRQ_NUM HC32_TMR62_CMPA_IRQ_PRIO INT_SRC_TMR6_2_GCMP_A>,
+						 <HC32_TMR62_CMPB_IRQ_NUM HC32_TMR62_CMPB_IRQ_PRIO INT_SRC_TMR6_2_GCMP_B>,
+						 <HC32_TMR62_CMPC_IRQ_NUM HC32_TMR62_CMPC_IRQ_PRIO INT_SRC_TMR6_2_GCMP_C>,
+						 <HC32_TMR62_CMPD_IRQ_NUM HC32_TMR62_CMPD_IRQ_PRIO INT_SRC_TMR6_2_GCMP_D>,
+						 <HC32_TMR62_CMPE_IRQ_NUM HC32_TMR62_CMPE_IRQ_PRIO INT_SRC_TMR6_2_GCMP_E>,
+						 <HC32_TMR62_CMPF_IRQ_NUM HC32_TMR62_CMPF_IRQ_PRIO INT_SRC_TMR6_2_GCMP_F>,
+						 <HC32_TMR62_OVF_IRQ_NUM HC32_TMR62_OVF_IRQ_PRIO INT_SRC_TMR6_2_OVF>,
+						 <HC32_TMR62_UDF_IRQ_NUM HC32_TMR62_UDF_IRQ_PRIO INT_SRC_TMR6_2_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_460_45X_TMR6_CNT_CLK_DIV1024>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timer6-counter";
+				max-ch = <6>;
+				status = "disabled";
+			};
+		};
+
+		timer63: timer@40018800 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR63_CMPA_IRQ_NUM HC32_TMR63_CMPA_IRQ_PRIO INT_SRC_TMR6_3_GCMP_A>,
+						 <HC32_TMR63_CMPB_IRQ_NUM HC32_TMR63_CMPB_IRQ_PRIO INT_SRC_TMR6_3_GCMP_B>,
+						 <HC32_TMR63_CMPC_IRQ_NUM HC32_TMR63_CMPC_IRQ_PRIO INT_SRC_TMR6_3_GCMP_C>,
+						 <HC32_TMR63_CMPD_IRQ_NUM HC32_TMR63_CMPD_IRQ_PRIO INT_SRC_TMR6_3_GCMP_D>,
+						 <HC32_TMR63_CMPE_IRQ_NUM HC32_TMR63_CMPE_IRQ_PRIO INT_SRC_TMR6_3_GCMP_E>,
+						 <HC32_TMR63_CMPF_IRQ_NUM HC32_TMR63_CMPF_IRQ_PRIO INT_SRC_TMR6_3_GCMP_F>,
+						 <HC32_TMR63_OVF_IRQ_NUM HC32_TMR63_OVF_IRQ_PRIO INT_SRC_TMR6_3_OVF>,
+						 <HC32_TMR63_UDF_IRQ_NUM HC32_TMR63_UDF_IRQ_PRIO INT_SRC_TMR6_3_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_460_45X_TMR6_CNT_CLK_DIV1024>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timer6-counter";
+				max-ch = <6>;
+				status = "disabled";
 			};
 		};
 

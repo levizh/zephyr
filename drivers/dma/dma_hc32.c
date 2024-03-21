@@ -541,7 +541,7 @@ static void dma_hc32_err_irq_handler_##inst(const struct device *dev) \
 	dma_hc32_err_irq_handler(dev); \
 }
 
-#define DEF_ALL_IRQ_HANDLE(inst, chs) LISTIFY(chs, DMA_HC32_DEFINE_TC_IRQ_HANDLER, (), inst) \
+#define DEF_ALL_IRQ_HANDLER(inst, chs) LISTIFY(chs, DMA_HC32_DEFINE_TC_IRQ_HANDLER, (), inst) \
 										DMA_HC32_DEFINE_ERR_IRQ_HANDLER(inst)
 
 
@@ -599,7 +599,7 @@ static int dma_hc32_init(const struct device *dev)
 
 
 #define HC32_DMA_INIT(inst)                                                    \
-	DEF_ALL_IRQ_HANDLE(inst, DMA_CHANNELS(inst))							\
+	DEF_ALL_IRQ_HANDLER(inst, DMA_CHANNELS(inst))							\
 	static struct hc32_modules_clock_sys 								\
 		dma_hc32_##inst##_fcg_config[DT_INST_NUM_CLOCKS(inst)] = HC32_MODULES_CLOCKS(DT_DRV_INST(inst)); \
 	static struct dma_hc32_channel                                         \

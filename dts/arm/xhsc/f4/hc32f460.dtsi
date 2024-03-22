@@ -619,7 +619,6 @@
 			interrupt-names = "EOCA", "EOCB";
 			interrupts = <HC32_ADC1_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC1_EOCA>,
 						 <HC32_ADC1_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC1_EOCB>;
-			xhsc,prescaler = <1 1>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
@@ -633,7 +632,6 @@
 			interrupt-names = "EOCA", "EOCB";
 			interrupts = <HC32_ADC2_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCA>,
 						 <HC32_ADC2_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCB>;
-			xhsc,prescaler = <1 1>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};

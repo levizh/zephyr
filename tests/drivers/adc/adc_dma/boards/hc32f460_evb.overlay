@@ -2,7 +2,7 @@
 
 / {
 	zephyr,user {
-		io-channels = <&adc1 1>;
+		io-channels = <&adc1 0>, <&adc1 1>;
 	};
 };
 
@@ -31,10 +31,8 @@ test_dma: &dma1 {
 		zephyr,resolution = <12>;
 	};
 
-	pinctrl-0 = <&adc1_ch1_default>;
+	pinctrl-0 = <&adc1_ch0_default>, <&adc1_ch1_default>;
 	pinctrl-names = "default";
-	xhsc,prescaler = <1 1>;
-	xhsc,sequence-mode = <0>;
 	status = "okay";
 
 	dmas =  <&dma1 2 EVT_SRC_ADC1_EOCA (HC32_DMA_PERIPH_TO_MEMORY | \

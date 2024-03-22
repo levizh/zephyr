@@ -31,6 +31,17 @@ LOG_MODULE_REGISTER(adc_hc32);
 #include <zephyr/mem_mgmt/mem_attr.h>
 
 #define ADC_MAX_CHANNEL		(17U)
+/* Macros to count channels */
+#define DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+const struct adc_dt_spec channels[] = {
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA)
+};
+#define CHANNEL_TABLE_SIZE (ARRAY_SIZE(channels))
+#else
+#define CHANNEL_TABLE_SIZE	(17U)
+#endif
 
 #ifdef CONFIG_ADC_ASYNC
 struct adc_hc32_dma_cfg {
@@ -59,7 +70,7 @@ struct adc_hc32_data {
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint8_t resolution;
-	uint8_t channel_table[ADC_MAX_CHANNEL];
+	uint8_t channel_table[CHANNEL_TABLE_SIZE];
 	uint8_t channel_count;
 	uint8_t samples_count;
 	int8_t acq_time_index;
@@ -242,7 +253,6 @@ static int start_read(const struct device *dev,
 {
 	int err, max_chs, idx;
 	uint8_t *p_temp;
-	uint32_t adc_clock_hz, sample_cycles, sample_time_us = 0U;
 	const struct adc_hc32_config *config = dev->config;
 	struct adc_hc32_data *data = dev->data;
 	CM_ADC_TypeDef *ADCx = (CM_ADC_TypeDef *)config->base;
@@ -257,7 +267,6 @@ static int start_read(const struct device *dev,
 	data->samples_count = 1U;
 	if (sequence->options != NULL) {
 		data->samples_count += sequence->options->extra_samplings;
-		sample_time_us = sequence->options->interval_us;
 	}
 
 	if (CM_ADC1 == ADCx) {
@@ -295,20 +304,6 @@ static int start_read(const struct device *dev,
 		stc_adc_init_struct.u16ScanMode = ADC_MD_SEQA_CONT;
 	} else {
 		stc_adc_init_struct.u16ScanMode = ADC_MD_SEQA_SINGLESHOT;
-	}
-
-	if (clock_control_get_rate(data->dev_clock,
-			(clock_control_subsys_t)config->clk_cfg, &adc_clock_hz) != 0) {
-		LOG_ERR("Failed to fetch adc clock frequency");
-		return -EINVAL;
-	}
-	/* ADC sample time convert to sample cycles, sample cycles from 5 to 255 */
-	sample_cycles = adc_clock_hz / 1000U * sample_time_us;
-	if (sample_cycles < 5U) {
-		sample_cycles = 5U;
-	}
-	for (idx = 0; idx < data->channel_count; idx++) {
-		ADC_SetSampleTime(ADCx, data->channel_table[idx], sample_cycles);
 	}
 
 	if (sequence->oversampling >= 9U) {

@@ -80,11 +80,8 @@ struct adc_hc32_config {
 	const struct hc32_modules_clock_sys *clk_cfg;
 	const struct adc_channel_cfg *ch_cfg;
 	uint32_t clk_prescaler;
-	const uint16_t sampling_time_table[10];
 	int8_t num_sampling_time_common_channels;
 	int8_t sequencer_type;
-	int8_t res_table_size;
-	const uint32_t res_table[];
 };
 
 #ifdef CONFIG_ADC_ASYNC
@@ -216,10 +213,6 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 static int adc_hc32_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
-	struct adc_hc32_config *config = (struct adc_hc32_config *)dev->config;
-	CM_ADC_TypeDef *ADCx = (CM_ADC_TypeDef *)config->base;
-	int sample_cycles;
-
 	if (channel_cfg->acquisition_time < 0)
 	{
 		LOG_ERR("Error adc acquisition time");
@@ -240,9 +233,6 @@ static int adc_hc32_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
-	/* ADC sample time to sample cycles, sample cycles from 5 to 255 */
-	sample_cycles = channel_cfg->acquisition_time + 5U;
-	ADC_SetSampleTime(ADCx, channel_cfg->channel_id, sample_cycles);
 
 	return 0;
 }
@@ -252,6 +242,7 @@ static int start_read(const struct device *dev,
 {
 	int err, max_chs, idx;
 	uint8_t *p_temp;
+	uint32_t adc_clock_hz, sample_cycles, sample_time_us = 0U;
 	const struct adc_hc32_config *config = dev->config;
 	struct adc_hc32_data *data = dev->data;
 	CM_ADC_TypeDef *ADCx = (CM_ADC_TypeDef *)config->base;
@@ -266,6 +257,7 @@ static int start_read(const struct device *dev,
 	data->samples_count = 1U;
 	if (sequence->options != NULL) {
 		data->samples_count += sequence->options->extra_samplings;
+		sample_time_us = sequence->options->interval_us;
 	}
 
 	if (CM_ADC1 == ADCx) {
@@ -303,6 +295,20 @@ static int start_read(const struct device *dev,
 		stc_adc_init_struct.u16ScanMode = ADC_MD_SEQA_CONT;
 	} else {
 		stc_adc_init_struct.u16ScanMode = ADC_MD_SEQA_SINGLESHOT;
+	}
+
+	if (clock_control_get_rate(data->dev_clock,
+			(clock_control_subsys_t)config->clk_cfg, &adc_clock_hz) != 0) {
+		LOG_ERR("Failed to fetch adc clock frequency");
+		return -EINVAL;
+	}
+	/* ADC sample time convert to sample cycles, sample cycles from 5 to 255 */
+	sample_cycles = adc_clock_hz / 1000U * sample_time_us;
+	if (sample_cycles < 5U) {
+		sample_cycles = 5U;
+	}
+	for (idx = 0; idx < data->channel_count; idx++) {
+		ADC_SetSampleTime(ADCx, data->channel_table[idx], sample_cycles);
 	}
 
 	if (sequence->oversampling >= 9U) {

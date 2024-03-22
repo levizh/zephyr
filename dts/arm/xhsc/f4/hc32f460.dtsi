@@ -261,7 +261,7 @@
 						 <HC32_UART1_TX_IRQ_NUM      HC32_UART1_TX_IRQ_PRIO      INT_SRC_USART1_TI>,
 						 <HC32_UART1_TX_CPLT_IRQ_NUM HC32_UART1_TX_CPLT_IRQ_PRIO INT_SRC_USART1_TCI>,
 						 <HC32_UART1_RXTO_IRQ_NUM    HC32_UART1_RXTO_IRQ_PRIO    INT_SRC_USART1_RTO>;
-			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
+			interrupt-names = "ei", "ri", "ti", "tci", "rto";
 			status = "disabled";
 		};
 		usart2: serial@4001d400 {
@@ -274,7 +274,7 @@
 						 <HC32_UART2_TX_IRQ_NUM      HC32_UART2_TX_IRQ_PRIO      INT_SRC_USART2_TI>,
 						 <HC32_UART2_TX_CPLT_IRQ_NUM HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>,
 						 <HC32_UART2_RXTO_IRQ_NUM    HC32_UART2_RXTO_IRQ_PRIO    INT_SRC_USART2_RTO>;
-			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
+			interrupt-names = "ei", "ri", "ti", "tci", "rto";
 			status = "disabled";
 		};
 		usart3: serial@40021000 {
@@ -287,7 +287,7 @@
 						 <HC32_UART3_TX_IRQ_NUM      HC32_UART3_TX_IRQ_PRIO      INT_SRC_USART3_TI>,
 						 <HC32_UART3_TX_CPLT_IRQ_NUM HC32_UART3_TX_CPLT_IRQ_PRIO INT_SRC_USART3_TCI>,
 						 <HC32_UART3_RXTO_IRQ_NUM    HC32_UART3_RXTO_IRQ_PRIO    INT_SRC_USART3_RTO>;
-			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
+			interrupt-names = "ei", "ri", "ti", "tci", "rto";
 			status = "disabled";
 		};
 		usart4: serial@40021400 {
@@ -300,7 +300,7 @@
 						 <HC32_UART4_TX_IRQ_NUM      HC32_UART4_TX_IRQ_PRIO      INT_SRC_USART4_TI>,
 						 <HC32_UART4_TX_CPLT_IRQ_NUM HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>,
 						 <HC32_UART4_RXTO_IRQ_NUM    HC32_UART4_RXTO_IRQ_PRIO    INT_SRC_USART4_RTO>;
-			interrupt-names = "EI", "RI", "TI", "TCI", "RTO";
+			interrupt-names = "ei", "ri", "ti", "tci", "rto";
 			status = "disabled";
 		};
 		wdt: watchdog@40049000 {
@@ -543,7 +543,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4004e000 DT_SIZE_K(1)>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1 
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
 								HC32_FCG1_PERIPH_I2C1>;
 			pinctrl-0 = <&i2c1_default>;
 			pinctrl-names = "default";
@@ -567,7 +567,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4004e400 DT_SIZE_K(1)>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1 
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
 								HC32_FCG1_PERIPH_I2C2>;
 			pinctrl-0 = <&i2c2_default>;
 			pinctrl-names = "default";
@@ -591,7 +591,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x4004e800 DT_SIZE_K(1)>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1 
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
 								HC32_FCG1_PERIPH_I2C3>;
 			pinctrl-0 = <&i2c3_default>;
 			pinctrl-names = "default";

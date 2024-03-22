@@ -96,6 +96,14 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER_RPI_PICO
 	DEVS_FOR_DT_COMPAT(raspberrypi_pico_timer)
 #endif
+#ifdef CONFIG_COUNTER_TIMERA_HC32
+#define HC32_COUNTER_DEV(idx) \
+	DEVICE_DT_GET(DT_INST(idx, xhsc_hc32_timera_counter)),
+#define DT_DRV_COMPAT xhsc_hc32_timera_counter
+	DT_INST_FOREACH_STATUS_OKAY(HC32_COUNTER_DEV)
+#undef DT_DRV_COMPAT
+#undef HC32_COUNTER_DEV
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -935,6 +943,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	return true;
 #endif
 #ifdef CONFIG_COUNTER_TIMER_STM32
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_TIMERA_HC32
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}

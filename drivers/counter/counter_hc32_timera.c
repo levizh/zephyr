@@ -191,6 +191,7 @@ static int counter_hc32_set_cc(const struct device *dev, uint8_t chan,
 		 "Expected that CC interrupt is disabled.");
 	/* First take care of a risk of an event coming from CC being set to
 	 * next tick. Reconfigure CC to future (now tick is the furthest future). */
+	TMRA_SetFunc(timer, TIMERA_CH(chan), TMRA_FUNC_CMP);
 	now = counter_hc32_read(dev);
 	ch_alarm->start_tick = now >> TIMERA_H16B_POS;
 	TMRA_SetCompareValue(timer, TIMERA_CH(chan), (now & TIMERA_L16B_MASK) - 1);

@@ -116,8 +116,7 @@ static uint32_t counter_hc32_ticks_add(uint32_t val1, uint32_t val2,
 	}
 	to_top = top - val1;
 
-	// return (val2 <= to_top) ? val1 + val2 : val2 - to_top - 1U;
-	return (val2 <= to_top) ? val1 + val2 : val2 - to_top;
+    return (val2 <= to_top) ? val1 + val2 : val2 - to_top;
 }
 
 static uint32_t counter_hc32_ticks_sub(uint32_t val, uint32_t old,
@@ -128,7 +127,7 @@ static uint32_t counter_hc32_ticks_sub(uint32_t val, uint32_t old,
 	}
 
 	/* if top is not 2^n-1 */
-	return (val >= old) ? (val - old) : val + top + 1U - old;
+	return (val >= old) ? (val - old) : val + (top - old + 1U);
 }
 
 static void counter_hc32_counter_hc32_set_cc_int_pending(
@@ -162,7 +161,7 @@ static int counter_hc32_set_cc(const struct device *dev, uint8_t chan,
 	/* First take care of a risk of an event coming from CC being set to
 	 * next tick. Reconfigure CC to future (now tick is the furthest future). */
 	now = counter_hc32_read(dev);
-	TMRA_SetCompareValue(timer, TIMERA_CH(chan), now);
+	TMRA_SetCompareValue(timer, TIMERA_CH(chan), now - 1);
 	TMRA_ClearStatus(timer, TIMERA_FLAG_CH(chan));
 
 	if (absolute) {
@@ -212,9 +211,10 @@ static int counter_hc32_set_alarm(const struct device *dev, uint8_t chan,
 	struct counter_hc32_data *data = dev->data;
 	struct counter_hc32_ch_data *ch_alarm = &data->ch_data[chan];
 
-	if (alarm_cfg->ticks >  counter_hc32_get_top_value(dev)) {
+	if (alarm_cfg->ticks > counter_hc32_get_top_value(dev)) {
 		return -EINVAL;
 	}
+
 	if (ch_alarm->callback) {
 		return -EBUSY;
 	}
@@ -243,7 +243,6 @@ static int counter_hc32_set_top_value(const struct device *dev,
 	struct counter_hc32_data *data = dev->data;
 	int err = 0;
 
-	// for (uint32_t i = 0; i < config->info.channels; i++) {
 	for (uint32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
 		/* Overflow can be changed only when all alarms are disabled. */
 		if (data->ch_data[i].callback) {
@@ -281,7 +280,6 @@ static uint32_t counter_hc32_get_pending_int(const struct device *dev)
 	const struct counter_hc32_config *config = dev->config;
 	uint32_t pending = 0;
 
-	// for (uint32_t i = 0; i < config->info.channels; i++) {
 	// for (uint32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
 	// 	if ((SET == TMRA_GetStatus(config->timer, TIMERA_FLAG_CH(i))) &&
 	// 	    (ENABLE == TMRA_GetIntEnable(config->timer, TIMERA_INT_CH(i)))) {
@@ -335,7 +333,7 @@ static int counter_hc32_init_timer(const struct device *dev)
 	/* initialize clock and check its speed  */
 	clk_node = DEVICE_DT_GET(HC32_CLOCK_CONTROL_NODE);
 	if (!device_is_ready(clk_node)) {
-		LOG_ERR("Could not get clock control device (%d)", ret);
+		LOG_ERR("Could not get clock control device");
 		return -ENODEV;
 	}
 	ret = clock_control_on(clk_node, (clock_control_subsys_t)&config->clk_sys);
@@ -356,15 +354,14 @@ static int counter_hc32_init_timer(const struct device *dev)
 	// 	return -ENODEV;
 	// }
 
-	/* config/enable IRQ */
+	/* config enable IRQ */
 	config->irq_config_func(dev);
 	/* initialize timer */
 	(void)TMRA_StructInit(&stcTmraInit);
 	stcTmraInit.sw_count.u8ClockDiv  = TIMERA_CLK_DIV(config->clock_division);
 	stcTmraInit.sw_count.u8CountMode = TMRA_MD_SAWTOOTH;
 	stcTmraInit.sw_count.u8CountDir  = TMRA_DIR_UP;
-	// stcTmraInit.u32PeriodValue       = counter_get_max_top_value(dev);
-	stcTmraInit.u32PeriodValue       = config->info.max_top_value;
+	stcTmraInit.u32PeriodValue       = counter_get_max_top_value(dev);
 	(void)TMRA_Init(timer, &stcTmraInit);
 
 	return 0;
@@ -429,8 +426,6 @@ void counter_hc32_ovf_irq_handler(const struct device *dev)
 
 void counter_hc32_cmp_irq_handler(const struct device *dev)
 {
-	// const struct counter_hc32_config *config = dev->config;
-	// for (uint32_t i = 0; i < config->info.channels; i++) {
 	for (uint32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
 		count_hc32_alarm_irq_handler(dev, i);
 	}

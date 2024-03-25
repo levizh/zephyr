@@ -445,7 +445,7 @@ static const struct adc_driver_api adc_hc32_driver_api = {
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = adc_hc32_read_async,
 #endif /* CONFIG_ADC_ASYNC */
-	.ref_internal = 3300U, /* VREF is usually connected to VDD */
+	.ref_internal = DT_INST_PROP(0, vref_mv),
 };
 
 #if defined(CONFIG_ADC_HC32_INTERRUPT)

@@ -21,6 +21,7 @@ test_dma: &dma1 {
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <0>;
 		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
 	};
 
 	channel@1 {

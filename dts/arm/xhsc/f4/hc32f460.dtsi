@@ -316,7 +316,7 @@
 			interrupts = <HC32_SPI1_ERR_IRQ_NUM HC32_SPI1_ERR_IRQ_PRIO INT_SRC_SPI1_SPEI>,
 						 <HC32_SPI1_RBF_IRQ_NUM HC32_SPI1_RBF_IRQ_PRIO INT_SRC_SPI1_SPRI>,
 						 <HC32_SPI1_TBE_IRQ_NUM HC32_SPI1_TBE_IRQ_PRIO INT_SRC_SPI1_SPTI>;
-			interrupt-names = "ERR", "SPRI", "SPTI";
+			interrupt-names = "err", "spri", "spti";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -330,7 +330,7 @@
 			interrupts = <HC32_SPI2_ERR_IRQ_NUM HC32_SPI2_ERR_IRQ_PRIO INT_SRC_SPI2_SPEI>,
 						 <HC32_SPI2_RBF_IRQ_NUM HC32_SPI2_RBF_IRQ_PRIO INT_SRC_SPI2_SPRI>,
 						 <HC32_SPI2_TBE_IRQ_NUM HC32_SPI2_TBE_IRQ_PRIO INT_SRC_SPI2_SPTI>;
-			interrupt-names = "ERR", "SPRI", "SPTI";
+			interrupt-names = "err", "spri", "spti";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -344,7 +344,7 @@
 			interrupts = <HC32_SPI3_ERR_IRQ_NUM HC32_SPI3_ERR_IRQ_PRIO INT_SRC_SPI3_SPEI>,
 						 <HC32_SPI3_RBF_IRQ_NUM HC32_SPI3_RBF_IRQ_PRIO INT_SRC_SPI3_SPRI>,
 						 <HC32_SPI3_TBE_IRQ_NUM HC32_SPI3_TBE_IRQ_PRIO INT_SRC_SPI3_SPTI>;
-			interrupt-names = "ERR", "SPRI", "SPTI";
+			interrupt-names = "err", "spri", "spti";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -358,7 +358,7 @@
 			interrupts = <HC32_SPI4_ERR_IRQ_NUM HC32_SPI4_ERR_IRQ_PRIO INT_SRC_SPI4_SPEI>,
 						 <HC32_SPI4_RBF_IRQ_NUM HC32_SPI4_RBF_IRQ_PRIO INT_SRC_SPI4_SPRI>,
 						 <HC32_SPI4_TBE_IRQ_NUM HC32_SPI4_TBE_IRQ_PRIO INT_SRC_SPI4_SPTI>;
-			interrupt-names = "ERR", "SPRI", "SPTI";
+			interrupt-names = "err", "spri", "spti";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -397,7 +397,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,timera-pwm";
+				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -424,7 +424,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,timera-pwm";
+				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -451,7 +451,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,timera-pwm";
+				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -505,7 +505,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,timera-pwm";
+				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};
@@ -532,7 +532,7 @@
 			};
 
 			pwm {
-				compatible = "xhsc,timera-pwm";
+				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
 				#pwm-cells = <3>;
 			};

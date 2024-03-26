@@ -10,10 +10,17 @@
 
 #include "test_pwm_loopback.h"
 
+#if DT_HAS_COMPAT_STATUS_OKAY(xhsc_hc32_timera_pwm)
+#define TEST_PWM_PERIOD_NSEC    655000
+#define TEST_PWM_PULSE_NSEC     200000
+#define TEST_PWM_PERIOD_USEC    280
+#define TEST_PWM_PULSE_USEC     150
+#else
 #define TEST_PWM_PERIOD_NSEC 100000000
 #define TEST_PWM_PULSE_NSEC   15000000
 #define TEST_PWM_PERIOD_USEC    100000
 #define TEST_PWM_PULSE_USEC      75000
+#endif
 
 enum test_pwm_unit {
 	TEST_PWM_UNIT_NSEC,

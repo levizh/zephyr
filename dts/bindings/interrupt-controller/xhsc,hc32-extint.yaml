@@ -1,0 +1,56 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: HC32 Interrupt Controller
+version: 0.1
+
+description: >
+  This binding gives a base representation of the HC32 Interrupt Controller
+
+properties:
+  compatible:
+    category: required
+    type: string
+    description: compatible strings
+    constraint: "xhsc,hc32-extint"
+    generation: define
+
+  reg:
+    category: required
+    type: array
+    description: mmio register space
+    generation: define
+
+  label:
+    category: required
+    type: string
+    description: Human readable string describing the device
+    generation: define
+
+  interrupts:
+    category: required
+    type: array
+    description: required interrupts
+    generation: define
+
+  interrupt-names:
+    category: optional
+    type: stringlist
+    description: names of required interrupts
+    generation: define
+
+  extint-nums:
+    category: required
+    type: int
+    description: Number of extint supported by the interrupt controller.
+    generation: define
+
+  extint-chs:
+    category: required
+    type: array
+    description: Description of the external channel for each interrupt vector.
+    generation: define
+...

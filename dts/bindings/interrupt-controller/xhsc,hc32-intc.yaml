@@ -1,0 +1,36 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: HC32 Interrupt Controller
+version: 0.1
+
+description: >
+  This binding gives a base representation of the HC32 Interrupt Controller
+
+properties:
+  compatible:
+    category: required
+    type: string
+    description: compatible strings
+    constraint: "xhsc,hc32-intc"
+    generation: define
+
+  reg:
+    category: required
+    type: array
+    description: mmio register space
+    generation: define
+
+  label:
+    category: required
+    type: string
+    description: Human readable string describing the device
+    generation: define
+
+"#cells":
+  - irq
+  - priority
+  - int_src

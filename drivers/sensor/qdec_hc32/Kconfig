@@ -1,0 +1,11 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config QDEC_HC32
+	bool "HC32 QDEC driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_QDEC_ENABLED
+	select HC32_LL_TMRA
+	help
+	  HC32 family Quadrature Decoder driver.

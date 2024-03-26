@@ -169,6 +169,7 @@ source "drivers/sensor/qdec_mcux/Kconfig"
 source "drivers/sensor/qdec_nrfx/Kconfig"
 source "drivers/sensor/qdec_sam/Kconfig"
 source "drivers/sensor/qdec_stm32/Kconfig"
+source "drivers/sensor/qdec_hc32/Kconfig"
 source "drivers/sensor/rpi_pico_temp/Kconfig"
 source "drivers/sensor/s11059/Kconfig"
 source "drivers/sensor/sbs_gauge/Kconfig"
@@ -209,5 +210,4 @@ source "drivers/sensor/wsen_pads/Kconfig"
 source "drivers/sensor/wsen_pdus/Kconfig"
 source "drivers/sensor/wsen_tids/Kconfig"
 source "drivers/sensor/xmc4xxx_temp/Kconfig"
-
 endif # SENSOR

@@ -120,6 +120,14 @@
 
 &i2c3 {
 	status = "okay";
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	dmas = <&dma1 0 INT_SRC_I2C3_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+			<&dma1 1 INT_SRC_I2C3_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+	dma-names = "tx_dma","rx_dma";
+	scl-gpios = <&gpioe 15 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpiob 5 GPIO_OPEN_DRAIN>;
+	clock-frequency = < 100000 >;
 	/* delete dma property once use interrupt transfer.
 	** dma-names must be named "tx_dma","rx_dma" while used dma transfer for i2c.
 	** example :
@@ -127,4 +135,15 @@
 	*/
 	/delete-property/ dmas;
 	/delete-property/ dma-names;
+};
+
+&timera5 {
+	status = "okay";
+
+	qdec {
+		pinctrl-0 = <&tmra5_qdec_default>;
+		pinctrl-names = "default";
+		hw-count-conditions = <(TMR_UP_COND_A_H_B_R | TMR_UP_COND_B_H_A_R)>;
+		counts-per-revolution = <1000>;
+	};
 };

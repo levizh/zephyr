@@ -1,0 +1,69 @@
+# Copyright (c) 2022, Valerio Setti <vsetti@baylibre.com
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 quadrature decoder
+
+compatible: "xhsc,hc32-qdec"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  hw-count-conditions:
+    type: int
+    required: true
+    description: |
+      Encoder is triggered by hardware up count conditions
+      bit0: When CLKA is low, a rising edge is sampled on CLKB
+      bit1: When CLKA is low, a falling edge is sampled on CLKB
+      bit2: When CLKA is high, a rising edge is sampled on CLKB
+      bit3: When CLKA is high, a falling edge is sampled on CLKB
+      bit4: When CLKB is low, a rising edge is sampled on CLKA
+      bit5: When CLKB is low, a rising edge is sampled on CLKA
+      bit6: When CLKB is high, a rising edge is sampled on CLKA
+      bit7: When CLKB is high, a falling edge is sampled on CLKA
+      bit8: When a rising edge occurred on TRIG
+      bit9: When a falling edge occurred on TRIG
+      bit11: When the symmetric unit overflow
+      bit12: When the symmetric unit underflow
+      Encoder is triggered by hardware down count conditions
+      bit16: When CLKA is low, a rising edge is sampled on CLKB
+      bit17: When CLKA is low, a falling edge is sampled on CLKB
+      bit18: When CLKA is high, a rising edge is sampled on CLKB
+      bit19: When CLKA is high, a falling edge is sampled on CLKB
+      bit20: When CLKB is low, a rising edge is sampled on CLKA
+      bit21: When CLKB is low, a rising edge is sampled on CLKA
+      bit22: When CLKB is high, a rising edge is sampled on CLKA
+      bit23: When CLKB is high, a falling edge is sampled on CLKA
+      bit24: When a rising edge occurred on TRIG
+      bit25: When a falling edge occurred on TRIG
+      bit27: When the symmetric unit overflow
+      bit28: When the symmetric unit underflow
+
+  filter-config:
+    type: int
+    description: |
+      bit13-14: TIMA_<t>_CLKB port filter clock select
+      bit9-10: TIMA_<t>_CLKA port filter clock select
+      - 00b  # TMRA_FILTER_CLK_DIV1
+      - 01b  # TMRA_FILTER_CLK_DIV4
+      - 10b  # TMRA_FILTER_CLK_DIV16
+      - 11b  # TMRA_FILTER_CLK_DIV64
+      bit12: TIMA_<t>_CLKA port filter enable
+      bit8: TIMA_<t>_CLKA port filter enable
+      - 0 disable
+      - 1 enable
+
+  counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      This is a number >= 1 that is used to determine how many revolutions
+      were done based on the current counter's value.

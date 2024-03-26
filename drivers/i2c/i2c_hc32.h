@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2016 BayLibre, SAS
- * Copyright (c) 2017 Linaro Ltd
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  *

@@ -8,4 +8,11 @@ if BOARD_HC32F460_EVB
 config BOARD
 	default "hc32f460_evb"
 
+if UART_CONSOLE
+
+config UART_4
+	default y
+
+endif # UART_CONSOLE
+
 endif # BOARD_HC32F460_EVB

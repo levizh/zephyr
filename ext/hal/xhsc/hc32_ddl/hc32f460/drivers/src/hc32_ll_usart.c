@@ -1017,6 +1017,29 @@ void USART_SetParity(CM_USART_TypeDef *USARTx, uint32_t u32Parity)
 }
 
 /**
+ * @brief  Get USART parity.
+ * @param  [in] USARTx                  Pointer to USART instance register base
+ *         This parameter can be one of the following values:
+ *           @arg CM_USARTx:            USART unit instance register base
+ * @retval This parameter can be one of the macros group @ref USART_Parity_Control
+ *           @arg USART_PARITY_NONE:    Parity control disabled
+ *           @arg USART_PARITY_ODD:     Parity control enabled and Odd Parity is selected
+ *           @arg USART_PARITY_EVEN:    Parity control enabled and Even Parity is selected
+ *  None
+ */
+uint32_t USART_GetParity(CM_USART_TypeDef *USARTx)
+{
+    DDL_ASSERT(IS_USART_UNIT(USARTx));
+
+    if (0U == (READ_REG32(USARTx->CR1) & USART_CR1_PCE)) {
+        return USART_PARITY_NONE;
+    }
+
+    return (READ_REG32(USARTx->CR1) & USART_CR1_PS) ?
+        USART_PARITY_ODD : USART_PARITY_EVEN;
+}
+
+/**
  * @brief  Set USART bit direction.
  * @param  [in] USARTx                  Pointer to USART instance register base
  *         This parameter can be one of the following values:
@@ -1055,6 +1078,23 @@ void USART_SetStopBit(CM_USART_TypeDef *USARTx, uint32_t u32StopBit)
 }
 
 /**
+ * @brief  Get USART stop bit.
+ * @param  [in] USARTx                  Pointer to USART instance register base
+ *         This parameter can be one of the following values:
+ *           @arg CM_USARTx:            USART unit instance register base
+ * @retval This parameter can be one of the macros group @ref USART_Stop_Bit
+ *           @arg USART_STOPBIT_1BIT:   1 stop bit
+ *           @arg USART_STOPBIT_2BIT:   2 stop bit
+ */
+uint32_t USART_GetStopBit(CM_USART_TypeDef *USARTx)
+{
+    DDL_ASSERT(IS_USART_UNIT(USARTx));
+
+    return (READ_REG32(USARTx->CR2) & USART_CR2_STOP) ?
+        USART_STOPBIT_2BIT: USART_STOPBIT_1BIT;
+}
+
+/**
  * @brief  Set USART data width.
  * @param  [in] USARTx                  Pointer to USART instance register base
  *         This parameter can be one of the following values:
@@ -1071,6 +1111,23 @@ void USART_SetDataWidth(CM_USART_TypeDef *USARTx, uint32_t u32DataWidth)
     DDL_ASSERT(IS_USART_DATA_WIDTH(u32DataWidth));
 
     MODIFY_REG32(USARTx->CR1, USART_CR1_M, u32DataWidth);
+}
+
+/**
+ * @brief  Get USART data width.
+ * @param  [in] USARTx                  Pointer to USART instance register base
+ *         This parameter can be one of the following values:
+ *           @arg CM_USARTx:            USART unit instance register base
+ * @retval This parameter can be one of the macros group @ref USART_Data_Width_Bit
+ *           @arg USART_DATA_WIDTH_8BIT: 8 bits word width
+ *           @arg USART_DATA_WIDTH_9BIT: 9 bits word width
+ */
+uint32_t USART_GetDataWidth(CM_USART_TypeDef *USARTx)
+{
+    DDL_ASSERT(IS_USART_UNIT(USARTx));
+
+    return (READ_REG32(USARTx->CR1) & USART_CR1_M) ?
+        USART_DATA_WIDTH_9BIT : USART_DATA_WIDTH_8BIT;
 }
 
 /**
@@ -1257,6 +1314,21 @@ void USART_SetHWFlowControl(CM_USART_TypeDef *USARTx, uint32_t u32HWFlowControl)
     } else {
         CLR_REG32_BIT(USARTx->CR3, USART_CR3_CTSE);
     }
+}
+
+/**
+ * @brief  Get UART hardware flow control CTS/RTS selection.
+ * @param  [in] USARTx                  Pointer to USART instance register base
+ *         This parameter can be one of the following values:
+ *           @arg CM_USARTx:            USART unit instance register base
+ * @retval This parameter can be one of the macros group @ref USART_Hardware_Flow_Control.
+ */
+uint32_t USART_GetHWFlowControl(CM_USART_TypeDef *USARTx)
+{
+    DDL_ASSERT(IS_USART_UNIT(USARTx));
+
+    return (READ_REG32(USARTx->CR3) & USART_CR3_CTSE) ?
+        USART_HW_FLOWCTRL_CTS: USART_HW_FLOWCTRL_RTS;
 }
 
 /**

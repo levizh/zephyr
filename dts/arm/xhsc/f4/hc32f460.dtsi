@@ -146,6 +146,41 @@
 							  "extint12", "extint13", "extint14", "extint15";
 			status = "okay";
 		};
+
+		usart1: serial@4001d000 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x4001d000 0x400>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "USART_1";
+		};
+
+		usart2: serial@4001d400 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x4001d400 0x400>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "USART_2";
+		};
+		usart3: serial@40021000 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x40021000 0x400>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "USART_3";
+		};
+		usart4: serial@40021400 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x40021400 0x400>;
+			label = "USART_4";
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART4_RXERR_IRQ_NUM   HC32_UART4_RXERR_IRQ_PRIO   INT_SRC_USART4_EI>,
+						 <HC32_UART4_RX_IRQ_NUM      HC32_UART4_RX_IRQ_PRIO      INT_SRC_USART4_RI>,
+						 <HC32_UART4_TX_IRQ_NUM      HC32_UART4_TX_IRQ_PRIO      INT_SRC_USART4_TI>,
+						 <HC32_UART4_TX_CPLT_IRQ_NUM HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>,
+						 <HC32_UART4_RXTO_IRQ_NUM    HC32_UART4_RXTO_IRQ_PRIO    INT_SRC_USART4_RTO>;
+			interrupt-names = "ei", "ri", "ti", "tci", "rto";
+		};
 	};
 };
 

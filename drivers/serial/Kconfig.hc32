@@ -1,0 +1,41 @@
+# license to be added
+
+menuconfig UART_HC32
+	bool "HC32 MCU serial driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select HC32_LL_USART
+	depends on SOC_FAMILY_HC32
+	help
+	  This option enables the UART driver for HC32 family of
+	  processors.
+	  Set y if you wish to use serial port on HC32 MCU.
+
+if UART_HC32
+
+config UART_1
+	bool "Enable HC32 USART1 Port"
+	help
+	  Enable support for USART1 port in the driver.
+	  Set y here if you want to use USART1 device.
+
+config UART_2
+	bool "Enable HC32 USART2 Port"
+	help
+	  Enable support for USART2 port in the driver.
+	  Set y here if you want to use USART2 device.
+
+config UART_3
+	bool "Enable HC32 USART3 Port"
+	help
+	  Enable support for USART3 port in the driver.
+	  Set y here if you want to use USART3 device.
+
+config UART_4
+	bool "Enable HC32 U(S)ART4 Port"
+	help
+	  Enable support for U(S)ART4 port in the driver.
+	  Set y here if you want to use U(S)ART4 device.
+
+
+endif # UART_HC32

@@ -1,0 +1,32 @@
+---
+title: HC32 USART
+version: 0.1
+
+description: >
+    This binding gives a base representation of the HC32 USART
+
+inherits:
+    !include uart.yaml
+
+properties:
+    compatible:
+      constraint: "xhsc,hc32-usart"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      category: optional
+      type: array
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      category: optional
+      type: stringlist
+      description: names of required interrupts
+      generation: define
+...

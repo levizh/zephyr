@@ -13,7 +13,6 @@ config INTC_HC32
 
 config INTC_EXTINT_HC32
 	bool "External Interrupt Controller (EXTINT) Driver for HC32 family of MCUs"
-	default y
 	default y if SOC_FAMILY_HC32
 	select HC32_LL_INTERRUPTS
 	help

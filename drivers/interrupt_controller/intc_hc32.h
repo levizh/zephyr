@@ -23,7 +23,7 @@ enum hc32_extint_trigger {
 typedef void (*hc32_extint_callback_t)(int pin, void *user);
 
 /* extint config */
-void hc32_extint_enable(int port, int pin);
+int  hc32_extint_enable(int port, int pin);
 void hc32_extint_disable(int port, int pin);
 void hc32_extint_trigger(int pin, int trigger);
 int  hc32_extint_set_callback(int pin, hc32_extint_callback_t cb, void *user);

@@ -172,6 +172,7 @@
 		usart4: serial@40021400 {
 			compatible = "xhsc,hc32-usart";
 			reg = <0x40021400 0x400>;
+			status = "disabled";
 			label = "USART_4";
 			interrupt-parent = <&intc>;
 			interrupts = <HC32_UART4_RXERR_IRQ_NUM   HC32_UART4_RXERR_IRQ_PRIO   INT_SRC_USART4_EI>,

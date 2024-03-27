@@ -6,13 +6,27 @@
 #include <init.h>
 #include <uart.h>
 #include <clock_control.h>
+#include <interrupt_controller/intc_hc32.h>
 
 #include <linker/sections.h>
 
-#include "hc32_ll_usart.h"
-/* will be removed after clock and pinctrl supported */
-#include "hc32_ll_fcg.h"
-#include "hc32_ll_gpio.h"
+#if CONFIG_UART_INTERRUPT_DRIVEN
+enum UART_TYPE{
+    UART_INT_IDX_EI,
+    UART_INT_IDX_RI,
+    UART_INT_IDX_TI,
+    UART_INT_IDX_TCI,
+    UART_INT_IDX_RTO,
+    UART_INT_NUM
+};
+#endif /* UART_INTERRUPT_DRIVEN */
+
+struct hc32_usart_cb_data {
+    /** Callback function */
+    uart_irq_callback_user_data_t user_cb;
+    /** User data. */
+    void *user_data;
+};
 
 /* device config */
 struct uart_hc32_config {
@@ -28,8 +42,7 @@ struct uart_hc32_data {
 	/* clock device */
 	struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_user_data_t user_cb;
-	void *user_data;
+	struct hc32_usart_cb_data cb[UART_INT_NUM];
 #endif
 };
 
@@ -42,8 +55,6 @@ struct uart_hc32_data {
 
 #define DEV_USART_BASE(dev)												\
 	((CM_USART_TypeDef *)(DEV_USART_CFG(dev)->base))
-
-#define TIMEOUT 1000
 
 static inline void uart_hc32_set_baudrate(struct device *dev,
 					 uint32_t baud_rate)
@@ -323,9 +334,10 @@ static int uart_hc32_fifo_fill(struct device *dev, const u8_t *tx_data,
 		return num_tx;
 	}
 
-	while ((size - num_tx > 0) && USART_GetStatus(USARTx)) {
+	while ((size - num_tx > 0) &&
+		USART_GetStatus(USARTx, USART_FLAG_TX_EMPTY)) {
 		/* Send a character (8bit , parity none) */
-		uart_hc32_poll_out(USARTx, tx_data[num_tx++]);
+		uart_hc32_poll_out(dev, tx_data[num_tx++]);
 	}
 
 	return num_tx;
@@ -340,7 +352,7 @@ static int uart_hc32_fifo_read(struct device *dev, u8_t *rx_data,
 
 	while ((size - num_rx > 0) && USART_GetStatus(USARTx, USART_FLAG_RX_FULL)) {
 		/* Receive a character (8bit , parity none) */
-		ret = uart_hc32_poll_in(USARTx, rx_data + num_rx++);
+		ret = uart_hc32_poll_in(dev, rx_data + num_rx++);
 		if (0 != ret) {
 			return ret;
 		}
@@ -429,23 +441,31 @@ static int uart_hc32_irq_update(struct device *dev)
 	return 1;
 }
 
+/*
+  user may use void *user_data = x to specify irq type, the x may be:
+  0：usart_hc32f4_rx_error_isr
+  1：usart_hc32f4_rx_full_isr
+  2：usart_hc32f4_tx_empty_isr
+  3：usart_hc32f4_tx_complete_isr
+  4：usart_hc32f4_rx_timeout_isr
+  others or user_data = NULL：set cb for all interrupt handlers
+*/
 static void uart_hc32_irq_callback_set(struct device *dev,
 					uart_irq_callback_user_data_t cb,
-					void *cb_data)
+					void *user_data)
 {
+	uint32_t i;
 	struct uart_hc32_data *data = DEV_USART_DATA(dev);
 
-	data->user_cb = cb;
-	data->user_data = cb_data;
-}
-
-static void uart_hc32_isr(void *arg)
-{
-	struct device *dev = arg;
-	struct uart_hc32_data *data = DEV_USART_DATA(dev);
-
-	if (data->user_cb) {
-		data->user_cb(data->user_data);
+	if ((user_data == NULL) || (*(uint32_t *)user_data >= UART_INT_NUM)) {
+		for (i = 0; i< UART_INT_NUM; i++) {
+			data->cb[i].user_cb = cb;
+			data->cb[i].user_data = user_data;
+		}
+	} else {
+		i = *(uint32_t *)user_data;
+		data->cb[i].user_cb = cb;
+		data->cb[i].user_data = user_data;
 	}
 }
 
@@ -551,51 +571,121 @@ static int uart_hc32_init(struct device *dev)
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	config->uart_cfg.irq_config_func(dev);
+	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	return 0;
 }
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	#define HC32_UART_IRQ_HANDLER_DECL(index)							\
-		static void uart_hc32_irq_config_func_##index(struct device *dev)
-	#define HC32_UART_IRQ_HANDLER_FUNC(index)							\
-		.irq_config_func = uart_hc32_irq_config_func_##index,
-	#define HC32_UART_IRQ_HANDLER(index)								\
-	static void uart_hc32_irq_config_func_##index(struct device *dev)	\
-	{																	\
-		IRQ_CONNECT(DT_XHSC_HC32_USART_##index##_IRQ_##index,			\
-			DT_XHSC_HC32_USART_##index##_IRQ_##index##_PRIORITY,		\
-			uart_hc32_isr, DEVICE_GET(uart_hc32_##index),				\
-			0);															\
-		irq_enable(DT_XHSC_HC32_USART_##index##_IRQ_##index);			\
-	}
-#else
-	#define HC32_UART_IRQ_HANDLER_DECL(index)
-	#define HC32_UART_IRQ_HANDLER_FUNC(index)
-	#define HC32_UART_IRQ_HANDLER(index)
-#endif
 
-#define HC32_UART_INIT(index)											\
-HC32_UART_IRQ_HANDLER_DECL(index);										\
-	static const struct uart_hc32_config uart_hc32_cfg_##index = {		\
-		.uart_cfg = {													\
-			.base = (u8_t *)DT_XHSC_HC32_USART_##index##_BASE_ADDRESS,	\
-			HC32_UART_IRQ_HANDLER_FUNC(index)							\
-		},																\
-	};																	\
-																		\
-	static struct uart_hc32_data uart_hc32_data_##index = {				\
-		.baud_rate = DT_XHSC_HC32_USART_##index##_CURRENT_SPEED			\
-	};																	\
-DEVICE_AND_API_INIT(uart_hc32_##index, 									\
-		DT_XHSC_HC32_USART_##index##_LABEL,								\
-		&uart_hc32_init,												\
-		&uart_hc32_data_##index, &uart_hc32_cfg_##index,				\
-		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
-		&uart_hc32_driver_api);											\
-HC32_UART_IRQ_HANDLER(index)
+#define USART_IRQ_ISR_CONFIG(isr_name_prefix, isr_idx, index)				\
+	IRQ_CONNECT(DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx,					\
+		DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx##_PRIORITY,				\
+		isr_name_prefix##_##index,											\
+		DEVICE_GET(uart_hc32_##index),										\
+		0);																	\
+	hc32_intc_irq_signin(													\
+		DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx,							\
+		DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx##_INT_SRC);				\
+	irq_enable(DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx);
+
+#define HC32_UART_IRQ_HANDLER_DECL(index)									\
+	static void usart_hc32_isr_func_cfg_##index(struct device *dev);		\
+	static void	usart_hc32_rx_error_isr_##index(const struct device *dev);	\
+	static void usart_hc32_rx_full_isr_##index(const struct device *dev);	\
+	static void usart_hc32_tx_empty_isr_##index(const struct device *dev);	\
+	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);\
+	static void	usart_hc32_rx_timeout_isr_##index(const struct device *dev)
+
+#define HC32_UART_ISR_DEF(index)											\
+	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
+	{																		\
+		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
+																			\
+		if (data->cb[UART_INT_IDX_EI].user_cb) {							\
+			data->cb[UART_INT_IDX_EI].user_cb( 								\
+				data->cb[UART_INT_IDX_EI].user_data);						\
+		}																	\
+	}																		\
+																			\
+	static void usart_hc32_rx_full_isr_##index(const struct device *dev)	\
+	{																		\
+		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
+																			\
+		if (data->cb[UART_INT_IDX_RI].user_cb) {							\
+			data->cb[UART_INT_IDX_RI].user_cb( 								\
+			data->cb[UART_INT_IDX_RI].user_data);							\
+		}																	\
+	}																		\
+																			\
+	static void 															\
+		usart_hc32_tx_empty_isr_##index(const struct device *dev)			\
+	{																		\
+		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
+																			\
+		if (data->cb[UART_INT_IDX_TI].user_cb) {							\
+			data->cb[UART_INT_IDX_TI].user_cb( 								\
+				data->cb[UART_INT_IDX_TI].user_data);						\
+		}																	\
+	}																		\
+																			\
+	static void usart_hc32_tx_complete_isr_##index(const struct device *dev)\
+	{																		\
+		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
+																			\
+		if (data->cb[UART_INT_IDX_TCI].user_cb) {							\
+			data->cb[UART_INT_IDX_TCI].user_cb( 							\
+				data->cb[UART_INT_IDX_TCI].user_data);						\
+		}																	\
+	}																		\
+																			\
+	static void usart_hc32_rx_timeout_isr_##index(const struct device *dev)	\
+		{																	\
+			struct uart_hc32_data *const data = DEV_USART_DATA(dev);		\
+																			\
+			if (data->cb[UART_INT_IDX_RTO].user_cb) {						\
+				data->cb[UART_INT_IDX_RTO].user_cb( 						\
+					data->cb[UART_INT_IDX_RTO].user_data);					\
+			}																\
+		}																	\
+																			\
+	static void usart_hc32_isr_func_cfg_##index(struct device *dev)			\
+	{																		\
+		USART_IRQ_ISR_CONFIG(usart_hc32_rx_error_isr, 0, index)				\
+		USART_IRQ_ISR_CONFIG(usart_hc32_rx_full_isr, 1, index)				\
+		USART_IRQ_ISR_CONFIG(usart_hc32_tx_empty_isr, 2, index)				\
+		USART_IRQ_ISR_CONFIG(usart_hc32_tx_complete_isr, 3, index)			\
+		USART_IRQ_ISR_CONFIG(usart_hc32_rx_timeout_isr, 4, index)			\
+	}
+
+#define HC32_UART_ISR_FUN_CONFIG(index)										\
+	.irq_config_func = usart_hc32_isr_func_cfg_##index,
+
+#else  /* CONFIG_UART_INTERRUPT_DRIVEN */
+#define HC32_UART_IRQ_HANDLER_DECL(index)
+#define HC32_UART_ISR_DEF(index)
+#define HC32_UART_ISR_FUN_CONFIG(index)
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#define HC32_UART_INIT(index)												\
+HC32_UART_IRQ_HANDLER_DECL(index);											\
+static const struct uart_hc32_config uart_hc32_cfg_##index = {				\
+	.uart_cfg = {															\
+		.base = (u8_t *)DT_XHSC_HC32_USART_##index##_BASE_ADDRESS,			\
+		HC32_UART_ISR_FUN_CONFIG(index)										\
+	},																		\
+};																			\
+static struct uart_hc32_data uart_hc32_data_##index = {						\
+	.baud_rate = DT_XHSC_HC32_USART_##index##_CURRENT_SPEED					\
+};																			\
+DEVICE_AND_API_INIT(uart_hc32_##index, 										\
+		DT_XHSC_HC32_USART_##index##_LABEL,									\
+		&uart_hc32_init,													\
+		&uart_hc32_data_##index, &uart_hc32_cfg_##index,					\
+		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					\
+		&uart_hc32_driver_api);												\
+HC32_UART_ISR_DEF(index)
 
 #ifdef CONFIG_UART_1
 HC32_UART_INIT(USART_1)

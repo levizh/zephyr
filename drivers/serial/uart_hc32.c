@@ -105,6 +105,14 @@ static inline uint32_t uart_hc32_get_hwctrl(const struct device *dev)
 	return USART_GetHWFlowControl(config->usart);
 }
 
+static inline void uart_hc32_set_baudrate(const struct device *dev,
+					 uint32_t baud_rate)
+{
+	const struct uart_hc32_config *config = dev->config;
+
+	(void)USART_SetBaudrate(config->usart, baud_rate, NULL);
+}
+
 static inline uint32_t uart_hc32_cfg2ll_parity(enum uart_config_parity parity)
 {
 	switch (parity) {
@@ -224,7 +232,7 @@ static inline enum uart_config_flow_control uart_hc32_ll2cfg_hwctrl(uint32_t fc)
 static int uart_hc32_configure(const struct device *dev,
 				const struct uart_config *cfg)
 {
-	// const struct uart_hc32_config *config = dev->config;
+	const struct uart_hc32_config *config = dev->config;
 	struct uart_hc32_data *data = dev->data;
 	struct uart_config *uart_cfg = data->uart_cfg;
 	const uint32_t parity = uart_hc32_cfg2ll_parity(cfg->parity);
@@ -264,12 +272,12 @@ static int uart_hc32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Upon successful configuration, persist the syscall-passed
-	 * uart_config.
-	 * This allows restoring it, should the device return from a low-power
-	 * mode in which register contents are lost.
-	 */
-	*uart_cfg = *cfg;
+	USART_FuncCmd(config->usart, USART_TX | USART_RX, DISABLE);
+	uart_hc32_set_parity(dev, parity);
+	uart_hc32_set_stopbits(dev, stopbits);
+	uart_hc32_set_databits(dev, databits);
+	uart_hc32_set_baudrate(dev, uart_cfg->baudrate);
+	USART_FuncCmd(config->usart, USART_TX | USART_RX, ENABLE);
 
 	return 0;
 }

@@ -28,7 +28,11 @@
 #include <pinmux.h>
 #include <ztest.h>
 
+#if defined(CONFIG_BOARD_HC32F460_EVB)
+#define PINMUX_NAME CONFIG_PINMUX_HC32_PORTB_NAME
+#else
 #define PINMUX_NAME CONFIG_PINMUX_NAME
+#endif
 
 #if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD)
 #define GPIO_DEV_NAME DT_GPIO_QMSI_0_NAME
@@ -55,6 +59,11 @@
 #define GPIO_OUT 8  /* DIO7 */
 #define GPIO_IN 9  /* DIO8 */
 #define PIN_IN 9  /* DIO8 */
+#elif defined(CONFIG_BOARD_HC32F460_EVB)
+#define GPIO_DEV_NAME DT_XHSC_HC32_GPIO_1_LABEL
+#define GPIO_OUT 6  /* DIO6 */
+#define GPIO_IN 7  /* DIO7 */
+#define PIN_IN 10  /* DIO10 */
 #endif
 
 #define MAX_INT_CNT 10
@@ -106,12 +115,21 @@ static int test_gpio(u32_t pin, u32_t func)
 	}
 
 	/* 2. Configure PIN_IN and set callback */
+#if defined(CONFIG_BOARD_HC32F460_EVB)
 	if (gpio_pin_configure(gpio_dev, GPIO_IN,
-				GPIO_DIR_IN | GPIO_INT | GPIO_INT_DEBOUNCE |
-				GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH)) {
+			       GPIO_DIR_IN | GPIO_INT | GPIO_INT_DEBOUNCE |
+			       GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH)) {
 		TC_PRINT("PIN_IN configure fail\n");
 		return TC_FAIL;
 	}
+#else
+	if (gpio_pin_configure(gpio_dev, GPIO_IN,
+			       GPIO_DIR_IN | GPIO_INT | GPIO_INT_DEBOUNCE |
+			       GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH)) {
+		TC_PRINT("PIN_IN configure fail\n");
+		return TC_FAIL;
+	}
+#endif
 
 	gpio_init_callback(&gpio_cb, callback, BIT(GPIO_IN));
 	if (gpio_add_callback(gpio_dev, &gpio_cb)) {
@@ -146,7 +164,14 @@ static int test_gpio(u32_t pin, u32_t func)
 	}
 
 	k_sleep(1000);
-
+#if defined(CONFIG_BOARD_HC32F460_EVB)
+	for (uint8_t i = 0; i < MAX_INT_CNT; i++) {
+		gpio_pin_write(gpio_dev, GPIO_OUT, 0);
+		k_sleep(100);
+		gpio_pin_write(gpio_dev, GPIO_OUT, 1);
+		k_sleep(100);
+	}
+#endif
 	if (cb_triggered) {
 		TC_PRINT("GPIO callback is triggered\n");
 		return TC_PASS;
@@ -159,5 +184,9 @@ static int test_gpio(u32_t pin, u32_t func)
 void test_pinmux_gpio(void)
 {
 	zassert_true(test_gpio(PIN_IN, PINMUX_FUNC_A) == TC_PASS, NULL);
+#if defined(CONFIG_BOARD_HC32F460_EVB)
+	zassert_true(test_gpio(PIN_IN, PINMUX_FUNC_B) == TC_PASS, NULL);
+#else
 	zassert_true(test_gpio(PIN_IN, PINMUX_FUNC_B) == TC_FAIL, NULL);
+#endif
 }

@@ -10,3 +10,43 @@ menuconfig PINMUX_HC32
 	depends on GPIO_HC32
 	help
 	  Enable driver for hc32f4 series Pin multiplexer.
+
+if PINMUX_HC32
+
+config PINMUX_HC32_PORTA_NAME
+	string "Pinmux Port A driver name"
+	default "porta"
+
+config PINMUX_HC32_PORTB_NAME
+	string "Pinmux Port B driver name"
+	default "portb"
+
+config PINMUX_HC32_PORTC_NAME
+	string "Pinmux Port C driver name"
+	default "portc"
+
+config PINMUX_HC32_PORTD_NAME
+	string "Pinmux Port D driver name"
+	default "portd"
+
+config PINMUX_HC32_PORTE_NAME
+	string "Pinmux Port E driver name"
+	default "porte"
+
+config PINMUX_HC32_PORTF_NAME
+	string "Pinmux Port F driver name"
+	default "portf"
+
+config PINMUX_HC32_PORTG_NAME
+	string "Pinmux Port G driver name"
+	default "portg"
+
+config PINMUX_HC32_PORTH_NAME
+	string "Pinmux Port H driver name"
+	default "porth"
+
+config PINMUX_HC32_PORTI_NAME
+	string "Pinmux Port I driver name"
+	default "porti"
+
+endif # PINMUX_HC32

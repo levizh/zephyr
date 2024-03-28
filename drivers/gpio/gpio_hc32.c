@@ -84,6 +84,7 @@ static int gpio_hc32_config(struct device *dev, int access_op,
 	}
 
 	if ((flags & GPIO_INT) != 0) {
+		hc32_extint_disable(port, pin);
 		stc_gpio_init.u16ExtInt = PIN_EXTINT_OFF;
 		stc_extint_init_t stcExtIntInit;
 		EXTINT_StructInit(&stcExtIntInit);

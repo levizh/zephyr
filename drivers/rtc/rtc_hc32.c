@@ -13,6 +13,7 @@
 #include <zephyr/drivers/interrupt_controller/intc_hc32.h>
 #include <zephyr/drivers/clock_control/hc32_clock_control.h>
 #include <zephyr/kernel.h>
+#include <math.h>
 #include "hc32_ll.h"
 
 LOG_MODULE_REGISTER(rtc_hc32, CONFIG_RTC_LOG_LEVEL);
@@ -22,6 +23,15 @@ LOG_MODULE_REGISTER(rtc_hc32, CONFIG_RTC_LOG_LEVEL);
 #define RTC_YEAR_REF (2000)
 /* struct tm start time:   1st, Jan, 1900 */
 #define TM_YEAR_REF  (1900)
+
+/* ppb = 1000*ppm */
+#define PPB_TO_PPM(ppb)         (ppb / 1000.0F)
+#define PPM_TO_PPB(ppm)         (ppm * 1000.0F)
+
+
+#define CAL_RESOLUTION_IN_PPB   (960)
+#define CAL_LIMIT_IN_PPB_LOW    (-(275500 + CAL_RESOLUTION_IN_PPB))
+#define CAL_LIMIT_IN_PPB_HIGHT  (212900 + CAL_RESOLUTION_IN_PPB)
 
 
 /* RTC alarm time fields supported by the hc32 */
@@ -360,19 +370,74 @@ static int rtc_hc32_update_set_callback(const struct device *dev,
 static int rtc_hc32_set_calibration(const struct device *dev,
 				    int32_t calibration)
 {
-	ARG_UNUSED(dev);
+	struct rtc_hc32_data *data = dev->data;
+	float fPPB, fPPM;
+	uint32_t u32Temp;
+	uint16_t u16CompRegVal;
+	int32_t i32Result = 0;
 
-	LOG_ERR("rtc calibration not support now.");
-	return -ENOTSUP;
+	fPPB = calibration;
+	if ((fPPB < CAL_LIMIT_IN_PPB_LOW) || (fPPB > CAL_LIMIT_IN_PPB_HIGHT)) {
+		return -EINVAL;
+	}
+
+	fPPB *= 32768 * 32;
+
+	fPPM = PPB_TO_PPM(fPPB);
+
+	i32Result = fPPM / 1000000;
+	if (fPPM > 0) {
+		i32Result += 0x20;
+	} else {
+		u32Temp = fabs(i32Result);
+		u32Temp = ~u32Temp + 1U;
+		u32Temp &= 0x1FFU;
+		u32Temp += 0x20U;
+		i32Result = u32Temp;
+
+	}
+	u16CompRegVal = i32Result & 0x1FFU;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	RTC_SetClockCompenValue(u16CompRegVal);
+
+	RTC_ClockCompenCmd(ENABLE);
+
+	k_mutex_unlock(&data->lock);
+
+	return 0;
 }
 
 static int rtc_hc32_get_calibration(const struct device *dev,
 				    int32_t *calibration)
 {
-	ARG_UNUSED(dev);
+	struct rtc_hc32_data *data = dev->data;
+	uint16_t u16CompRegVal;
+	float fPPM;
 
-	LOG_ERR("rtc calibration not support now.");
-	return -ENOTSUP;
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	u16CompRegVal = READ_REG32(bCM_RTC->ERRCRH_b.COMP8);
+	u16CompRegVal = u16CompRegVal << 8U;
+	u16CompRegVal |= READ_REG8(CM_RTC->ERRCRL);
+
+	k_mutex_unlock(&data->lock);
+
+	if ((u16CompRegVal > 0xFFU) || (u16CompRegVal < 0x20U)) {
+		u16CompRegVal -= 0x20U;
+		u16CompRegVal -= 1U;
+		u16CompRegVal = ~u16CompRegVal;
+		u16CompRegVal &= 0x1FFU;
+		fPPM = -(float)u16CompRegVal * 1000000 / 32768 / 32;
+	} else {
+		u16CompRegVal -= 0x20U;
+		fPPM = (float)u16CompRegVal * 1000000 / 32768 / 32;
+	}
+
+	*calibration = PPM_TO_PPB(fPPM);
+
+	return 0;
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 

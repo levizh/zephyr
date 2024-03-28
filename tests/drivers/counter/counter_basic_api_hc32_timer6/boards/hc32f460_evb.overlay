@@ -1,0 +1,24 @@
+/* Copyright (c) 2021 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer61 {
+        status = "okay";
+        counter {
+                status = "okay";
+        };
+};
+
+// &timer62 {
+//         status = "okay";
+//         counter {
+//                 status = "okay";
+//         };
+// };
+
+// &timer63 {
+//         status = "okay";
+//         counter {
+//                 status = "okay";
+//         };
+// };

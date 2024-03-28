@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+test_dma0: &dma2 {
+    status = "okay";
+};
+// test_dma1: &dma2 {
+//     status = "okay";
+// };

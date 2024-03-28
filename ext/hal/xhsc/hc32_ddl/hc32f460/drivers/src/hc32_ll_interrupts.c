@@ -400,6 +400,7 @@ int32_t NMI_Init(const stc_nmi_init_t *pstcNmiInit)
         DDL_ASSERT(IS_NMI_FAE(pstcNmiInit->u32Filter));
         DDL_ASSERT(IS_NMI_FACLK(pstcNmiInit->u32FilterClock));
         u32NMICR |= pstcNmiInit->u32Edge | pstcNmiInit->u32Filter | pstcNmiInit->u32FilterClock;
+        CLR_REG32_BIT(CM_INTC->NMICR, INTC_NMICR_NFEN);
         WRITE_REG32(CM_INTC->NMICR, u32NMICR);
     }
     return i32Ret;
@@ -480,6 +481,7 @@ int32_t EXTINT_Init(uint32_t u32Ch, const stc_extint_init_t *pstcExtIntInit)
                 EIRQCRVal = pstcExtIntInit->u32Filter | pstcExtIntInit->u32FilterClock  |   \
                             pstcExtIntInit->u32Edge;
                 EIRQCRx = (__IO uint32_t *)((uint32_t)&CM_INTC->EIRQCR0 + 4UL * u8ExtIntPos);
+                CLR_REG32_BIT(*EIRQCRx, INTC_EIRQCR_EFEN);
                 WRITE_REG32(*EIRQCRx, EIRQCRVal);
             }
         }

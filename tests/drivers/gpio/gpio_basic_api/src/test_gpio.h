@@ -52,6 +52,10 @@
 #define DEV_NAME DT_GPIO_P0_DEV_NAME
 #define PIN_OUT 12  /* P0.12 */
 #define PIN_IN 13  /* P0.13 */
+#elif defined(CONFIG_BOARD_HC32F460_EVB)
+#define DEV_NAME DT_XHSC_HC32_GPIO_3_LABEL
+#define PIN_OUT 12  /* P0.12 */
+#define PIN_IN  13  /* P0.13 */
 #else
 #error Unsupported board
 #endif

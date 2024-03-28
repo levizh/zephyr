@@ -5,6 +5,8 @@
 
 menuconfig PINMUX_HC32
 	bool "HC32 Pin multiplexer driver"
+	default y if PINMUX
 	depends on SOC_SERIES_HC32F4
+	depends on GPIO_HC32
 	help
 	  Enable driver for hc32f4 series Pin multiplexer.

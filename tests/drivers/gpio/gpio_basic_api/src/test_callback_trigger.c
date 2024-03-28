@@ -126,9 +126,16 @@ void test_gpio_callback_edge_low(void)
 
 void test_gpio_callback_level_high(void)
 {
+	#if defined(CONFIG_BOARD_HC32F460_EVB)
+	/* Not support High level trigger */
+	zassert_true(
+		test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH) == TC_FAIL,
+		NULL);
+	#else
 	zassert_true(
 		test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH) == TC_PASS,
 		NULL);
+	#endif
 }
 
 void test_gpio_callback_level_low(void)

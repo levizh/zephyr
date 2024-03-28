@@ -7,8 +7,10 @@
 
 menuconfig GPIO_HC32
 	bool "GPIO Driver for HC32 MCUs"
+	default y if GPIO
 	depends on SOC_FAMILY_HC32
 	select HAS_DTS_GPIO
 	select HC32_LL_GPIO
+	select HC32_LL_INTERRUPTS
 	help
 	  Enable GPIO driver for HC32 line of MCUs

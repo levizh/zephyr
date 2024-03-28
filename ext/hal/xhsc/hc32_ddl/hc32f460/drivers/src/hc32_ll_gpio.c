@@ -667,6 +667,8 @@ void GPIO_ExtIntCmd(uint8_t u8Port, uint16_t u16Pin, en_functional_state_t enNew
 {
     __IO uint16_t *PCRx;
     uint8_t u8PinPos;
+    __IO uint32_t *EIRQCRx;
+    uint32_t EIRQ_Value;
 
     /* Parameter validity checking */
     DDL_ASSERT(IS_GPIO_PORT(u8Port));
@@ -675,8 +677,13 @@ void GPIO_ExtIntCmd(uint8_t u8Port, uint16_t u16Pin, en_functional_state_t enNew
     for (u8PinPos = 0U; u8PinPos < GPIO_PIN_NUM_MAX; u8PinPos++) {
         if ((u16Pin & 1U) != 0U) {
             PCRx = &PCR_REG(u8Port, u8PinPos);
+            EIRQCRx = (__IO uint32_t *)((uint32_t)&CM_INTC->EIRQCR0 + 4UL * u8PinPos);
             if (ENABLE == enNewState) {
+                EIRQ_Value = (uint32_t) * EIRQCRx;
+                /*  disable digital filter A */
+                CLR_REG32_BIT(*EIRQCRx, INTC_EIRQCR_EFEN);
                 SET_REG16_BIT(*PCRx, GPIO_PCR_INTE);
+                WRITE_REG32(*EIRQCRx, EIRQ_Value);
             } else {
                 CLR_REG16_BIT(*PCRx, GPIO_PCR_INTE);
             }

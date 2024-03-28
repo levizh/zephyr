@@ -17,32 +17,4 @@ config UART_HC32
 
 endif #SERIAL
 
-if GPIO
-
-config GPIO_HC32
-	bool
-	default y
-
-config GPIO_HC32_PORTA
-	bool
-	default y
-
-config GPIO_HC32_PORTB
-	bool
-	default y
-
-config GPIO_HC32_PORTC
-	bool
-	default y
-
-endif #GPIO
-
-if PINMUX
-
-config PINMUX_HC32
-	bool
-	default n
-
-endif #PINMUX
-
 endif # SOC_FAMILY_HC32

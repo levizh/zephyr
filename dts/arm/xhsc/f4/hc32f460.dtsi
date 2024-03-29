@@ -701,7 +701,7 @@
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
 			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
 			interrupt-parent = <&intc>;
-			interrupt-names = "EOCA", "EOCB";
+			interrupt-names = "eoca", "eocb";
 			interrupts = <HC32_ADC1_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC1_EOCA>,
 						 <HC32_ADC1_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC1_EOCB>;
 			#io-channel-cells = <1>;
@@ -714,7 +714,7 @@
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
 			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
 			interrupt-parent = <&intc>;
-			interrupt-names = "EOCA", "EOCB";
+			interrupt-names = "eoca", "eocb";
 			interrupts = <HC32_ADC2_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCA>,
 						 <HC32_ADC2_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCB>;
 			#io-channel-cells = <1>;

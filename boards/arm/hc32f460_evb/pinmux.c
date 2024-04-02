@@ -11,24 +11,22 @@ static int hc32_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_HC32_PORTA_NAME
+#ifdef CONFIG_PINMUX_HC32
 	struct device *porta =
 		device_get_binding(CONFIG_PINMUX_HC32_PORTA_NAME);
-#endif
-#ifdef CONFIG_PINMUX_HC32_PORTB_NAME
+
 	struct device *portb =
 		device_get_binding(CONFIG_PINMUX_HC32_PORTB_NAME);
-#endif
-#ifdef CONFIG_PINMUX_HC32_PORTC_NAME
+
 	struct device *portc =
 		device_get_binding(CONFIG_PINMUX_HC32_PORTC_NAME);
-#endif
 
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(porta, 8, 43); /* SCK */
 	pinmux_pin_set(portb, 0, 40); /* MOSI */
 	pinmux_pin_set(portc, 5, 41); /* MISO */
 
+#endif
 	return 0;
 }
 

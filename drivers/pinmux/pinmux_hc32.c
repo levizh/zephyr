@@ -111,127 +111,41 @@ static int pinmux_initialize(struct device *device)
 /* Initialize using PRE_KERNEL_1 priority so that GPIO can use the pin
  * mux driver.
  */
+#define PINMUX_HC32_INIT(__SUFFIX, __suffix, num)                                   \
+static const struct pinmux_hc32_config pinmux_hc32_port##__suffix##_config = { \
+	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * num,        \
+	.port = GPIO_PORT_##__SUFFIX,                                            \
+};\
+DEVICE_AND_API_INIT(pinmux_port##__suffix, CONFIG_PINMUX_HC32_PORT##__SUFFIX##_NAME,\
+		    &pinmux_initialize, NULL, &pinmux_hc32_port##__suffix##_config,       \
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                \
+		    &api_funcs);
+
+
 /* GPIOA */
-#ifdef CONFIG_PINMUX_HC32_PORTA_NAME
-static const struct pinmux_hc32_config pinmux_hc32_porta_config = {
-	.base = PINMUX_GPIO_BASE,
-	.port = GPIO_PORT_A,
-};
-DEVICE_AND_API_INIT(pinmux_porta, CONFIG_PINMUX_HC32_PORTA_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_porta_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTB_NAME
+PINMUX_HC32_INIT(A, a, 0);
 /* GPIOB */
-static const struct pinmux_hc32_config pinmux_hc32_portb_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET,
-	.port = GPIO_PORT_B,
-};
-DEVICE_AND_API_INIT(pinmux_portb, CONFIG_PINMUX_HC32_PORTB_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_portb_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTC_NAME
+PINMUX_HC32_INIT(B, b, 1);
 /* GPIOC */
-static const struct pinmux_hc32_config pinmux_hc32_portc_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 2u,
-	.port = GPIO_PORT_C,
-};
-DEVICE_AND_API_INIT(pinmux_portc, CONFIG_PINMUX_HC32_PORTC_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_portc_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTD_NAME
+PINMUX_HC32_INIT(C, c, 2);
 /* GPIOD */
-static const struct pinmux_hc32_config pinmux_hc32_portd_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 3u,
-	.port = GPIO_PORT_D,
-};
-DEVICE_AND_API_INIT(pinmux_portd, CONFIG_PINMUX_HC32_PORTD_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_portd_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTE_NAME
+PINMUX_HC32_INIT(D, d, 3);
 /* GPIOE */
-static const struct pinmux_hc32_config pinmux_hc32_porte_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 4u,
-	.port = GPIO_PORT_E,
-};
-DEVICE_AND_API_INIT(pinmux_porte, CONFIG_PINMUX_HC32_PORTE_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_porte_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
+PINMUX_HC32_INIT(E, e, 4);
 
 #if defined(CONFIG_SOC_HC32F460)
-#ifdef CONFIG_PINMUX_HC32_PORTH_NAME
 /* GPIOH */
-static const struct pinmux_hc32_config pinmux_hc32_porth_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 5u,
-	.port = GPIO_PORT_H,
-};
-DEVICE_AND_API_INIT(pinmux_porth, CONFIG_PINMUX_HC32_PORTH_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_porth_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
+PINMUX_HC32_INIT(H, h, 5);
 
 #elif defined (CONFIG_SOC_HC32F4A0)
-#ifdef CONFIG_PINMUX_HC32_PORTF_NAME
 /* GPIOF */
-static const struct pinmux_hc32_config pinmux_hc32_portf_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 5u,
-	.port = GPIO_PORT_F,
-};
-DEVICE_AND_API_INIT(pinmux_portf, CONFIG_PINMUX_HC32_PORTF_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_portf_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTG_NAME
+PINMUX_HC32_INIT(F, f ,5);
 /* GPIOG */
-static const struct pinmux_hc32_config pinmux_hc32_portg_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 6u,
-	.port = GPIO_PORT_G,
-};
-DEVICE_AND_API_INIT(pinmux_portg, CONFIG_PINMUX_HC32_PORTG_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_portg_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTH_NAME
+PINMUX_HC32_INIT(G, g, 6);
 /* GPIOH */
-static const struct pinmux_hc32_config pinmux_hc32_porth_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 7u,
-	.port = GPIO_PORT_H,
-};
-DEVICE_AND_API_INIT(pinmux_porth, CONFIG_PINMUX_HC32_PORTH_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_porth_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
-
-#ifdef CONFIG_PINMUX_HC32_PORTI_NAME
+PINMUX_HC32_INIT(H, h, 7);
 /* GPIOI */
-static const struct pinmux_hc32_config pinmux_hc32_porti_config = {
-	.base = PINMUX_GPIO_BASE + PINMUX_GPIO_OFFSET * 8u,
-	.port = GPIO_PORT_I,
-};
-DEVICE_AND_API_INIT(pinmux_porti, CONFIG_PINMUX_HC32_PORTI_NAME,
-		    &pinmux_initialize, NULL, &pinmux_hc32_porti_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &api_funcs);
-#endif
+PINMUX_HC32_INIT(I, i, 8);
 
 #endif /* CONFIG_SOC_HC32F460 */
 

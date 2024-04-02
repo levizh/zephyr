@@ -242,6 +242,13 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		wdt: watchdog@40049000 {
+			compatible = "xhsc,hc32-watchdog";
+			reg = <0x40049000 0x400>;
+			status = "disabled";
+			label = "WDT";
+		};
 	};
 };
 

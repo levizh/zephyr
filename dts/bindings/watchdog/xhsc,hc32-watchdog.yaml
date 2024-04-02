@@ -1,0 +1,26 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+---
+title: HC32 watchdog driver
+version: 0.1
+description: This is a representation of the HC32 watchdog
+
+properties:
+  compatible:
+    type: string
+    category: required
+    description: compatible strings
+    constraint: "xhsc,hc32-watchdog"
+    generation: define
+
+  reg:
+    type: int
+    description: mmio register space
+    generation: define
+    category: required
+
+  label:
+    type: string
+    category: required
+    description: Human readable string describing the device (used by Zephyr for API name)
+    generation: define

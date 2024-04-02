@@ -62,7 +62,9 @@
 #include <ztest.h>
 #include "test_wdt.h"
 
-#ifdef CONFIG_WDT_0_NAME
+#if defined(CONFIG_WDT_HC32)
+#define WDT_DEV_NAME DT_XHSC_HC32_WATCHDOG_0_LABEL
+#elif CONFIG_WDT_0_NAME
 #define WDT_DEV_NAME CONFIG_WDT_0_NAME
 #else
 #define WDT_DEV_NAME DT_WDT_0_NAME
@@ -76,7 +78,7 @@
 
 #ifdef CONFIG_WDT_NRFX
 #define TIMEOUTS                   2
-#elif defined(CONFIG_IWDG_STM32)
+#elif defined(CONFIG_IWDG_STM32) || defined(CONFIG_WDT_HC32)
 #define TIMEOUTS                   0
 #else
 #define TIMEOUTS                   1

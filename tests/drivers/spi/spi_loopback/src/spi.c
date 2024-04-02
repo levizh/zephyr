@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(main);
 #include <spi.h>
 
 #define SPI_DRV_NAME	CONFIG_SPI_LOOPBACK_DRV_NAME
-#define SPI_SLAVE	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER
+#define SPI_SLAVE_NUM	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER
 #define SLOW_FREQ	CONFIG_SPI_LOOPBACK_SLOW_FREQ
 #define FAST_FREQ	CONFIG_SPI_LOOPBACK_FAST_FREQ
 
@@ -58,7 +58,7 @@ struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
-	.slave = SPI_SLAVE,
+	.slave = SPI_SLAVE_NUM,
 	.cs = SPI_CS,
 };
 
@@ -66,7 +66,7 @@ struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
-	.slave = SPI_SLAVE,
+	.slave = SPI_SLAVE_NUM,
 	.cs = SPI_CS,
 };
 
@@ -312,6 +312,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
+
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -326,7 +327,7 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 			      void *unused)
 {
 	int ret;
-
+#ifdef CONFIG_SPI_ASYNC
 	LOG_DBG("Polling...");
 
 	while (1) {
@@ -340,10 +341,13 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 		async_evt->signal->signaled = 0U;
 		async_evt->state = K_POLL_STATE_NOT_READY;
 	}
+#endif
 }
+
 
 static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 {
+#ifdef CONFIG_SPI_ASYNC
 	const struct spi_buf tx_bufs[] = {
 		{
 			.buf = buffer_tx,
@@ -389,6 +393,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 	}
 
 	LOG_INF("Passed");
+#endif
 
 	return 0;
 }

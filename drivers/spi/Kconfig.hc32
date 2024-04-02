@@ -1,0 +1,32 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SPI_HC32
+	bool "HC32 MCU SPI controller driver"
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_SPI
+	select PINMUX_HC32
+	help
+	  Enable SPI support on the HC32 family of processors.
+
+if SPI_HC32
+
+config SPI_HC32_INTERRUPT
+	bool "HC32 MCU SPI Interrupt Support"
+	default y if SPI_ASYNC
+	help
+	  Enable Interrupt support for the SPI Driver of HC32 family.
+
+config SPI_HC32_DMA
+	bool "HC32 MCU SPI DMA Support"
+	depends on DMA
+	select HC32_LL_DMA
+	select DMA_HC32
+	help
+	  Use the DMA for SPI transfer
+	  that enable dma channels in their device tree node.
+	  
+endif # SPI_HC32

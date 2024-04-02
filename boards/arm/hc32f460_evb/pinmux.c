@@ -24,13 +24,10 @@ static int hc32_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_HC32_PORTC_NAME);
 #endif
 
-#ifdef CONFIG_SPI_1
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(porta, 8, 43); /* SCK */
 	pinmux_pin_set(portb, 0, 40); /* MOSI */
 	pinmux_pin_set(portc, 5, 41); /* MISO */
-	pinmux_pin_set(porta, 7, 0);  /* CS */
-#endif
 
 	return 0;
 }

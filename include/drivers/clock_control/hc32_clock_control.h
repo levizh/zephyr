@@ -33,9 +33,9 @@
 
 #define HC32_MODULES_CLOCK_INFO(clk_index, node_id)				\
 	{								\
-	.bus = DT_##node_id##_CLOCK_ID_##clk_index,	\
-	.fcg = DT_##node_id##_CLOCK_CELL1_##clk_index,		\
-	.bits = DT_##node_id##_CLOCK_CELL2_##clk_index		\
+	.bus = DT_##node_id##_CLOCK_BUS_##clk_index,	\
+	.fcg = DT_##node_id##_CLOCK_FCG_##clk_index,		\
+	.bits = DT_##node_id##_CLOCK_BITS_##clk_index		\
 	},
 
 #define NODE_ID_PASTE(compatible, inst)	compatible##_##inst
@@ -50,15 +50,15 @@
  * The above line will generate the below:
  * {
  * 		{
-	* 		.bus = DT_XHSC_HC32_GPIO_3_CLOCK_ID_0,
-	* 		.fcg = DT_XHSC_HC32_GPIO_3__CLOCK_CELL1_0,
-			.bits = DT_XHSC_HC32_GPIO_3__CLOCK_CELL2_0
-		},
-		{
-			.bus = DT_XHSC_HC32_GPIO_3_CLOCK_ID_1,
-	* 		.fcg = DT_XHSC_HC32_GPIO_3__CLOCK_CELL1_1,
-			.bits = DT_XHSC_HC32_GPIO_3__CLOCK_CELL2_1
-		}
+ * 			.bus = DT_XHSC_HC32_GPIO_3_CLOCK_BUS_0,
+ * 			.fcg = DT_XHSC_HC32_GPIO_3_CLOCK_FCG_0,
+ *			.bits = DT_XHSC_HC32_GPIO_3_CLOCK_BITS_0
+ *		},
+ *		{
+ *			.bus = DT_XHSC_HC32_GPIO_3_CLOCK_BUS_1,
+ *			.fcg = DT_XHSC_HC32_GPIO_3_CLOCK_FCG_1,
+ *			.bits = DT_XHSC_HC32_GPIO_3_CLOCK_BITS_1
+ *		}
  * }
  */
 #define HC32_MODULES_CLOCKS(inst,compatible, num)					\

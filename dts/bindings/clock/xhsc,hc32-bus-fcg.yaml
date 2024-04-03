@@ -21,7 +21,7 @@ properties:
       generation: define
       category: required
 
-"cells":
+"#cells":
   - bus
   - fcg
   - bits

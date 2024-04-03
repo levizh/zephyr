@@ -1,6 +1,6 @@
 /**
  *******************************************************************************
- * @file  usb/usb_host_msc/source/hc32f4xx_conf.h
+ * @file  ext/hal/xhsc/hc32_ddl/hc32f460/soc/hc32f4xx_conf.h
  * @brief This file contains HC32 Series Device Driver Library usage management.
  @verbatim
    Change Logs:
@@ -49,11 +49,12 @@ extern "C"
  */
 #define LL_ICG_ENABLE                               (DDL_ON)
 #define LL_UTILITY_ENABLE                           (DDL_ON)
-#define LL_PRINT_ENABLE                             (DDL_ON)
+#define LL_PRINT_ENABLE                             (DDL_OFF)
 
-#define LL_AES_ENABLE                               (DDL_ON)
-#define LL_CAN_ENABLE                               (DDL_ON)
 #define LL_ADC_ENABLE                               (DDL_ON)
+#define LL_AES_ENABLE                               (DDL_ON)
+#define LL_AOS_ENABLE                               (DDL_ON)
+#define LL_CAN_ENABLE                               (DDL_ON)
 #define LL_CLK_ENABLE                               (DDL_ON)
 #define LL_CMP_ENABLE                               (DDL_ON)
 #define LL_CRC_ENABLE                               (DDL_ON)

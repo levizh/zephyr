@@ -162,6 +162,40 @@
 			status = "okay";
 		};
 
+		dma1: dma@40053000 {
+			compatible = "xhsc,hc32-dma";
+			reg = <0x40053000 0x400>;
+			label = "DMA_1";
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_DMA1_CH0_IRQ_NUM HC32_DMA1_CH0_IRQ_PRIO INT_SRC_DMA1_TC0>,
+						 <HC32_DMA1_CH1_IRQ_NUM HC32_DMA1_CH1_IRQ_PRIO INT_SRC_DMA1_TC1>,
+						 <HC32_DMA1_CH2_IRQ_NUM HC32_DMA1_CH2_IRQ_PRIO INT_SRC_DMA1_TC2>,
+						 <HC32_DMA1_CH3_IRQ_NUM HC32_DMA1_CH3_IRQ_PRIO INT_SRC_DMA1_TC3>,
+						 <HC32_DMA1_ERR_IRQ_NUM HC32_DMA1_ERR_IRQ_PRIO INT_SRC_DMA1_ERR>;
+			interrupt-names = "tc0", "tc1", "tc2", "tc3", "err";
+			dma-channels = <4>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA1>,
+					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>;
+			status = "disabled";
+		};
+
+		dma2: dma@40053400 {
+			compatible = "xhsc,hc32-dma";
+			reg = <0x40053400 0x400>;
+			label = "DMA_2";
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_DMA2_CH0_IRQ_NUM HC32_DMA2_CH0_IRQ_PRIO INT_SRC_DMA2_TC0>,
+						 <HC32_DMA2_CH1_IRQ_NUM HC32_DMA2_CH1_IRQ_PRIO INT_SRC_DMA2_TC1>,
+						 <HC32_DMA2_CH2_IRQ_NUM HC32_DMA2_CH2_IRQ_PRIO INT_SRC_DMA2_TC2>,
+						 <HC32_DMA2_CH3_IRQ_NUM HC32_DMA2_CH3_IRQ_PRIO INT_SRC_DMA2_TC3>,
+						 <HC32_DMA2_ERR_IRQ_NUM HC32_DMA2_ERR_IRQ_PRIO INT_SRC_DMA2_ERR>;
+			interrupt-names = "tc0", "tc1", "tc2", "tc3", "err";
+			dma-channels = <4>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA2>,
+					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>;
+			status = "disabled";
+		};
+
 		usart1: serial@4001d000 {
 			compatible = "xhsc,hc32-usart";
 			reg = <0x4001d000 0x400>;

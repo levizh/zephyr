@@ -1,0 +1,15 @@
+# Kconfig - DMA configuration options
+#
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DMA_HC32
+	bool "Enable HC32 DMA driver"
+	default y if SOC_FAMILY_HC32
+	select HC32_LL_DMA
+	select HC32_LL_AOS
+	help
+	  DMA driver for HC32 Family SoCs.

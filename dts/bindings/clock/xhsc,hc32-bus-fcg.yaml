@@ -1,0 +1,28 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+---
+title: HC32 Bus FCG
+version: 0.1
+
+description: >
+        enable peripherals clock.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "xhsc,hc32-bus-fcg"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+"cells":
+  - bus
+  - fcg
+  - bits
+...

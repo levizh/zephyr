@@ -8,6 +8,7 @@
  #include <mem.h>
  #include <dt-bindings/gpio/gpio.h>
  #include <dt-bindings/interrupt-controller/hc32f460-intc.h>
+ #include <dt-bindings/clock/hc32f4_clock.h>
 
  / {
 	cpus {
@@ -60,6 +61,19 @@
 	};
 
 	soc {
+		clocks: clk_sys{
+			clocks-controller;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			bus_fcg: pwc_fcg@40048000 {
+				compatible = "xhsc,hc32-bus-fcg";
+				#clock-cells = <3>;
+				reg = < 0x40048000 DT_SIZE_K(1) >;
+				status = "okay";
+			};
+		};
+
 		gpioa: gpio@40053c00 {
 			compatible = "xhsc,hc32-gpio";
 			gpio-controller;

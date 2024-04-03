@@ -1,0 +1,212 @@
+
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+
+if SOC_FAMILY_HC32
+menuconfig CLOCK_CONTROL_HC32
+	bool "HC32 Clock Control"
+	select HC32_LL_PWC
+endif
+
+if CLOCK_CONTROL_HC32
+menu "HC32 CLK SYSTEM CONFIG"
+	config HC32_CLK_XTAL
+		bool "HC32 xtal control"
+		default y
+
+	config HC32_CLK_XTAL32
+		bool "HC32 xtal32 control"
+		default y
+
+	config HC32_CLK_HRC
+		bool "HC32 hrc control"
+		default y
+
+	config HC32_CLK_MRC
+		bool "HC32 mrc control"
+		default y
+
+	config HC32_CLK_LRC
+		bool "HC32 lrc control"
+		default y
+endmenu
+
+choice	HC32_SYSCLK_SRC
+prompt "HC32 System Clock Source"
+	default HC32_SYSCLK_SRC_PLL
+
+config HC32_SYSCLK_SRC_PLL
+	bool "select pll as system clock"
+	help
+	  select pll as system clock
+
+config HC32_SYSCLK_SRC_XTAL
+	bool "select xtal as system clock"
+	select HC32_CLK_XTAL
+	help
+	  select xtal as system clock
+
+config HC32_SYSCLK_SRC_HRC
+	bool "select hrc as system clock"
+	select HC32_CLK_HRC
+	help
+	  select hrc as system clock
+
+config HC32_SYSCLK_SRC_MRC
+	bool "select mrc as system clock"
+	select HC32_CLK_MRC
+	help
+	  select mrc as system clock
+
+config HC32_SYSCLK_SRC_LRC
+	bool "select lrc as system clock"
+	select HC32_CLK_LRC
+	help
+	  select lrc as system clock
+
+config HC32_SYSCLK_SRC_XTAL32
+	bool "select xtal32 as system clock"
+	select HC32_CLK_XTAL32
+	help
+	  select xtal32 as system clock
+endchoice
+
+choice	HC32_PLL_SRC
+prompt "HC32 PLL Clock Source"
+	depends on HC32_SYSCLK_SRC_PLL
+	default HC32_PLL_SRC_XTAL
+
+config HC32_PLL_SRC_XTAL
+	bool "xtal"
+	select HC32_CLK_XTAL
+	help
+	  select xtal as pll clock source
+
+config HC32_PLL_SRC_HRC
+	bool "hrc"
+	select HC32_CLK_HRC
+	help
+	  select hrc as pll clock source
+endchoice
+
+menu "HC32_BUS_CONFIG"
+	config HC32_BUS_HCLK_DIV
+		int "HC32 hclk division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 1
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+
+	config HC32_BUS_EXCLK_DIV
+		int "HC32 exclk division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 2
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+
+	config HC32_BUS_PCLK0_DIV
+		int "HC32 pclk0 division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 1
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+
+	config HC32_BUS_PCLK1_DIV
+		int "HC32 pclk1 division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 2
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+
+	config HC32_BUS_PCLK2_DIV
+		int "HC32 pclk2 division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 4
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+
+	config HC32_BUS_PCLK3_DIV
+		int "HC32 pclk3 division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 4
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+
+	config HC32_BUS_PCLK4_DIV
+		int "HC32 pclk4 division, allowed values:1, 2, 4, 8, 16, 32, 64"
+		default 2
+		help
+		allowed values:1, 2, 4, 8, 16, 32, 64
+endmenu
+
+menu "HC32_PLL_CONFIG"
+depends on HC32_SYSCLK_SRC_PLL
+	config HC32_PLL_DIV_M
+		int "Division factor for PLL, Valid range: 1 - 24"
+		default 1
+		help
+		input clock, Valid range: 1 - 24
+
+	config HC32_PLL_MUL_N
+		int "Main PLL multiplication factor for VCO, Valid range: 20 - 480"
+		default 50
+		help
+		Valid range: 20 - 480
+
+	config HC32_PLL_DIV_P
+		int "PLL division factor for pll_p_ck, Valid range: 2 - 16"
+		default 2
+		help
+		Valid range: 2 - 16
+
+	config HC32_PLL_DIV_Q
+		int "PLL division factor for pll_q_ck, Valid range: 2 - 16"
+		default 2
+		help
+		Valid range: 2 - 16
+
+	config HC32_PLL_DIV_R
+		int "PLL division factor for pll_r_ck, Valid range: 2 - 16"
+		default 2
+		help
+		Valid range: 2 - 16
+endmenu
+
+choice HC32_XTAL32_DRV_SELECT
+	bool "Select XTAL32 driver power"
+	depends on HC32_CLK_XTAL32
+	default HC32_XTAL32_DRV_M
+
+config HC32_XTAL32_DRV_H
+	bool "High Driver"
+	depends on HC32_CLK_XTAL32
+	help
+	  Select High Driver for XTAL32
+
+config HC32_XTAL32_DRV_M
+	bool "medium Driver"
+	depends on HC32_CLK_XTAL32
+	help
+	  Select medium Driver for XTAL32
+endchoice
+
+config HC32_XTAL32_DRV
+	int
+	default 0 if HC32_XTAL32_DRV_M
+	default 1 if HC32_XTAL32_DRV_H
+
+menu "HC32 CLK SYSTEM FREQ SET"
+config HC32_XTAL_FREQ
+	int "set xtal frequercy"
+	default 8000000 if HC32_CLK_XTAL
+
+config HC32_XTAL32_FREQ
+	int "set xtal32 frequercy"
+	default 32768 if HC32_CLK_XTAL32
+
+config HC32_HRC_FREQ
+	int "set hrc frequercy"
+	default 16000000 if HC32_CLK_HRC
+
+config HC32_MRC_FREQ
+	int "set mrc frequercy"
+	default 8000000 if HC32_CLK_MRC
+
+config HC32_LRC_FREQ
+	int "set lrc frequercy"
+	default 32768 if HC32_CLK_LRC
+endmenu
+endif

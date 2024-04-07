@@ -31,5 +31,8 @@ properties:
       category: optional
       description: readable string describing the interrupts
 
-  #clocks:
-  #  required: true
+    clocks:
+      category: required
+
+    label:
+      category: required

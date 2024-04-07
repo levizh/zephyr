@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(spi_hc32);
 #include <toolchain.h>
 #include "spi_context.h"
 
-//#include <clock_control/hc32_clock_control.h>
+#include <clock_control/hc32_clock_control.h>
 #include <clock_control.h>
 
 /* SPI error status mask. */
@@ -50,7 +50,7 @@ struct spi_hc32_dma_config {
 
 struct spi_hc32_config {
 	uint32_t reg;
-	//struct hc32_modules_clock_sys clk_sys;
+	struct hc32_modules_clock_sys spi_clk;
 #ifdef CONFIG_SPI_HC32_INTERRUPT
 	void (*irq_configure)();
 #endif
@@ -771,15 +771,23 @@ static const struct spi_driver_api api_funcs = {
 
 static int spi_hc32_init(struct device *dev)
 {
-	struct spi_hc32_data *data __attribute__((unused)) = dev->driver_data;
+	int ret;
+	struct device* clock;
+	const struct spi_hc32_config *cfg = dev->config->config_info;
+	struct spi_hc32_data *data = dev->driver_data;
 
-	//__ASSERT_NO_MSG(device_get_binding(hc32_CLOCK_CONTROL_NAME));
+	clock = device_get_binding(CLOCK_CONTROL);
+	/* spi clock open */
+	(void)clock_control_on(clock, (clock_control_subsys_t)&cfg->spi_clk);
 
-	/* TODO: spi clk open */
-	FCG_Fcg1PeriphClockCmd(FCG1_PERIPH_SPI1 | FCG1_PERIPH_SPI2, ENABLE);
+	ret = SPI_DeInit((CM_SPI_TypeDef *)cfg->reg);
+
+	if (ret < 0) {
+		return ret;
+	}
 
 #ifdef CONFIG_SPI_HC32_INTERRUPT
-	const struct spi_hc32_config *cfg = dev->config->config_info;
+
 	cfg->irq_configure(dev);
 #endif
 
@@ -851,9 +859,14 @@ static void spi_hc32_irq_config_##idx(struct device *dev)   \
 }                                                           \
 static const struct spi_hc32_config spi_hc32_cfg_##idx = {  \
 	.reg = DT_XHSC_HC32_SPI_##idx##_BASE_ADDRESS,           \
+	.spi_clk ={\
+		.bus = DT_XHSC_HC32_SPI_##idx##_CLOCK_BUS,          \
+		.fcg = DT_XHSC_HC32_SPI_##idx##_CLOCK_FCG,          \
+		.bits = DT_XHSC_HC32_SPI_##idx##_CLOCK_BITS         \
+	},\
 	COND_CODE_1(CONFIG_SPI_HC32_INTERRUPT,                  \
 	 (.irq_configure =spi_hc32_irq_config_##idx),())        \
-};                                                          \
+};\
 DEVICE_AND_API_INIT(spi_hc32_##idx, DT_XHSC_HC32_SPI_##idx##_LABEL, &spi_hc32_init,    \
 		    &spi_hc32_data_##idx, &spi_hc32_cfg_##idx,                                 \
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                                     \

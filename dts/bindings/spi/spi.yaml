@@ -38,7 +38,7 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
     clocks:
-      type: compound
+      type: array
       category: optional
       description: Clock gate information
       generation: define

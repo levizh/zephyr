@@ -1,0 +1,71 @@
+---
+title: HC32 TIMERAS
+version: 0.1
+
+description: >
+    This binding gives a base representation of the HC32 TIMERAS
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "xhsc,hc32-timera"
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate information
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: readable string describing the interrupts
+
+    clock-division:
+      type: int
+      category: required
+      default: 0 # HC32_TMR_CNT_CLK_DIV1 - reset state
+      description: |
+        Set timer count clock division.
+        Use constants defined in dt-bindings/timer/hc32-timer.h.
+      generation: define
+
+    count-mode:
+      type: int
+      category: required
+      default: 0 # HC32_TMR_CNT_MD_SAWTOOTH - reset state
+      description: |
+        Set timer count mode.
+        Use constants defined in dt-bindings/timer/hc32-timer.h.
+      generation: define
+
+    count-direction:
+      type: int
+      category: required
+      default: 0 # HC32_TMR_CNT_DIR_UP - reset state
+      description: |
+        Set timer count direction.
+        Use constants defined in dt-bindings/timer/hc32-timer.h.
+      generation: define
+...

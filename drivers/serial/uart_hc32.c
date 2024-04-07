@@ -6,12 +6,14 @@
 #include <init.h>
 #include <uart.h>
 #include <clock_control.h>
+#include <clock_control/hc32_clock_control.h>
+#include <pinmux.h>
 #include <interrupt_controller/intc_hc32.h>
 
 #include <linker/sections.h>
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
-enum UART_TYPE{
+enum usart_isr_type{
     UART_INT_IDX_EI,
     UART_INT_IDX_RI,
     UART_INT_IDX_TI,
@@ -28,11 +30,20 @@ struct hc32_usart_cb_data {
     void *user_data;
 };
 
+struct uart_hc32_pin_cfg
+{
+	const char *gpio_name;
+	uint32_t pin_cfg_val;
+};
+
+
 /* device config */
 struct uart_hc32_config {
 	struct uart_device_config uart_cfg;
 	/* clock subsystem driving this peripheral */
-	struct device *dev_clock;
+	struct hc32_modules_clock_sys uart_clock;
+	struct uart_hc32_pin_cfg tx_pin_cfg;
+	struct uart_hc32_pin_cfg rx_pin_cfg;
 };
 
 /* driver data */
@@ -322,6 +333,36 @@ static void uart_hc32_poll_out(struct device *dev,
 // 	data->clock = clk;
 // }
 
+#ifdef CONFIG_UART_ASYNC_API
+int uart_hc32_callback_set(struct device *dev, uart_callback_t callback,
+			void *user_data)
+{
+	return 0;
+}
+int uart_hc32_tx(struct device *dev, const u8_t *buf, size_t len,
+		  u32_t timeout)
+{
+	return 0;
+}
+int uart_hc32_tx_abort(struct device *dev)
+{
+	return 0;
+}
+int uart_hc32_rx_enable(struct device *dev, u8_t *buf, size_t len,
+			 u32_t timeout)
+{
+	return 0;
+}
+int uart_hc32_rx_buf_rsp(struct device *dev, u8_t *buf, size_t len)
+{
+	return 0;
+}
+int uart_hc32_rx_disable(struct device *dev)
+{
+	return 0;
+}
+#endif /* CONFIG_UART_ASYNC_API */
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
 static int uart_hc32_fifo_fill(struct device *dev, const u8_t *tx_data,
@@ -476,6 +517,14 @@ static const struct uart_driver_api uart_hc32_driver_api = {
 	.poll_out = uart_hc32_poll_out,
 	.configure = uart_device_configure,
 	.config_get = uart_device_config_get,
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set = uart_hc32_callback_set,
+	.tx = uart_hc32_tx,
+	.tx_abort = uart_hc32_tx_abort,
+	.rx_enable = uart_hc32_rx_enable,
+	.rx_buf_rsp = uart_hc32_rx_buf_rsp,
+	.rx_disable = uart_hc32_rx_disable,
+#endif /* CONFIG_UART_ASYNC_API */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_hc32_fifo_fill,
 	.fifo_read = uart_hc32_fifo_read,
@@ -493,26 +542,6 @@ static const struct uart_driver_api uart_hc32_driver_api = {
 	.irq_callback_set = uart_hc32_irq_callback_set,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };
-
-static int uart_hc32_clocks_enable(const struct device *dev)
-{
-	// CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
-	// struct uart_hc32_data *data = DEV_USART_DATA(dev);
-	// const struct device *const dev_clk = data->clock;
-	// int err;
-
-	// if (!device_is_ready(dev_clk)) {
-	// 	LOG_ERR("clock control device not ready");
-	// 	return -ENODEV;
-	// }
-
-	// /* enable clock */
-	// err = clock_control_on(dev_clock, (clock_control_subsys_t)config->clk_cfg);
-	// if (err != 0) {
-	// 	return err;
-	// }
-	return 0;
-}
 
 static int uart_hc32_registers_configure(const struct device *dev)
 {
@@ -532,6 +561,20 @@ static int uart_hc32_registers_configure(const struct device *dev)
 	return 0;
 }
 
+static inline void uart_hc32_pin_config(struct uart_hc32_pin_cfg *pin_cfg)
+{
+	uint8_t port, pin, fun;
+	uint32_t pin_val = pin_cfg->pin_cfg_val;
+	static struct device *dev;
+
+	pin = (pin_val & 0x00FU) >> 0U;
+	port = (pin_val & 0x0F0U) >> 8U;
+	fun = (pin_val & 0xF00U) >> 16U;
+	dev = device_get_binding(pin_cfg->gpio_name);
+
+	pinmux_pin_set(dev, pin, fun);
+}
+
 /**
  * @brief Initialize UART channel
  *
@@ -544,26 +587,35 @@ static int uart_hc32_registers_configure(const struct device *dev)
  */
 static int uart_hc32_init(struct device *dev)
 {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	const struct uart_device_config *config = DEV_USART_CFG(dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	// struct uart_hc32_data *data = DEV_USART_DATA(dev);
 	// CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
+	struct device* dev_clock;
+	const struct uart_hc32_config *hc32_config = dev->config->config_info;
+	const struct uart_device_config *config = DEV_USART_CFG(dev);
+
 	int err;
 
-	err = uart_hc32_clocks_enable(dev);
+	dev_clock = device_get_binding(CLOCK_CONTROL);
+	err = clock_control_on(dev_clock,
+							(clock_control_subsys_t)&hc32_config->uart_clock);
 	if (err < 0) {
 		return err;
 	}
-	FCG_Fcg1PeriphClockCmd(FCG1_PERIPH_USART4, ENABLE);
+	// FCG_Fcg1PeriphClockCmd(FCG1_PERIPH_USART2, ENABLE);
+	// FCG_Fcg1PeriphClockCmd(FCG1_PERIPH_USART4, ENABLE);
 
 	// /* Configure dt provided device signals when available */
 	// err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
 	// if (err < 0) {
 	// 	return err;
 	// }
+	/* tx and rx */
+
 	GPIO_SetFunc(GPIO_PORT_E, GPIO_PIN_06, GPIO_FUNC_36);
 	GPIO_SetFunc(GPIO_PORT_B, GPIO_PIN_09, GPIO_FUNC_37);
+/* usart2 tx and rx */
+	GPIO_SetFunc(GPIO_PORT_A, GPIO_PIN_01, GPIO_FUNC_36);
+	GPIO_SetFunc(GPIO_PORT_A, GPIO_PIN_02, GPIO_FUNC_37);
 
 	err = uart_hc32_registers_configure(dev);
 	if (err < 0) {
@@ -598,57 +650,42 @@ static int uart_hc32_init(struct device *dev)
 	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);\
 	static void	usart_hc32_rx_timeout_isr_##index(const struct device *dev)
 
+static inline void usart_hc32_common_isr(const struct device *dev,
+					enum usart_isr_type enIdx)
+{
+	struct uart_hc32_data *const data = DEV_USART_DATA(dev);
+
+	if (data->cb[enIdx].user_cb) {
+		data->cb[enIdx].user_cb(data->cb[enIdx].user_data);
+	}
+}
+
 #define HC32_UART_ISR_DEF(index)											\
 	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
 	{																		\
-		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
-																			\
-		if (data->cb[UART_INT_IDX_EI].user_cb) {							\
-			data->cb[UART_INT_IDX_EI].user_cb( 								\
-				data->cb[UART_INT_IDX_EI].user_data);						\
-		}																	\
+		usart_hc32_common_isr(dev, UART_INT_IDX_EI);						\
 	}																		\
 																			\
 	static void usart_hc32_rx_full_isr_##index(const struct device *dev)	\
 	{																		\
-		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
-																			\
-		if (data->cb[UART_INT_IDX_RI].user_cb) {							\
-			data->cb[UART_INT_IDX_RI].user_cb( 								\
-			data->cb[UART_INT_IDX_RI].user_data);							\
-		}																	\
+		usart_hc32_common_isr(dev, UART_INT_IDX_RI);						\
 	}																		\
 																			\
 	static void 															\
 		usart_hc32_tx_empty_isr_##index(const struct device *dev)			\
 	{																		\
-		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
-																			\
-		if (data->cb[UART_INT_IDX_TI].user_cb) {							\
-			data->cb[UART_INT_IDX_TI].user_cb( 								\
-				data->cb[UART_INT_IDX_TI].user_data);						\
-		}																	\
+		usart_hc32_common_isr(dev, UART_INT_IDX_TI);						\
 	}																		\
 																			\
 	static void usart_hc32_tx_complete_isr_##index(const struct device *dev)\
 	{																		\
-		struct uart_hc32_data *const data = DEV_USART_DATA(dev);			\
-																			\
-		if (data->cb[UART_INT_IDX_TCI].user_cb) {							\
-			data->cb[UART_INT_IDX_TCI].user_cb( 							\
-				data->cb[UART_INT_IDX_TCI].user_data);						\
-		}																	\
+		usart_hc32_common_isr(dev, UART_INT_IDX_TCI);						\
 	}																		\
 																			\
 	static void usart_hc32_rx_timeout_isr_##index(const struct device *dev)	\
-		{																	\
-			struct uart_hc32_data *const data = DEV_USART_DATA(dev);		\
-																			\
-			if (data->cb[UART_INT_IDX_RTO].user_cb) {						\
-				data->cb[UART_INT_IDX_RTO].user_cb( 						\
-					data->cb[UART_INT_IDX_RTO].user_data);					\
-			}																\
-		}																	\
+	{																		\
+		usart_hc32_common_isr(dev, UART_INT_IDX_TCI);						\
+	}																		\
 																			\
 	static void usart_hc32_isr_func_cfg_##index(struct device *dev)			\
 	{																		\
@@ -668,12 +705,25 @@ static int uart_hc32_init(struct device *dev)
 #define HC32_UART_ISR_FUN_CONFIG(index)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#define GPIO_GET_LABLE(prefix, port)	prefix_##port##_LABEL
+
 #define HC32_UART_INIT(index)												\
 HC32_UART_IRQ_HANDLER_DECL(index);											\
 static const struct uart_hc32_config uart_hc32_cfg_##index = {				\
 	.uart_cfg = {															\
 		.base = (u8_t *)DT_XHSC_HC32_USART_##index##_BASE_ADDRESS,			\
 		HC32_UART_ISR_FUN_CONFIG(index)										\
+	},																		\
+	.uart_clock = {															\
+		.bus = DT_XHSC_HC32_USART_##index##_CLOCK_BUS,						\
+		.fcg = DT_XHSC_HC32_USART_##index##_CLOCK_FCG,						\
+		.bits = DT_XHSC_HC32_USART_##index##_CLOCK_BITS,					\
+	},																		\
+	.tx_pin_cfg = {															\
+		.pin_cfg_val = DT_XHSC_HC32_USART_##index##_TX_PIN_1,				\
+	},																		\
+	.rx_pin_cfg = {															\
+		.pin_cfg_val = DT_XHSC_HC32_USART_##index##_RX_PIN_1,				\
 	},																		\
 };																			\
 static struct uart_hc32_data uart_hc32_data_##index = {						\
@@ -687,18 +737,18 @@ DEVICE_AND_API_INIT(uart_hc32_##index, 										\
 		&uart_hc32_driver_api);												\
 HC32_UART_ISR_DEF(index)
 
-#ifdef CONFIG_UART_1
-HC32_UART_INIT(USART_1)
-#endif	/* CONFIG_UART_1 */
-
-#ifdef CONFIG_UART_2
-HC32_UART_INIT(USART_2)
-#endif	/* CONFIG_UART_2 */
-
-#ifdef CONFIG_UART_3
-HC32_UART_INIT(USART_3)
-#endif	/* CONFIG_UART_3 */
-
-#ifdef CONFIG_UART_4
+#ifdef DT_XHSC_HC32_USART_0
 HC32_UART_INIT(0)
-#endif /* CONFIG_UART_4 */
+#endif
+
+#ifdef DT_XHSC_HC32_USART_1
+HC32_UART_INIT(1)
+#endif
+
+#ifdef DT_XHSC_HC32_USART_2
+HC32_UART_INIT(2)
+#endif
+
+#ifdef DT_XHSC_HC32_USART_3
+HC32_UART_INIT(3)
+#endif

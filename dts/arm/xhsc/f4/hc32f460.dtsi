@@ -168,6 +168,7 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "USART_1";
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART1>;
 		};
 
 		usart2: serial@4001d400 {
@@ -176,6 +177,7 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "USART_2";
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART2>;
 		};
 		usart3: serial@40021000 {
 			compatible = "xhsc,hc32-usart";
@@ -183,12 +185,14 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "USART_3";
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART3>;
 		};
 		usart4: serial@40021400 {
 			compatible = "xhsc,hc32-usart";
 			reg = <0x40021400 0x400>;
 			status = "disabled";
 			label = "USART_4";
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_USART4>;
 			interrupt-parent = <&intc>;
 			interrupts = <HC32_UART4_RXERR_IRQ_NUM   HC32_UART4_RXERR_IRQ_PRIO   INT_SRC_USART4_EI>,
 						 <HC32_UART4_RX_IRQ_NUM      HC32_UART4_RX_IRQ_PRIO      INT_SRC_USART4_RI>,
@@ -366,6 +370,18 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA6";
+		};
+
+		adc1: adc@40040000 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_ADC1_EOCA_IRQ_NUM HC32_ADC1_EOCA_IRQ_PRIO INT_SRC_ADC1_EOCA>,
+						 <HC32_ADC1_EOCB_IRQ_NUM HC32_ADC1_EOCB_IRQ_PRIO INT_SRC_ADC1_EOCB>;
+			interrupt-names = "eoca", "eocb";
+			status = "disabled";
+			label = "ADC1";
 		};
 	};
 };

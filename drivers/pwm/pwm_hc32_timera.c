@@ -450,7 +450,7 @@ static int pwm_hc32_get_cycles_per_sec(const struct device *dev,
 	for (uint8_t i = 0U; i < cfg->prescaler; i++) {
 		bus_clk >>= 1;
 	}
-	*	cycles = (uint64_t)bus_clk;
+	*cycles = (uint64_t)bus_clk;
 
 	return 0;
 }

@@ -866,7 +866,7 @@ int spi_hc32_init(const struct device *dev)
 		spi_hc32_data_##inst.status_sem, 0, 1),
 #else
 #define DMAS_DECL(inst)
-#define SPI_DMA_STATUS_SEM(id)
+#define SPI_DMA_STATUS_SEM(inst)
 #endif
 
 #define IDX_IRQ_CONFIGURE(idx, inst)                                                             \

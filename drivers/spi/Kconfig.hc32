@@ -3,7 +3,7 @@
 
 config SPI_HC32
 	bool "XHSC HC32 SPI driver"
-	default y
+	default y if SPI
 	depends on DT_HAS_XHSC_HC32_SPI_ENABLED
 	depends on SOC_FAMILY_HC32
 	select HC32_LL_SPI

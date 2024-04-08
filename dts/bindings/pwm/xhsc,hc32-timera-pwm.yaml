@@ -12,11 +12,11 @@ properties:
     compatible:
       constraint: "xhsc,hc32-timera-pwm"
 
-    label:
-      type: string
-      category: required
-      description: Human readable string describing the device (used by Zephyr for API name)
+    addr:
+      type: int
+      description: timera register base address
       generation: define
+      category: required
 
 "#cells":
   - channel

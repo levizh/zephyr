@@ -1,0 +1,14 @@
+# XHSC HC32 PWM configuration options
+
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_HC32_TIMERA
+	bool "HC32 MCU TIMERA PWM driver"
+	default y if PWM
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_TMRA
+	help
+	  This option enables the PWM driver for HC32 family of
+	  processors. Say y if you wish to use PWM port on HC32
+	  MCU.

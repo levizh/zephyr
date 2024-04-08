@@ -470,10 +470,13 @@ int32_t TMRA_PWM_Init(CM_TMRA_TypeDef *TMRAx, uint32_t u32Ch, const stc_tmra_pwm
         SET_VAL_BY_ADDR(u32CMPARAddr, pstcPwmInit->u32CompareValue);
 
         u32PCONRAddr = (uint32_t)&TMRAx->PCONR1 + u32Ch;
-        RW_MEM16(u32PCONRAddr) = (uint16_t)((pstcPwmInit->u16StartPolarity << TMRA_PCONR_STAC_POS) | \
-                                            (pstcPwmInit->u16StopPolarity << TMRA_PCONR_STPC_POS)  | \
-                                            (pstcPwmInit->u16CompareMatchPolarity << TMRA_PCONR_CMPC_POS) | \
-                                            (pstcPwmInit->u16PeriodMatchPolarity << TMRA_PCONR_PERC_POS));
+
+        MODIFY_REG16(RW_MEM16(u32PCONRAddr), (TMRA_PCONR_STAC | TMRA_PCONR_STPC | TMRA_PCONR_CMPC | TMRA_PCONR_PERC),
+                     (uint16_t)((pstcPwmInit->u16StartPolarity << TMRA_PCONR_STAC_POS) | \
+                                (pstcPwmInit->u16StopPolarity << TMRA_PCONR_STPC_POS)  | \
+                                (pstcPwmInit->u16CompareMatchPolarity << TMRA_PCONR_CMPC_POS) | \
+                                (pstcPwmInit->u16PeriodMatchPolarity << TMRA_PCONR_PERC_POS)));
+
         i32Ret = LL_OK;
     }
 

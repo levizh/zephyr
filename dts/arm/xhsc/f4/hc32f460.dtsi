@@ -283,12 +283,12 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA1";
-
 			pwm {
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
+				addr = <0x40015000>;
 				#pwm-cells = <2>;
-				label = "TMRA-PWM1";
+				label = "TMRA1_PWM";
 			};
 		};
 
@@ -306,6 +306,13 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA2";
+			pwm{
+				compatible = "xhsc,hc32-timera-pwm";
+				addr = <0x40015400>;
+				status = "disabled";
+				#pwm-cells = <2>;
+				label = "TMRA2_PWM";
+			};
 		};
 
 		timera3: timer@40015800 {
@@ -322,6 +329,13 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA3";
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				addr = <0x40015800>;
+				#pwm-cells = <2>;
+				label = "TMRA3_PWM";
+			};
 		};
 
 		timera4: timer@40015c00 {
@@ -338,6 +352,13 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA4";
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				addr = <0x40015c00>;
+				#pwm-cells = <2>;
+				label = "TMRA4_PWM";
+			};
 		};
 
 		timera5: timer@40016000 {
@@ -354,6 +375,13 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA5";
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				addr = <0x40016000>;
+				#pwm-cells = <2>;
+				label = "TMRA5_PWM";
+			};
 		};
 
 		timera6: timer@40016400 {
@@ -370,6 +398,13 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA6";
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				addr = <0x40016400>;
+				#pwm-cells = <2>;
+				label = "TMRA6_PWM";
+			};
 		};
 
 		adc1: adc@40040000 {

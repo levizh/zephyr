@@ -591,8 +591,9 @@ static int uart_hc32_init(struct device *dev)
 	// CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
 	struct device* dev_clock;
 	const struct uart_hc32_config *hc32_config = dev->config->config_info;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_device_config *config = DEV_USART_CFG(dev);
-
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	int err;
 
 	dev_clock = device_get_binding(CLOCK_CONTROL);
@@ -718,12 +719,6 @@ static const struct uart_hc32_config uart_hc32_cfg_##index = {				\
 		.bus = DT_XHSC_HC32_USART_##index##_CLOCK_BUS,						\
 		.fcg = DT_XHSC_HC32_USART_##index##_CLOCK_FCG,						\
 		.bits = DT_XHSC_HC32_USART_##index##_CLOCK_BITS,					\
-	},																		\
-	.tx_pin_cfg = {															\
-		.pin_cfg_val = DT_XHSC_HC32_USART_##index##_TX_PIN_1,				\
-	},																		\
-	.rx_pin_cfg = {															\
-		.pin_cfg_val = DT_XHSC_HC32_USART_##index##_RX_PIN_1,				\
 	},																		\
 };																			\
 static struct uart_hc32_data uart_hc32_data_##index = {						\

@@ -615,7 +615,7 @@ static void dma_hc32_##inst##_aos_configure(void)                               
 		.aos_configure = dma_hc32_##inst##_aos_configure,                                     \
 	};                                                                                        \
                                                                                               \
-	DEVICE_AND_API_INIT(dma_hc32_##inst, CONFIG_DMA_##inst##_NAME, &dma_hc32_init,            \
+	DEVICE_AND_API_INIT(dma_hc32_##inst, DT_XHSC_HC32_DMA_##inst##_LABEL, &dma_hc32_init,     \
 		    	&dma_hc32_##inst##_data, &dma_hc32_##inst##_config,                           \
 		    	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                             \
 		    	(void *)&dma_hc32_driver_api);                                                \

@@ -1,0 +1,31 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+---
+title: HC32 Counter
+version: 0.1
+
+description: >
+  This binding gives a base representation of the HC32 counter
+
+properties:
+  compatible:
+    type: string
+    category: required
+    description: compatible strings
+    constraint: "xhsc,hc32-timera-counter"
+    generation: define
+
+  label:
+    type: string
+    category: required
+    description: Human readable string describing the device (used by Zephyr for API name)
+    generation: define
+
+  ch-nums:
+    type: int
+    category: required
+    description: counter channel numbers
+    generation: define
+...

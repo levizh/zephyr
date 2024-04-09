@@ -317,6 +317,14 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA1";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+				label = "TMRA1-COUNTER";
+			};
+
 			pwm {
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
@@ -340,6 +348,14 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA2";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+				label = "TMRA2-COUNTER";
+			};
+
 			pwm{
 				compatible = "xhsc,hc32-timera-pwm";
 				addr = <0x40015400>;
@@ -363,6 +379,14 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA3";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+				label = "TMRA3-COUNTER";
+			};
+
 			pwm {
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
@@ -386,6 +410,14 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA4";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+				label = "TMRA4-COUNTER";
+			};
+
 			pwm {
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
@@ -409,6 +441,14 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA5";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+				label = "TMRA5-COUNTER";
+			};
+
 			pwm {
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";
@@ -432,6 +472,14 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 			label = "TMRA6";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+				label = "TMRA6-COUNTER";
+			};
+
 			pwm {
 				compatible = "xhsc,hc32-timera-pwm";
 				status = "disabled";

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timera1 {
+    status = "ok";
+    clock-division = <HC32_TMR_CNT_CLK_DIV128>;
+
+    counter {
+        status = "ok";
+    };
+};

@@ -1,0 +1,56 @@
+#
+# Copyright (c) 2017 I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: HC32 I2C V2
+version: 0.1
+
+description: >
+    HC32 I2C controller
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      constraint: "xhsc,hc32-i2c"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: readable string describing the interrupts
+      generation: define
+
+    int-nums:
+      type: int
+      category: required
+      generation: define
+
+    scl-gpios:
+      type: compound
+      category: option
+      description: |
+        GPIO to which the I2C SCL signal is routed. This is only needed for
+        I2C bus recovery support.
+
+    sda-gpios:
+      type: compound
+      category: option
+      description: |
+        GPIO to which the I2C SDA signal is routed. This is only needed for
+        I2C bus recovery support.
+...

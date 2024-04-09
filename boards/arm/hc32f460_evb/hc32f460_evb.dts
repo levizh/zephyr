@@ -73,3 +73,8 @@
 	pins-num = <2>;
 	status = "ok";
 };
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = < 100000 >;
+};

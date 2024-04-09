@@ -41,7 +41,7 @@
 #define NODE_ID_PASTE(compatible, inst)	compatible##_##inst
 
 /**
- * get peripherals clock info for device tree
+ * get peripherals clock info form device tree
  * @arg inst: the instance serial number of compatible
  * @arg compatible: device tree compatible.must be uppercase when invoked 
  * @arg num: the number of clocks properties in peripheral node

@@ -10,6 +10,7 @@
 #include <dt-bindings/interrupt-controller/hc32f460-intc.h>
 #include <dt-bindings/clock/hc32f4_clock.h>
 #include <dt-bindings/timer/hc32-timer.h>
+#include <dt-bindings/dma/hc32_dma.h>
 
 /{
 	cpus {

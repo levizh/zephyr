@@ -20,7 +20,7 @@
 #define HC32_PERIPH_TX_DMA_CH(val)           ((val & 0xFFU) << 16U)
 
 #define HC32_PERIPH_RX_DMA_UNIT(val)         ((val & 0xFU) << 8U)
-#define HC32_PERIPH_TX_DMA_CH(val)           ((val & 0xFFU) << 0U)
+#define HC32_PERIPH_RX_DMA_CH(val)           ((val & 0xFFU) << 0U)
 
 /* dts bindings example:
     ...
@@ -37,7 +37,7 @@
     usart4: serial@40021400 {
         ...
         dmas = <(HC32_PERIPH_TX_DMA_UNIT(DMA1) | HC32_PERIPH_TX_DMA_CH(0) |
-                 HC32_PERIPH_RX_DMA_UNIT(DMA2) | HC32_PERIPH_TX_DMA_CH(2))>;
+                 HC32_PERIPH_RX_DMA_UNIT(DMA2) | HC32_PERIPH_RX_DMA_CH(2))>;
         ...
 	}
 

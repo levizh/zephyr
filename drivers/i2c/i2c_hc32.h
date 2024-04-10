@@ -17,17 +17,10 @@ struct i2c_hc32_config {
 #ifdef CONFIG_I2C_HC32_INTERRUPT
 	irq_config_func_t irq_config_func;
 #endif
-#ifdef CONFIG_I2C_HC32_DMA
-	const struct device *dma_dev[2];
-	struct dma_config *dma_conf;
-	uint8_t channel[2];
-	dma_callback_t dma_callbcck;
-#endif
 	const struct hc32_modules_clock_sys *mod_clk;
 	CM_I2C_TypeDef *i2c;
 
 	uint32_t bitrate;
-	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_I2C_HC32_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
@@ -36,6 +29,11 @@ struct i2c_hc32_config {
 };
 
 struct i2c_hc32_data {
+#ifdef CONFIG_I2C_HC32_DMA
+	struct device *dma_dev[2];
+	struct dma_config *dma_conf;
+	uint8_t channel[2];
+#endif
 #if defined (CONFIG_I2C_HC32_INTERRUPT) || (CONFIG_I2C_HC32_DMA)
 	struct k_sem device_sync_sem;
 #endif

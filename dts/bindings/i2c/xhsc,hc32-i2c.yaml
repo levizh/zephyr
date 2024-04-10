@@ -40,6 +40,16 @@ properties:
       category: required
       generation: define
 
+    dmas:
+      type: compound
+      category: option
+      generation: define
+
+    dma-names:
+      type: stringlist
+      category: option
+      generation: define
+
     scl-gpios:
       type: compound
       category: option

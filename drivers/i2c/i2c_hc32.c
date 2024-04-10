@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(i2c_hc32);
 #include "i2c-priv.h"
 
 #ifdef CONFIG_I2C_HC32_DMA
-#include <zephyr/drivers/dma/dma_hc32.h>
+#include <drivers/dma/dma_hc32.h>
 #endif
 #ifdef CONFIG_I2C_HC32_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -334,7 +334,7 @@ static int hc32_i2c_msg_transaction(struct device *dev)
 #endif /* CONFIG_I2C_HC32_INTERRUPT */
 
 #ifdef CONFIG_I2C_HC32_DMA
-static void hc32_dma_callback(struct device *dev, void *user_data,
+static void hc32_dma_callback(void *user_data,
 				uint32_t channel, int status)
 {
 	struct dma_hc32_config_user_data *hc32_user_data = \
@@ -344,16 +344,16 @@ static void hc32_dma_callback(struct device *dev, void *user_data,
 	struct i2c_hc32_data *data = i2c_dev->driver_data;
 
 	k_sem_give(&data->device_sync_sem);
-	dma_stop(dev, channel);
+	dma_stop(data->dma_dev[0], channel);
 }
 
 static int hc32_i2c_dma_write(struct device *dev)
 {
 	uint32_t timeout = 0;
-	struct i2c_hc32_config *cfg = dev->config->config_info;
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
-	struct dma_config *i2c_dma_config = cfg->dma_conf;
+	struct dma_config *i2c_dma_config = data->dma_conf;
 	struct dma_block_config *i2c_tx_dma_block_conf = \
 					i2c_dma_config[0].head_block;
 
@@ -366,15 +366,15 @@ static int hc32_i2c_dma_write(struct device *dev)
 		i2c_tx_dma_block_conf->source_address = (uint32_t)(&data->dat[1]);
 		//i2c_tx_dma_block_conf->dest_address = (uint32_t)&i2c->DTR;
 		i2c_tx_dma_block_conf->block_size = data->len- 1;
-		dma_config(cfg->dma_dev[0], cfg->channel[0], i2c_dma_config);
-		dma_start(cfg->dma_dev[0], cfg->channel[0]);
+		dma_config(data->dma_dev[0], data->channel[0], i2c_dma_config);
+		dma_start(data->dma_dev[0], data->channel[0]);
 	}
 
 	I2C_WriteData(i2c, *data->dat);
 	if (data->len > 1) {
 		if (k_sem_take(&data->device_sync_sem,
 				K_MSEC(HC32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-			dma_stop(cfg->dma_dev[0], cfg->channel[0]);
+			dma_stop(data->dma_dev[0], data->channel[0]);
 			return -EIO;
 		}
 	}
@@ -394,10 +394,10 @@ static int hc32_i2c_dma_write(struct device *dev)
 static int hc32_i2c_dma_read(struct device *dev)
 {
 	uint32_t timeout = 0;
-	struct i2c_hc32_config *cfg = dev->config->config_info;
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
-	struct dma_config *i2c_dma_config = cfg->dma_conf;
+	struct dma_config *i2c_dma_config = data->dma_conf;
 	struct dma_block_config *i2c_rx_dma_block_conf = \
 					i2c_dma_config[1].head_block;
 
@@ -412,14 +412,14 @@ static int hc32_i2c_dma_read(struct device *dev)
 		//i2c_rx_dma_block_conf->source_address = (uint32_t)&i2c->DRR;
 		i2c_rx_dma_block_conf->dest_address = (uint32_t)(&data->dat[0]);
 		i2c_rx_dma_block_conf->block_size = data->len- 2;
-		dma_config(cfg->dma_dev[1], cfg->channel[1], &i2c_dma_config[1]);
-		dma_start(cfg->dma_dev[1], cfg->channel[1]);
+		dma_config(data->dma_dev[1], data->channel[1], &i2c_dma_config[1]);
+		dma_start(data->dma_dev[1], data->channel[1]);
 	}
 
 	if (data->len > 2) {
 		if (k_sem_take(&data->device_sync_sem,
 				K_MSEC(HC32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-			dma_stop(cfg->dma_dev[1], cfg->channel[1]);
+			dma_stop(data->dma_dev[1], data->channel[1]);
 			return -EIO;
 		}
 	}
@@ -467,7 +467,7 @@ static int hc32_i2c_dma_read(struct device *dev)
 static int hc32_i2c_msg_transaction(struct device *dev)
 {
 	uint32_t ret = 0;
-	struct i2c_hc32_config *cfg = dev->config->config_info;
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
 	
@@ -732,6 +732,12 @@ static int i2c_hc32_init(struct device *dev)
 #ifdef CONFIG_I2C_HC32_INTERRUPT
 	cfg->irq_config_func(dev);
 #endif
+#ifdef CONFIG_I2C_HC32_DMA
+	data->dma_dev[0] = device_get_binding(CONFIG_DMA_1_NAME);
+	data->dma_dev[1] = device_get_binding(CONFIG_DMA_1_NAME);
+	((struct dma_hc32_config_user_data *)(data->dma_conf[0].callback_arg))->user_data = (void *)dev;
+	((struct dma_hc32_config_user_data *)(data->dma_conf[1].callback_arg))->user_data = (void *)dev;
+#endif
 #if defined (CONFIG_I2C_HC32_INTERRUPT) || (CONFIG_I2C_HC32_DMA)
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 #endif
@@ -793,68 +799,61 @@ static void i2c_hc32_irq_config_func_##index(struct device *dev)	\
 
 #ifdef CONFIG_I2C_HC32_DMA
 #define HC32_I2C_DMA_INIT(inst)	\
-static void hc32_dma_callback(struct device *dev, void *user_data,	\
+static void hc32_dma_callback(void *user_data,	\
 				uint32_t channel, int status);	\
-uint32_t dma_config_vaule[2] = {HC32_DMA_CHANNEL_CONFIG(inst, tx_dma), \
-								HC32_DMA_CHANNEL_CONFIG(inst, rx_dma)}; \
+					\
 struct dma_block_config dma_block_config_##inst[2] = \
 {	\
 	{	\
-		.dest_addr_adj = HC32_DMA_CONFIG_DEST_ADDR_INC(dma_config_vaule[0]), \
-		.source_addr_adj = HC32_DMA_CONFIG_SOURCE_ADDR_INC(dma_config_vaule[0]), \
-		.dest_address = (uint32_t)&(((CM_I2C_TypeDef *)DT_INST_REG_ADDR(inst))->DTR),	\
+		.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE, \
+		.source_addr_adj = DMA_ADDR_ADJ_INCREMENT, \
+		.dest_address = (uint32_t)&(((CM_I2C_TypeDef *)DT_XHSC_HC32_I2C_##inst##_BASE_ADDRESS)->DTR),	\
 	},		\
 	{	\
-		.source_addr_adj = HC32_DMA_CONFIG_SOURCE_ADDR_INC(dma_config_vaule[1]), \
-		.dest_addr_adj = HC32_DMA_CONFIG_DEST_ADDR_INC(dma_config_vaule[1]), \
-		.source_address = (uint32_t)&(((CM_I2C_TypeDef *)DT_INST_REG_ADDR(inst))->DRR),	\
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE, \
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT, \
+		.source_address = (uint32_t)&(((CM_I2C_TypeDef *)DT_XHSC_HC32_I2C_##inst##_BASE_ADDRESS)->DRR),	\
 	}		\
 };	\
 struct dma_hc32_config_user_data i2c_dma_user_data_##inst[2] = \
 {	\
 	{	\
-		.slot = HC32_DMA_SLOT(inst, tx_dma),\
-		.user_data = (void*)DEVICE_DT_INST_GET(inst),	\
+		.slot = INT_SRC_I2C3_TEI,\
 	},	\
 	{	\
-		.slot = HC32_DMA_SLOT(inst, rx_dma),\
-		.user_data = (void*)DEVICE_DT_INST_GET(inst),	\
+		.slot = INT_SRC_I2C3_RXI,\
 	},	\
 }; 	\
 struct dma_config dma_config_##inst[2] = \
 {	\
 	{	\
-		.channel_direction = HC32_DMA_CONFIG_DIRECTION(dma_config_vaule[0]), \
+		.channel_direction = MEMORY_TO_PERIPHERAL, \
 		.block_count = 1,	\
 		.source_burst_length = 1,	\
 		.dest_burst_length = 1,	\
-		.source_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[0]),	\
-		.dest_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[0]),	\
+		.source_data_size = 1,	\
+		.dest_data_size = 1,	\
 		.head_block = &dma_block_config_##inst[0],	\
-		.user_data = &i2c_dma_user_data_##inst[0],	\
+		.callback_arg = &i2c_dma_user_data_##inst[0],	\
 		.dma_callback = hc32_dma_callback,	\
 	},	\
 	{	\
-		.channel_direction = HC32_DMA_CONFIG_DIRECTION(dma_config_vaule[1]), \
+		.channel_direction = PERIPHERAL_TO_MEMORY, \
 		.block_count = 1,	\
 		.source_burst_length = 1,	\
 		.dest_burst_length = 1,	\
-		.source_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[1]),	\
-		.dest_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[1]),	\
+		.source_data_size = 1,	\
+		.dest_data_size = 1,	\
 		.head_block = &dma_block_config_##inst[1],	\
-		.user_data = &i2c_dma_user_data_##inst[1],	\
+		.callback_arg = &i2c_dma_user_data_##inst[1],	\
 		.dma_callback = hc32_dma_callback,	\
 	}	\
 };	
 #define HC32_I2C_DMA_CONFIG(inst)	\
-	.dma_dev = {	\
-		DEVICE_DT_GET(HC32_DMA_CTLR(inst, tx_dma)),	\
-		DEVICE_DT_GET(HC32_DMA_CTLR(inst, rx_dma)),	\
-	},	\
 	.dma_conf = dma_config_##inst,		\
 	.channel = {	\
-		HC32_DMA_CHANNEL(inst, tx_dma),	\
-		HC32_DMA_CHANNEL(inst, rx_dma),	\
+		CONFIG_I2C_##inst##_DMA_TX_CHANNEL,	\
+		CONFIG_I2C_##inst##_DMA_RX_CHANNEL,	\
 	}	
 #else
 #define HC32_I2C_DMA_INIT(inst)
@@ -885,10 +884,11 @@ static struct i2c_hc32_config i2c_hc32_cfg_##index = {		\
 	I2C_HC32_SCL_INIT(index)					\
 	I2C_HC32_SDA_INIT(index)					\
 	HC32_I2C_FLAG_TIMEOUT			\
-	HC32_I2C_DMA_CONFIG(index)		\
 };									\
 									\
-static struct i2c_hc32_data i2c_hc32_dev_data_##index;		\
+static struct i2c_hc32_data i2c_hc32_dev_data_##index = {		\
+	HC32_I2C_DMA_CONFIG(index)	\
+};	\
 									\
 DEVICE_AND_API_INIT(i2c_hc32_##index, DT_XHSC_HC32_I2C_##index##_LABEL,	\
 			i2c_hc32_init,	\

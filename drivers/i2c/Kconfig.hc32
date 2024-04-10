@@ -12,7 +12,7 @@ if I2C_HC32
 
 choice I2C_TRANSFER_MODE
 	bool "Select i2c transfer mode"
-	default I2C_HC32_INTERRUPT
+	default I2C_HC32_DMA
 
 config I2C_HC32_INTERRUPT
 	bool "HC32 MCU I2C Interrupt Support"
@@ -26,6 +26,45 @@ config I2C_HC32_DMA
 	help
 	  Enable DMA support for the I2C Driver
 endchoice
+
+if I2C_HC32_DMA
+
+config I2C_0_DMA_TX_CHANNEL
+	int "Select i2c1 write channel"
+	default 0
+	help
+	  Select DMA Channel for I2C1 Bus Wtite
+
+config I2C_0_DMA_RX_CHANNEL
+	int "Select i2c1 read channel"
+	default 1
+	help
+	  Select DMA Channel for I2C1 Bus Read
+
+config I2C_1_DMA_TX_CHANNEL
+	int "Select i2c2 write channel"
+	default 0
+	help
+	  Select DMA Channel for I2C2 Bus Wtite
+
+config I2C_1_DMA_RX_CHANNEL
+	int "Select i2c2 read channel"
+	default 1
+	help
+	  Select DMA Channel for I2C2 Bus Read
+
+config I2C_2_DMA_TX_CHANNEL
+	int "Select i2c3 write channel"
+	default 0
+	help
+	  Select DMA Channel for I2C3 Bus Wtite
+
+config I2C_2_DMA_RX_CHANNEL
+	int "Select i2c3 read channel"
+	default 1
+	help
+	  Select DMA Channel for I2C3 Bus Read
+endif
 
 config I2C_HC32_BUS_RECOVERY
 	bool "Bus recovery support"

@@ -499,7 +499,19 @@
 						 <HC32_ADC1_EOCB_IRQ_NUM HC32_ADC1_EOCB_IRQ_PRIO INT_SRC_ADC1_EOCB>;
 			interrupt-names = "eoca", "eocb";
 			status = "disabled";
-			label = "ADC1";
+			label = "ADC_1";
+		};
+
+		adc2: adc@40040400 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_ADC2_EOCA_IRQ_NUM HC32_ADC2_EOCA_IRQ_PRIO INT_SRC_ADC2_EOCA>,
+						 <HC32_ADC2_EOCB_IRQ_NUM HC32_ADC2_EOCB_IRQ_PRIO INT_SRC_ADC2_EOCB>;
+			interrupt-names = "eoca", "eocb";
+			status = "disabled";
+			label = "ADC_2";
 		};
 	};
 };

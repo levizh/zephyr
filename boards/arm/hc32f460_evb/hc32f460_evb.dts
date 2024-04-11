@@ -54,9 +54,6 @@
 
 &usart4 {
 	current-speed = <115200>;
-	// pinctrl-0 = <&gpioe 6 GPIO_INT_ACTIVE_LOW>,
-	// <&gpiob 9 GPIO_INT_ACTIVE_LOW>;
-	pinctrl-names = "default";
 	status = "ok";
 };
 
@@ -65,5 +62,9 @@
 };
 
 &spi2 {
+	status = "ok";
+};
+
+&adc2 {
 	status = "ok";
 };

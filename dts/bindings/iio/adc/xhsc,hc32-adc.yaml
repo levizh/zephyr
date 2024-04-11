@@ -1,0 +1,56 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: XHSC Semiconductor ADC
+version: 0.1
+
+description: >
+    This is a representation of the XHSC ADC node
+
+inherits:
+    !include adc.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "xhsc,hc32-adc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      required: true
+
+    vref-mv:
+      type: int
+      default: 3300
+      description: Indicates the reference voltage of the ADC in mV (on the target board).
+
+    pin-num:
+      type: int
+      required: true
+
+    pin-name:
+      type: string
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+io-channel-cells:
+  - input
+...

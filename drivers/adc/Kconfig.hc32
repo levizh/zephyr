@@ -1,0 +1,52 @@
+# Kconfig - ADC configuration options
+
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+
+config ADC_HC32
+	bool "xhsc ADC driver"
+	default y
+	select HC32_LL_ADC
+	depends on SOC_FAMILY_HC32
+	help
+	  Enable support for xhsc ADC driver for HC32 MCU series.
+
+if ADC_HC32
+
+config ADC_DMA
+	bool "xhsc ADC dma support"
+	default y
+	depends on CONFIG_ADC_ASYNC
+	help
+	  Enable support for DMA driver for ADC.
+
+config ADC_HC32_INTERRUPT
+	bool "HC32 ADC shared interrupts"
+	default y
+	help
+	Enable the use of shared interrupts
+
+config ADC1
+	bool "Enable HC32 ADC1"
+	help
+	  Enable support for ADC1 in the driver.
+	  Set y here if you want to use ADC1 device.
+
+config ADC2
+	bool "Enable HC32 ADC2"
+	help
+	  Enable support for ADC2 port in the driver.
+	  Set y here if you want to use ADC2 device.
+
+endif # ADC_HC32
+
+if ADC1
+config ADC1_HC32_CHANNEL_COUNT
+	int "Number of ADC channels"
+	range 1 16
+	default 1
+	help
+	  Number of ADC channels to be supported by the driver. Each channel
+	  needs a dedicated structure in RAM that stores the ADC settings
+	  to be used when sampling this channel.
+
+endif # ADC1

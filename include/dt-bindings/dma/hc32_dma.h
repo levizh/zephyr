@@ -12,21 +12,25 @@
 #define DMA2            (2U)
 
 /* macros for dmas cfg in dts:
-   |--31:28--|---27:24---|--23:16--|--15:12--|---11:8----|---7:0---|
-   |---REV---|--TX_UNIT--|--TX_CH--|---REV---|--RX_UNIT--|--RX_CH--|
+   |--31:24--|----23:12---|---11:8----|---7:0---|
+   |---REV---|----SLOT----|---UNIT----|---CH----|
  */
 
-#define HC32_PERIPH_TX_DMA_UNIT(val)         ((val & 0xFU) << 24U)
-#define HC32_PERIPH_TX_DMA_CH(val)           ((val & 0xFFU) << 16U)
-
-#define HC32_PERIPH_RX_DMA_UNIT(val)         ((val & 0xFU) << 8U)
-#define HC32_PERIPH_RX_DMA_CH(val)           ((val & 0xFFU) << 0U)
+#define HC32_DT_DMA_SLOT(val)         ((val & 0xFFFUL) << 12U)
+#define HC32_DT_DMA_UNIT(val)         ((val & 0xFUL) << 8U)
+#define HC32_DT_DMA_CH(val)           ((val & 0xFFUL) << 0U)
 
 /* dts bindings example:
     ...
-    dmas:
+    dma-tx-cfg:
       type: int
-      description: DMA config
+      description: DMA tx config
+      generation: define
+      category: optional
+
+    dma-rx-cfg:
+      type: int
+      description: DMA rx config
       generation: define
       category: optional
     ...
@@ -36,8 +40,10 @@
 
     usart4: serial@40021400 {
         ...
-        dmas = <(HC32_PERIPH_TX_DMA_UNIT(DMA1) | HC32_PERIPH_TX_DMA_CH(0) |
-                 HC32_PERIPH_RX_DMA_UNIT(DMA2) | HC32_PERIPH_RX_DMA_CH(2))>;
+      dma-tx-cfg = <(HC32_DT_DMA_UNIT(DMA1) | HC32_DT_DMA_CH(0) |
+                     HC32_DT_DMA_SLOT(EVT_SRC_USART4_TI))>;
+      dma-rx-cfg = <(HC32_DT_DMA_UNIT(DMA2) | HC32_DT_DMA_CH(2) |
+                     HC32_DT_DMA_SLOT(EVT_SRC_USART4_RI))>;
         ...
 	}
 

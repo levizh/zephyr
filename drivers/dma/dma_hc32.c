@@ -186,7 +186,7 @@ static int dma_hc32_configure(struct device *dev, u32_t channel,
 
 	if ((dma_cfg->head_block->block_size % (dma_cfg->source_data_size *
 						dma_cfg->source_burst_length)) != 0) {
-		LOG_ERR("block_size is not an integer multiple of source_data_size.");
+		LOG_ERR("block_size is not an integer multiple of (data_size*burst_length).");
 		return -ENOTSUP;
 	}
 

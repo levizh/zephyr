@@ -721,7 +721,14 @@ static int i2c_hc32_activate(struct device *dev)
 
 	return 0;
 }
-
+#define STRING(x)	#x
+#define TO_STRING(x)	STRING(x)
+#define HC32_I2C_DMA_UINT_PRASE_F(x)	DMA_##x
+#define HC32_I2C_DMA_UINT_PRASE(x)	HC32_I2C_DMA_UINT_PRASE_F(x)
+#if defined HC32F460
+#define HC32_DMA_SUPPORT_NUM	2
+#define HC32_I2C_SUPPORT_NUM	3
+#endif
 static int i2c_hc32_init(struct device *dev)
 {
 	const struct i2c_hc32_config *cfg = dev->config->config_info;
@@ -733,8 +740,48 @@ static int i2c_hc32_init(struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 #ifdef CONFIG_I2C_HC32_DMA
-	data->dma_dev[0] = device_get_binding(CONFIG_DMA_1_NAME);
-	data->dma_dev[1] = device_get_binding(CONFIG_DMA_1_NAME);
+	const char *tx_name;
+	const char *rx_name;
+
+	__ASSERT((data->uints[0] > HC32_DMA_SUPPORT_NUM) == 0, "uints too large");
+	__ASSERT((data->uints[1] > HC32_DMA_SUPPORT_NUM) == 0, "uints too large");
+
+	switch (data->uints[0])
+	{
+	case 1:
+		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(1));
+		break;
+	case 2:
+		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(2));
+		break;
+	case 3:
+		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(3));
+		break;
+	case 4:
+		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(4));
+		break;
+	default:
+		return -EINVAL;
+	}
+	switch (data->uints[1])
+	{
+	case 1:
+		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(1));
+		break;
+	case 2:
+		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(2));
+		break;
+	case 3:
+		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(3));
+		break;
+	case 4:
+		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(4));
+		break;
+	default:
+		return -EINVAL;
+	}
+	data->dma_dev[0] = device_get_binding(tx_name);
+	data->dma_dev[1] = device_get_binding(rx_name);
 	((struct dma_hc32_config_user_data *)(data->dma_conf[0].callback_arg))->user_data = (void *)dev;
 	((struct dma_hc32_config_user_data *)(data->dma_conf[1].callback_arg))->user_data = (void *)dev;
 #endif
@@ -848,13 +895,18 @@ struct dma_config dma_config_##inst[2] = \
 		.callback_arg = &i2c_dma_user_data_##inst[1],	\
 		.dma_callback = hc32_dma_callback,	\
 	}	\
-};	
+};	\
+
 #define HC32_I2C_DMA_CONFIG(inst)	\
 	.dma_conf = dma_config_##inst,		\
+	.uints = {	\
+		(DT_XHSC_HC32_I2C_##inst##_DMAS >> 24) & 0xF,	\
+		(DT_XHSC_HC32_I2C_##inst##_DMAS >> 8) & 0xF,	\
+	},	\
 	.channel = {	\
-		CONFIG_I2C_##inst##_DMA_TX_CHANNEL,	\
-		CONFIG_I2C_##inst##_DMA_RX_CHANNEL,	\
-	}	
+		(DT_XHSC_HC32_I2C_##inst##_DMAS >> 16) & 0xFF,	\
+		(DT_XHSC_HC32_I2C_##inst##_DMAS) & 0xFF,	\
+	}
 #else
 #define HC32_I2C_DMA_INIT(inst)
 #define HC32_I2C_DMA_CONFIG(inst)

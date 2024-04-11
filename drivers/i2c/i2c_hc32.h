@@ -32,7 +32,9 @@ struct i2c_hc32_data {
 #ifdef CONFIG_I2C_HC32_DMA
 	struct device *dma_dev[2];
 	struct dma_config *dma_conf;
+	uint8_t uints[2];
 	uint8_t channel[2];
+	const char *name[2];
 #endif
 #if defined (CONFIG_I2C_HC32_INTERRUPT) || (CONFIG_I2C_HC32_DMA)
 	struct k_sem device_sync_sem;

@@ -41,14 +41,11 @@ properties:
       generation: define
 
     dmas:
-      type: compound
+      type: int
       category: option
       generation: define
-
-    dma-names:
-      type: stringlist
-      category: option
-      generation: define
+      description: |
+        dma config. ref hc32_dma.h
 
     scl-gpios:
       type: compound

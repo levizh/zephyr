@@ -28,5 +28,5 @@ config SPI_HC32_DMA
 	help
 	  Use the DMA for SPI transfer
 	  that enable dma channels in their device tree node.
-	  
+
 endif # SPI_HC32

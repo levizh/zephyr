@@ -57,12 +57,14 @@
 	status = "ok";
 };
 
-&spi1 {
+&dma1{
 	status = "ok";
 };
 
-&spi2 {
+&spi1 {
 	status = "ok";
+	dma-tx-cfg =  < (HC32_DT_DMA_UNIT(DMA1) | HC32_DT_DMA_CH(1) | HC32_DT_DMA_SLOT(EVT_SRC_SPI1_SPTI)) >;
+	dma-rx-cfg = < (HC32_DT_DMA_UNIT(DMA1) | HC32_DT_DMA_CH(2) | HC32_DT_DMA_SLOT(EVT_SRC_SPI1_SPRI)) >;
 };
 
 &adc2 {

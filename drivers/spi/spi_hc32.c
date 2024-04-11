@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(spi_hc32);
 #include <misc/util.h>
 #include <kernel.h>
 #include <soc.h>
+#include <dma.h>
 #include <errno.h>
 #include <spi.h>
 #include <toolchain.h>
@@ -18,6 +19,9 @@ LOG_MODULE_REGISTER(spi_hc32);
 
 #include <clock_control/hc32_clock_control.h>
 #include <clock_control.h>
+#include <dma/dma_hc32.h>
+#include <dt-bindings/dma/hc32_dma.h>
+#include <interrupt_controller/intc_hc32.h>
 
 /* SPI error status mask. */
 #define SPI_HC32_ERR_MASK          SPI_FLAG_CLR_ALL
@@ -31,16 +35,26 @@ LOG_MODULE_REGISTER(spi_hc32);
 
 #ifdef CONFIG_SPI_HC32_DMA
 
+#ifdef DT_XHSC_HC32_DMA_40053000_LABEL
+#define DMA1_LABLE  DT_XHSC_HC32_DMA_40053000_LABEL
+#else
+#define DMA1_LABLE ""
+#endif
+
+#ifdef DT_XHSC_HC32_DMA_40053400_LABEL
+#define DMA2_LABLE  DT_XHSC_HC32_DMA_40053400_LABEL
+#else
+#define DMA2_LABLE  ""
+#endif
+
 #define SPI_HC32_DMA_ERROR_FLAG	    0x01
 #define SPI_HC32_DMA_RX_DONE_FLAG	0x02
 #define SPI_HC32_DMA_TX_DONE_FLAG	0x04
 #define SPI_HC32_DMA_DONE_FLAG	\
 	(SPI_HC32_DMA_RX_DONE_FLAG | SPI_HC32_DMA_TX_DONE_FLAG)
 struct spi_hc32_dma_config {
-	const struct device *dev;
+	struct device *dev;
 	uint8_t channel;
-	uint8_t src_addr_increment;
-	uint8_t dst_addr_increment;
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg;
 	struct dma_hc32_config_user_data dma_cfg_user_data;
@@ -54,6 +68,7 @@ struct spi_hc32_config {
 #ifdef CONFIG_SPI_HC32_INTERRUPT
 	void (*irq_configure)();
 #endif
+	struct spi_cs_hc32 *cs_hc32;
 };
 
 struct spi_hc32_data {
@@ -73,15 +88,13 @@ static __aligned(32) uint32_t dummy_rx_tx_buffer;
 #ifdef CONFIG_SPI_HC32_DMA
 
 /* dma interrupt context */
-static void spi_dma_callback(const struct device *dev, void *user_data,
-			     uint32_t channel, int status)
+static void spi_dma_callback(void *callback_arg, u32_t channel, int error_code)
 {
 	/* arg directly holds the spi device */
-	struct dma_hc32_config_user_data *dma_cfg_user_data  = user_data;
+	struct dma_hc32_config_user_data *dma_cfg_user_data  = callback_arg;
 	struct spi_hc32_data *data = dma_cfg_user_data->user_data;
-	ARG_UNUSED(dev);
 
-	if (status < 0) {
+	if (error_code < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_HC32_DMA_ERROR_FLAG;
 	} else {
@@ -134,23 +147,15 @@ static int spi_hc32_dma_rx_load(const struct device *dev, const uint8_t *buf,
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
 		blk_cfg->dest_address = (uint32_t)buf;
-		if (data->dma_rx.dst_addr_increment == DMA_ADDR_ADJ_INCREMENT) {
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		} else {
-			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
+		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	}
 
 	blk_cfg->source_address = cfg->reg;
-	if (data->dma_rx.src_addr_increment == DMA_ADDR_ADJ_INCREMENT) {
-		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-	} else {
-		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	}
+	blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 	dma_cfg_rx->head_block = blk_cfg;
 	data->dma_rx.dma_cfg_user_data.user_data = data;
-	dma_cfg_rx->user_data = (void *) &data->dma_rx.dma_cfg_user_data;
+	dma_cfg_rx->callback_arg = &data->dma_rx.dma_cfg_user_data;
 	dma_cfg_rx->source_data_size = dft;
 	dma_cfg_rx->dest_data_size = dft;
 
@@ -197,23 +202,16 @@ static int spi_hc32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
 		blk_cfg->source_address = (uint32_t)buf;
-		if (data->dma_tx.src_addr_increment == DMA_ADDR_ADJ_INCREMENT) {
-			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		} else {
-			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
+		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	}
 
 	blk_cfg->dest_address = cfg->reg;
-	if (data->dma_tx.dst_addr_increment == DMA_ADDR_ADJ_INCREMENT) {
-		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-	} else {
-		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-	}
+	blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
 
 	dma_cfg_tx->head_block = blk_cfg;
 	data->dma_tx.dma_cfg_user_data.user_data = data;
-	dma_cfg_tx->user_data = (void *) &data->dma_tx.dma_cfg_user_data;
+	dma_cfg_tx->callback_arg = &data->dma_tx.dma_cfg_user_data;
 	dma_cfg_tx->source_data_size = dft;
 	dma_cfg_tx->dest_data_size = dft;
 
@@ -232,7 +230,7 @@ static int wait_dma_done(const struct device *dev)
 {
 	struct spi_hc32_data *data = dev->driver_data;
 	int res = -1;
-	k_timeout_t timeout;
+	s32_t timeout;
 
 	/*
 	 * In slave mode we do not know when the transaction will start. Hence,
@@ -523,13 +521,11 @@ static int spi_hc32_configure(struct device *dev,
 		stcSpiInit.u32SpiMode |= SPI_CFG2_CPHA;
 	}
 
-#if 0
 	/* get bus clk*/
-	err = clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(clk_sys)),
-				     (clock_control_subsys_t)&cfg->clk_sys,
+	err = clock_control_get_rate(device_get_binding(CLOCK_CONTROL),
+				     (clock_control_subsys_t)&cfg->spi_clk,
 				     &bus_freq);
-#endif
-	bus_freq = 100000000;
+
 	if (err < 0) {
 		LOG_ERR("Failed call clock_control_get_rate()");
 		return -EIO;
@@ -586,7 +582,7 @@ static int spi_hc32_release(struct device *dev,
 
 #ifdef CONFIG_SPI_HC32_DMA
 /* spi transceive function through DMA */
-static int transceive_dma(const struct device *dev,
+static int transceive_dma(struct device *dev,
 			  const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs,
@@ -772,9 +768,36 @@ static const struct spi_driver_api api_funcs = {
 static int spi_hc32_init(struct device *dev)
 {
 	int ret;
-	struct device* clock;
+	struct device *clock;
 	const struct spi_hc32_config *cfg = dev->config->config_info;
 	struct spi_hc32_data *data = dev->driver_data;
+#ifdef CONFIG_SPI_HC32_DMA
+	/* update dma tx dev and dma trig source */
+	switch ((uint32_t)(data->dma_tx.dev)) {
+	case DMA1:
+		data->dma_tx.dev = device_get_binding(DMA1_LABLE);
+		break;
+	case DMA2:
+		data->dma_tx.dev = device_get_binding(DMA2_LABLE);
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+
+	/* update dma rx dev */
+	switch ((uint32_t)(data->dma_rx.dev)) {
+	case DMA1:
+		data->dma_rx.dev = device_get_binding(DMA1_LABLE);
+		break;
+	case DMA2:
+		data->dma_rx.dev = device_get_binding(DMA2_LABLE);
+		break;
+	default:
+		return -EINVAL;
+		break;
+	}
+#endif
 
 	clock = device_get_binding(CLOCK_CONTROL);
 	/* spi clock open */
@@ -804,45 +827,63 @@ IRQ_CONNECT(DT_XHSC_HC32_SPI_##idx##_IRQ_##num, DT_XHSC_HC32_SPI_##idx##_IRQ_##n
 		    spi_hc32_isr, DEVICE_GET(spi_hc32_##idx), 0);                                              \
 hc32_intc_irq_signin(DT_XHSC_HC32_SPI_##idx##_IRQ_##num, DT_XHSC_HC32_SPI_##idx##_IRQ_##num##_INT_SRC);\
 irq_enable(DT_XHSC_HC32_SPI_##idx##_IRQ_##num);
-#else
-#define IRQ_SIGNIN(idx, num)
+
+#define HC32_IRQ_CONFIGURE(idx)                             \
+static void spi_hc32_irq_config_##idx(struct device *dev)   \
+{                                                           \
+	IRQ_SIGNIN(idx, 0)                                      \
+	IRQ_SIGNIN(idx, 1)                                      \
+	IRQ_SIGNIN(idx, 2)                                      \
+}                                                           \
 
 #endif /* CONFIG_SPI_HC32_INTERRUPT */
 
-#if 0
-#define DMA_INITIALIZER(inst, dir)                                      \
-	{                                                                   \
-		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, dir)),     \
-		.channel = HC32_DMA_CHANNEL(inst, dir),                         \
-		.dma_cfg_user_data = {                                          \
-			.slot = DT_INST_DMAS_CELL_BY_NAME(inst, dir, slot),         \
-		},                                                              \
-		.dma_cfg = {							                        \
-		.channel_direction = HC32_DMA_CONFIG_DIRECTION(HC32_DMA_CHANNEL_CONFIG(inst, dir)),	\
-		.source_burst_length = 1,  /* SINGLE transfer */		        \
-		.dest_burst_length = 1,    /* SINGLE transfer */		        \
-		.block_count = 1,                                               \
-		.dma_callback = spi_dma_callback,				                \
-		.complete_callback_en = 0,                                      \
-		.error_callback_en = 0,                                         \
-		},								\
-		.src_addr_increment = HC32_DMA_CONFIG_SOURCE_ADDR_INC(HC32_DMA_CHANNEL_CONFIG(inst, dir)),\
-		.dst_addr_increment = HC32_DMA_CONFIG_DEST_ADDR_INC(HC32_DMA_CHANNEL_CONFIG(inst, dir)),  \
+#define DMA_INITIALIZER_TX(inst)                                                                         \
+	{                                                                                                    \
+		.dev = (struct device *)HC32_DT_GET_DMA_UNIT((uint32_t)DT_XHSC_HC32_SPI_##inst##_DMA_TX_CFG),    \
+		.channel = (uint8_t)HC32_DT_GET_DMA_CH((uint32_t)DT_XHSC_HC32_SPI_##inst##_DMA_TX_CFG),          \
+		.dma_cfg_user_data = {                                                                           \
+			.slot = HC32_DT_GET_DMA_SLOT(DT_XHSC_HC32_SPI_##inst##_DMA_TX_CFG),                          \
+		},                                                                                               \
+		.dma_cfg = {                                                                                     \
+		.channel_direction = MEMORY_TO_PERIPHERAL,	                                                     \
+		.source_burst_length = 1,  /* SINGLE transfer */                                                 \
+		.dest_burst_length = 1,    /* SINGLE transfer */                                                 \
+		.block_count = 1,                                                                                \
+		.dma_callback = spi_dma_callback,                                                                \
+		.complete_callback_en = 0,                                                                       \
+		.error_callback_en = 0,                                                                          \
+		},                                                                                               \
+	}
+
+#define DMA_INITIALIZER_RX(inst)                                                                      \
+	{                                                                                                 \
+		.dev = (struct device *)HC32_DT_GET_DMA_UNIT((uint32_t)DT_XHSC_HC32_SPI_##inst##_DMA_RX_CFG), \
+		.channel = (uint8_t)HC32_DT_GET_DMA_CH((uint32_t)DT_XHSC_HC32_SPI_##inst##_DMA_RX_CFG),       \
+		.dma_cfg_user_data = {                                                                        \
+			.slot = HC32_DT_GET_DMA_SLOT(DT_XHSC_HC32_SPI_##inst##_DMA_RX_CFG),                       \
+		},                                                                                            \
+		.dma_cfg = {                                                                                  \
+		.channel_direction = PERIPHERAL_TO_MEMORY,	                                                  \
+		.source_burst_length = 1,  /* SINGLE transfer */                                              \
+		.dest_burst_length = 1,    /* SINGLE transfer */                                              \
+		.block_count = 1,                                                                             \
+		.dma_callback = spi_dma_callback,                                                             \
+		.complete_callback_en = 0,                                                                    \
+		.error_callback_en = 0                                                                        \
+		},                                                                                            \
 	}
 
 #ifdef CONFIG_SPI_HC32_DMA
-#define DMAS_DECL(inst)                                              \
-		.dma_rx = COND_CODE_1(DT_INST_DMAS_HAS_NAME(inst, rx),       \
-			    (DMA_INITIALIZER(inst, rx)), (NULL)),                \
-		.dma_tx = COND_CODE_1(DT_INST_DMAS_HAS_NAME(inst, tx),       \
-			    (DMA_INITIALIZER(inst, tx)), (NULL)),
-#define SPI_DMA_STATUS_SEM(inst)						\
-		.status_sem = Z_SEM_INITIALIZER(				\
+#define DMAS_DECL(inst)                                 \
+		.dma_rx = DMA_INITIALIZER_RX(inst),             \
+		.dma_tx = DMA_INITIALIZER_TX(inst),
+#define SPI_DMA_STATUS_SEM(inst)                        \
+		.status_sem = Z_SEM_INITIALIZER(                \
 		spi_hc32_data_##inst.status_sem, 0, 1),
 #else
 #define DMAS_DECL(inst)
 #define SPI_DMA_STATUS_SEM(inst)
-#endif
 #endif
 
 #define SPI_HC32_DEVICE_INIT(idx)                           \
@@ -850,13 +891,11 @@ DEVICE_DECLARE(spi_hc32_##idx);                             \
 static struct spi_hc32_data spi_hc32_data_##idx = {         \
 	SPI_CONTEXT_INIT_LOCK(spi_hc32_data_##idx, ctx),        \
 	SPI_CONTEXT_INIT_SYNC(spi_hc32_data_##idx, ctx),        \
+	SPI_DMA_STATUS_SEM(idx)                                 \
+	DMAS_DECL(idx)                                          \
 };                                                          \
-static void spi_hc32_irq_config_##idx(struct device *dev)   \
-{                                                           \
-	IRQ_SIGNIN(idx, 0)                                      \
-	IRQ_SIGNIN(idx, 1)                                      \
-	IRQ_SIGNIN(idx, 2)                                      \
-}                                                           \
+COND_CODE_1(CONFIG_SPI_HC32_INTERRUPT,                      \
+(HC32_IRQ_CONFIGURE(idx)),());                              \
 static const struct spi_hc32_config spi_hc32_cfg_##idx = {  \
 	.reg = DT_XHSC_HC32_SPI_##idx##_BASE_ADDRESS,           \
 	.spi_clk ={\

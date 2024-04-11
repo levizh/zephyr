@@ -30,9 +30,22 @@ properties:
       type: stringlist
       category: optional
       description: readable string describing the interrupts
+      generation: define
 
     clocks:
       category: required
 
     label:
       category: required
+
+    dma-tx-cfg:
+      type: int
+      category: optional
+      description: dma configuration
+      generation: define
+
+    dma-rx-cfg:
+      type: int
+      category: optional
+      description: dma configuration
+      generation: define

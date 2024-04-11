@@ -326,8 +326,8 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 			      struct k_sem *caller_sem,
 			      void *unused)
 {
-	int ret;
 #ifdef CONFIG_SPI_ASYNC
+	int ret;
 	LOG_DBG("Polling...");
 
 	while (1) {

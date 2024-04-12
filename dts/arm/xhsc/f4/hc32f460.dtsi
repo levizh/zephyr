@@ -584,6 +584,18 @@
 			phase-seg2 = <2>;
 			sjw = <2>;
 		};
+
+		rtc: rtc@4004c000 {
+			compatible = "xhsc,hc32-rtc";
+			reg = <0x4004c000 0x400>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_RTC_ALARM_IRQ_NUM HC32_RTC_ALARM_IRQ_PRIO INT_SRC_RTC_ALM>;
+			interrupt-names = "alm";
+			clock-src = "lrc";
+			prescaler = <32768>;
+			status = "ok";
+			label = "RTC_0";
+		};
 	};
 };
 

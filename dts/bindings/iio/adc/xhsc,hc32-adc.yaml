@@ -32,25 +32,21 @@ properties:
       description: required interrupts
       generation: define
 
-    interrupt-names:
-      required: true
-
-    vref-mv:
-      type: int
-      default: 3300
-      description: Indicates the reference voltage of the ADC in mV (on the target board).
-
-    pin-num:
-      type: int
-      required: true
-
-    pin-name:
+    ports:
       type: string
-      required: true
+      description: adc input ports
+      generation: define
+      category: required
 
-    "#io-channel-cells":
-      const: 1
+    pins-idx:
+      type: int
+      description: specific pins of adc-ports
+      generation: define
+      category: required
 
-io-channel-cells:
-  - input
+    pins-num:
+      type: int
+      description: number of adc input pin
+      generation: define
+      category: required
 ...

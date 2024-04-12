@@ -7,6 +7,7 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <soc.h>
+#include <pinmux.h>
 #include <clock_control/hc32_clock_control.h>
 #include <interrupt_controller/intc_hc32.h>
 
@@ -62,12 +63,25 @@ struct adc_hc32_data {
 #endif /* CONFIG_ADC_ASYNC */
 };
 
+struct adc_hc32_gpio_info
+{
+	uint8_t *port_name;
+	uint8_t pin_idx;
+};
+
+
+struct adc_hc32_pin_cfg
+{
+	const uint8_t pin_num;
+	const struct adc_hc32_gpio_info *gpio_info;
+};
+
 struct adc_hc32_config {
 	CM_ADC_TypeDef *base;
 #if defined(CONFIG_ADC_HC32_INTERRUPT)
 	void (*irq_cfg_func)(struct device *dev);
 #endif /* CONFIG_ADC_HC32_INTERRUPT */
-	const struct pinctrl_dev_config *pin_cfg;
+	const struct adc_hc32_pin_cfg pin_cfg;
 	struct hc32_modules_clock_sys clk_cfg;
 #if defined(CONFIG_ADC_ASYNC)
 	const struct adc_channel_cfg ch_cfg;
@@ -187,19 +201,6 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 		data->buffer = data->repeat_buffer;
 		data->is_do_repeat_sample = true;
 	}
-}
-
-static void adc_context_on_complete(struct adc_context *ctx)
-{
-	struct adc_hc32_data *data = CONTAINER_OF(ctx, struct adc_hc32_data, ctx);
-	const struct adc_hc32_config *config = data->dev_adc->config->config_info;
-	CM_ADC_TypeDef *ADCx = config->base;
-
-	data->is_finish_sample = true;
-
-	ADC_Stop(ADCx);
-	ADC_ClearStatus(ADCx, ADC_FLAG_ALL);
-	ADC_IntCmd(ADCx, ADC_INT_ALL, DISABLE);
 }
 
 /* Implementation of the ADC driver API function: adc_channel_setup. */
@@ -353,9 +354,11 @@ static int adc_hc32_read_async(struct device *dev,
 static int adc_hc32_init(struct device *dev)
 {
 	int err;
-	struct device* dev_clock;
+	uint8_t i, port_count;
+	struct device *dev_clock, *dev_pin;
 	struct adc_hc32_data *data = dev->driver_data;
 	const struct adc_hc32_config *config = dev->config->config_info;
+	const struct adc_hc32_pin_cfg *pin_config = &config->pin_cfg;
 
 	/* Init adc pointer address in data structure */
 	data->dev_adc = dev;
@@ -366,6 +369,15 @@ static int adc_hc32_init(struct device *dev)
 		return err;
 	}
 	/* Config adc pin */
+	port_count = pin_config->pin_num;
+	for (i = 0; i < port_count; i++) {
+		dev_pin = device_get_binding((pin_config->gpio_info + i)->port_name);
+		err = pinmux_pin_set(dev_pin,
+			(pin_config->gpio_info + i)->pin_idx, 0xFFU);
+		if(err < 0) {
+			return err;
+		}
+	}
 
 	/* Config dma if defined async dma */
 #ifdef CONFIG_ADC_ASYNC
@@ -425,7 +437,10 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 
 	if ((++data->sample_idx >= data->samples_count) &&
 		(data->is_do_repeat_sample == false)) {
-		adc_context_on_complete(ctx);
+		ADC_Stop(ADCx);
+		ADC_ClearStatus(ADCx, ADC_FLAG_ALL);
+		ADC_IntCmd(ADCx, ADC_INT_ALL, DISABLE);
+		data->is_finish_sample = true;
 	}
 }
 
@@ -465,8 +480,24 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 
 #endif /* CONFIG_ADC_HC32_INTERRUPT */
 
+#define ADC_HC32_PIN_INIT(pins_idx, adc_idx)								\
+	{																		\
+		.port_name = DT_XHSC_HC32_ADC_##adc_idx##_PORTS_##pins_idx,			\
+		.pin_idx = DT_XHSC_HC32_ADC_##adc_idx##_PINS_IDX_##pins_idx,		\
+	},
+
+#define ADC_HC32_PIN_CFG(index, pins_num)									\
+	{																		\
+		UTIL_LISTIFY(pins_num, ADC_HC32_PIN_INIT, index)					\
+	}
+
+#define ADC_HC32_PINS_INFO_DECL(index)										\
+	static const struct adc_hc32_gpio_info adc_hc32_gpio_info_##index[] = 	\
+		ADC_HC32_PIN_CFG(index, DT_XHSC_HC32_ADC_##index##_PINS_NUM);
+
 #define HC32_ADC_INIT(index)												\
 	DEVICE_DECLARE(adc_hc32_##index);										\
+	ADC_HC32_PINS_INFO_DECL(index)											\
 	ADC_HC32_IRQ_HANDLER_DECL(index)										\
 	static const struct adc_hc32_config adc_hc32_cfg_##index = {			\
 		.base = (CM_ADC_TypeDef *)DT_XHSC_HC32_ADC_##index##_BASE_ADDRESS,	\
@@ -475,7 +506,11 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 			.fcg = DT_XHSC_HC32_ADC_##index##_CLOCK_FCG,					\
 			.bits = DT_XHSC_HC32_ADC_##index##_CLOCK_BITS,					\
 		},																	\
-	ADC_HC32_ISR_CFG_FUNC(index)											\
+		.pin_cfg = {														\
+			.pin_num = DT_XHSC_HC32_ADC_##index##_PINS_NUM,					\
+			.gpio_info = adc_hc32_gpio_info_##index,						\
+		},																	\
+		ADC_HC32_ISR_CFG_FUNC(index)										\
 	};																		\
 	static struct adc_hc32_data adc_hc32_data_##index = {					\
 		ADC_CONTEXT_INIT_TIMER(adc_hc32_data_##index, ctx),					\

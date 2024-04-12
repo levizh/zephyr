@@ -602,21 +602,6 @@ static int uart_hc32_init(struct device *dev)
 	if (err < 0) {
 		return err;
 	}
-	// FCG_Fcg1PeriphClockCmd(FCG1_PERIPH_USART2, ENABLE);
-	// FCG_Fcg1PeriphClockCmd(FCG1_PERIPH_USART4, ENABLE);
-
-	// /* Configure dt provided device signals when available */
-	// err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
-	// if (err < 0) {
-	// 	return err;
-	// }
-	/* tx and rx */
-
-	GPIO_SetFunc(GPIO_PORT_E, GPIO_PIN_06, GPIO_FUNC_36);
-	GPIO_SetFunc(GPIO_PORT_B, GPIO_PIN_09, GPIO_FUNC_37);
-/* usart2 tx and rx */
-	GPIO_SetFunc(GPIO_PORT_A, GPIO_PIN_01, GPIO_FUNC_36);
-	GPIO_SetFunc(GPIO_PORT_A, GPIO_PIN_02, GPIO_FUNC_37);
 
 	err = uart_hc32_registers_configure(dev);
 	if (err < 0) {
@@ -705,8 +690,6 @@ static inline void usart_hc32_common_isr(const struct device *dev,
 #define HC32_UART_ISR_DEF(index)
 #define HC32_UART_ISR_FUN_CONFIG(index)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-#define GPIO_GET_LABLE(prefix, port)	prefix_##port##_LABEL
 
 #define HC32_UART_INIT(index)												\
 HC32_UART_IRQ_HANDLER_DECL(index);											\

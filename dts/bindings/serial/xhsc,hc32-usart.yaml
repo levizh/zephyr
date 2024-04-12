@@ -18,18 +18,6 @@ properties:
       generation: define
       category: required
 
-    tx-pin:
-      type: int
-      description: TX pin
-      generation: define
-      category: required
-
-    rx-pin:
-      type: int
-      description: RX pin
-      generation: define
-      category: required
-
     interrupts:
       category: optional
       type: array

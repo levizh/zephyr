@@ -40,12 +40,19 @@ properties:
       category: required
       generation: define
 
-    dmas:
+    dma-tx-cfg:
       type: int
       category: option
       generation: define
       description: |
-        dma config. ref hc32_dma.h
+        dma tx config. ref hc32_dma.h
+
+    dma-rx-cfg:
+      type: int
+      category: option
+      generation: define
+      description: |
+        dma rx config. ref hc32_dma.h
 
     scl-gpios:
       type: compound

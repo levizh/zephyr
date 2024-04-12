@@ -1,0 +1,33 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig COUNTER_HC32_RTC
+	bool "HC32 Counter RTC driver"
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_RTC
+	select NEWLIB_LIBC
+
+	help
+	  Build RTC driver for HC32 SoCs.
+
+choice COUNTER_RTC_HC32_CLOCK_SRC
+	bool "RTC clock source"
+	depends on COUNTER_HC32_RTC
+
+config COUNTER_RTC_HC32_CLOCK_LRC
+	bool "select lrc as rtc clock"
+	depends on HC32_CLK_LRC
+	help
+	  Select LRC as RTC clock
+
+config COUNTER_RTC_HC32_CLOCK_XTAL32
+	bool "select xtal32 as rtc clock"
+	depends on HC32_CLK_XTAL32
+	help
+	  Select XTAL32 as RTC clock
+
+endchoice #COUNTER_RTC_HC32_CLOCK_SRC
+

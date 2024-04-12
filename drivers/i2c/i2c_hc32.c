@@ -845,6 +845,9 @@ static void i2c_hc32_irq_config_func_##index(struct device *dev)	\
 #endif /* CONFIG_I2C_HC32_INTERRUPT */
 
 #ifdef CONFIG_I2C_HC32_DMA
+#define GET_HC32_I2C_DMA_UINT(x)	((x >> 8) & 0xF)
+#define GET_HC32_I2C_DMA_CHAN(x)	(x & 0xFF)
+#define GET_HC32_I2C_DMA_SLOT(x)	((x >> 12) & 0xFFF)
 #define HC32_I2C_DMA_INIT(inst)	\
 static void hc32_dma_callback(void *user_data,	\
 				uint32_t channel, int status);	\
@@ -865,10 +868,10 @@ struct dma_block_config dma_block_config_##inst[2] = \
 struct dma_hc32_config_user_data i2c_dma_user_data_##inst[2] = \
 {	\
 	{	\
-		.slot = INT_SRC_I2C3_TEI,\
+		.slot = GET_HC32_I2C_DMA_SLOT(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),\
 	},	\
 	{	\
-		.slot = INT_SRC_I2C3_RXI,\
+		.slot = GET_HC32_I2C_DMA_SLOT(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),\
 	},	\
 }; 	\
 struct dma_config dma_config_##inst[2] = \
@@ -900,12 +903,12 @@ struct dma_config dma_config_##inst[2] = \
 #define HC32_I2C_DMA_CONFIG(inst)	\
 	.dma_conf = dma_config_##inst,		\
 	.uints = {	\
-		(DT_XHSC_HC32_I2C_##inst##_DMAS >> 24) & 0xF,	\
-		(DT_XHSC_HC32_I2C_##inst##_DMAS >> 8) & 0xF,	\
+		GET_HC32_I2C_DMA_UINT(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
+		GET_HC32_I2C_DMA_UINT(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
 	},	\
 	.channel = {	\
-		(DT_XHSC_HC32_I2C_##inst##_DMAS >> 16) & 0xFF,	\
-		(DT_XHSC_HC32_I2C_##inst##_DMAS) & 0xFF,	\
+		GET_HC32_I2C_DMA_CHAN(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
+		GET_HC32_I2C_DMA_CHAN(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
 	}
 #else
 #define HC32_I2C_DMA_INIT(inst)

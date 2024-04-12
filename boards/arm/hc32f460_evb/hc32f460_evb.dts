@@ -77,13 +77,4 @@
 &i2c3 {
 	status = "okay";
 	clock-frequency = < 100000 >;
-	dmas = <(HC32_PERIPH_TX_DMA_UNIT(DMA2) | HC32_PERIPH_TX_DMA_CH(0) | HC32_PERIPH_RX_DMA_UNIT(DMA2) | HC32_PERIPH_RX_DMA_CH(1))>;
-};
-
-&dma1 {
-	status = "okay";
-};
-
-&dma2 {
-	status = "okay";
 };

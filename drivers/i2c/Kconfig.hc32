@@ -12,7 +12,7 @@ if I2C_HC32
 
 choice I2C_TRANSFER_MODE
 	bool "Select i2c transfer mode"
-	default I2C_HC32_DMA
+	default I2C_HC32_INTERRUPT
 
 config I2C_HC32_INTERRUPT
 	bool "HC32 MCU I2C Interrupt Support"

@@ -8,8 +8,11 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_DMA_HC32_DMA_H_
 
 
-#define DMA1            (1U)
-#define DMA2            (2U)
+#define DMA1                (1U)
+#define DMA1_LABEL_NAME     "DMA_1"
+
+#define DMA2                (2U)
+#define DMA2_LABEL_NAME     "DMA_2"
 
 /* macros for dmas cfg in dts:
    |--31:24--|----23:12---|---11:8----|---7:0---|

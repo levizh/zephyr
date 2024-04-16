@@ -4,30 +4,28 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig COUNTER_HC32_RTC
+menuconfig COUNTER_RTC_HC32
 	bool "HC32 Counter RTC driver"
+	default y
 	depends on SOC_FAMILY_HC32
 	select HC32_LL_RTC
 	select NEWLIB_LIBC
-
 	help
-	  Build RTC driver for HC32 SoCs.
+	  Build Counter RTC driver for HC32 SoCs.
 
-choice COUNTER_RTC_HC32_CLOCK_SRC
-	bool "RTC clock source"
-	depends on COUNTER_HC32_RTC
 
-config COUNTER_RTC_HC32_CLOCK_LRC
-	bool "select lrc as rtc clock"
-	depends on HC32_CLK_LRC
+if COUNTER_RTC_HC32
+
+config COUNTER_RTC_HC32_SAVE_VALUE_BETWEEN_RESETS
+	bool "Save rtc time value between resets"
+	default n
 	help
-	  Select LRC as RTC clock
+	  Keep the counter value after each reset.
 
-config COUNTER_RTC_HC32_CLOCK_XTAL32
-	bool "select xtal32 as rtc clock"
-	depends on HC32_CLK_XTAL32
+config RTC_PRESCALER
+	int "rtc prescaler"
+	default 32768
 	help
-	  Select XTAL32 as RTC clock
+	  rtc prescaler.
 
-endchoice #COUNTER_RTC_HC32_CLOCK_SRC
-
+endif # COUNTER_RTC_HC32

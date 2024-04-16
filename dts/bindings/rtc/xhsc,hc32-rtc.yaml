@@ -1,0 +1,31 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+---
+title: HC32 RTC
+version: 0.1
+
+description: >
+    This binding gives a base representation of the HC32 RTC
+
+inherits:
+    !include rtc.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "xhsc,hc32-rtc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    clock-src:
+      type: int
+      category: required
+      description: Clock src, HC32_CLK_SRC_LRC or HC32_CLK_SRC_XTAL32
+      generation: define
+...

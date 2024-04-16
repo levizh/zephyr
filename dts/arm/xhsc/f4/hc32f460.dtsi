@@ -591,9 +591,9 @@
 			interrupt-parent = <&intc>;
 			interrupts = <HC32_RTC_ALARM_IRQ_NUM HC32_RTC_ALARM_IRQ_PRIO INT_SRC_RTC_ALM>;
 			interrupt-names = "alm";
-			clock-src = "lrc";
+			clock-src = <HC32_CLK_SRC_LRC>;
 			prescaler = <32768>;
-			status = "ok";
+			status = "disabled";
 			label = "RTC_0";
 		};
 	};

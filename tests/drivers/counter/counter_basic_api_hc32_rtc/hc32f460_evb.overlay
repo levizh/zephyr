@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rtc{
+    status = "ok";
+    clock-src = <HC32_CLK_SRC_XTAL32>;
+};

@@ -57,6 +57,7 @@ properties:
     scl-gpios:
       type: compound
       category: option
+      generation: define
       description: |
         GPIO to which the I2C SCL signal is routed. This is only needed for
         I2C bus recovery support.
@@ -64,6 +65,7 @@ properties:
     sda-gpios:
       type: compound
       category: option
+      generation: define
       description: |
         GPIO to which the I2C SDA signal is routed. This is only needed for
         I2C bus recovery support.

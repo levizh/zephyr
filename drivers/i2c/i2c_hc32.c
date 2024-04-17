@@ -23,9 +23,6 @@ LOG_MODULE_REGISTER(i2c_hc32);
 #ifdef CONFIG_I2C_HC32_DMA
 #include <drivers/dma/dma_hc32.h>
 #endif
-#ifdef CONFIG_I2C_HC32_BUS_RECOVERY
-#include "i2c_bitbang.h"
-#endif /* CONFIG_I2C_HC32_BUS_RECOVERY */
 
 #define I2C_0_IRQ_NAME	eei
 #define I2C_1_IRQ_NAME	tei
@@ -40,113 +37,10 @@ static int hc32_hw_i2c_restart(const struct i2c_hc32_config *cfg);
 static int hc32_hw_i2c_send_addr(struct device *dev);
 static int hc32_hw_i2c_stop(const struct i2c_hc32_config *cfg);
 
-#ifdef CONFIG_I2C_HC32_BUS_RECOVERY
-pinctrl_soc_pin_t pins[2];
-struct pinctrl_state pinctl_default_sta = \
-{
-	.pins = &pins[0],
-};
-struct pinctrl_dev_config pinctl_dev_default_conf = \
-{
-	.states = &pinctl_default_sta,
-};
+#if CONFIG_I2C_SLAVE
+static void hc32_i2c_slaver_eei_isr(struct device *dev);
+#endif
 
-static void i2c_hc32_bitbang_set_scl(void *io_context, int state)
-{
-	struct i2c_hc32_config *config = io_context;
-
-	gpio_pin_set_dt(&config->scl, state);
-}
-
-static void i2c_hc32_bitbang_set_sda(void *io_context, int state)
-{
-	struct i2c_hc32_config *config = io_context;
-
-	gpio_pin_set_dt(&config->sda, state);
-}
-
-static int i2c_hc32_bitbang_get_sda(void *io_context)
-{
-	struct i2c_hc32_config *config = io_context;
-
-	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
-}
-
-static int i2c_hc32_recover_bus(struct device *dev)
-{
-	uint8_t i;
-	struct i2c_hc32_config *config = dev->config->config_info;
-	struct i2c_hc32_data *data = dev->driver_data;
-	struct i2c_bitbang bitbang_ctx;
-	struct i2c_bitbang_io bitbang_io = {
-		.set_scl = i2c_hc32_bitbang_set_scl,
-		.set_sda = i2c_hc32_bitbang_set_sda,
-		.get_sda = i2c_hc32_bitbang_get_sda,
-	};
-	uint32_t bitrate_cfg;
-	int error = 0;
-
-	LOG_ERR("attempting to recover bus");
-
-	if (!gpio_is_ready_dt(&config->scl)) {
-		LOG_ERR("SCL GPIO device not ready");
-		return -EIO;
-	}
-
-	if (!gpio_is_ready_dt(&config->sda)) {
-		LOG_ERR("SDA GPIO device not ready");
-		return -EIO;
-	}
-
-	pinctl_dev_default_conf.state_cnt = config->pcfg->state_cnt;
-	pinctl_default_sta.id = config->pcfg->states->id;
-	pinctl_default_sta.pin_cnt = config->pcfg->states->pin_cnt;
-	for (i=0; i< pinctl_default_sta.pin_cnt; i++) {
-		pins[i] = config->pcfg->states->pins[i] & \
-			(~(HC32_FUNC_MSK << HC32_FUNC_SHIFT));
-	}
-
-	k_sem_take(&data->bus_mutex, K_FOREVER);
-
-	(void)pinctrl_apply_state(&pinctl_dev_default_conf, PINCTRL_STATE_DEFAULT);
-
-	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
-	if (error != 0) {
-		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
-		goto restore;
-	}
-
-	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
-	if (error != 0) {
-		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
-		goto restore;
-	}
-
-	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
-
-	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
-	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
-	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
-		goto restore;
-	}
-
-	error = i2c_bitbang_recover_bus(&bitbang_ctx);
-	if (error != 0) {
-		LOG_ERR("failed to recover bus (err %d)", error);
-	}
-
-restore:
-	I2C_Cmd(config->i2c, ENABLE);
-	hc32_hw_i2c_reset(config);
-	I2C_Cmd(config->i2c, DISABLE);
-	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-
-	k_sem_give(&data->bus_mutex);
-
-	return error;
-}
-#endif // CONFIG_I2C_HC32_BUS_RECOVERY
 static void hc32_i2c_start(const struct i2c_hc32_config *cfg)
 {
 	CM_I2C_TypeDef *i2c = cfg->i2c;
@@ -188,6 +82,13 @@ void hc32_i2c_eei_isr(void *arg)
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
 
+#if CONFIG_I2C_SLAVE
+	if (data->slave_attached && !data->master_active) {
+		hc32_i2c_slaver_eei_isr(dev);
+		return;
+	}
+#endif
+
 	if (SET == I2C_GetStatus(i2c, I2C_FLAG_START)) {
 		I2C_ClearStatus(i2c, I2C_CLR_STARTFCLR | I2C_CLR_NACKFCLR);
 		I2C_IntCmd(i2c, I2C_INT_STOP | I2C_INT_NACK, ENABLE);
@@ -198,7 +99,7 @@ void hc32_i2c_eei_isr(void *arg)
 			if (data->len == 1) {
 				I2C_AckConfig(i2c, I2C_NACK);
 			}
-			I2C_IntCmd(i2c, I2C_INT_RX_FULL | I2C_INT_TX_CPLT, ENABLE);
+			I2C_IntCmd(i2c, I2C_INT_RX_FULL, ENABLE);
 			I2C_WriteData(i2c, (uint8_t)(data->slaver_addr << 1) | I2C_DIR_RX);
 		}
 	}
@@ -206,7 +107,7 @@ void hc32_i2c_eei_isr(void *arg)
 	if (SET == I2C_GetStatus(i2c, I2C_FLAG_STOP)) {
 		I2C_ClearStatus(i2c, I2C_CLR_STOPFCLR);
 		hc32_i2c_transaction_end(dev);
-		I2C_IntCmd(i2c, I2C_INT_NACK | I2C_INT_STOP, DISABLE);
+		I2C_IntCmd(i2c, I2C_INT_START | I2C_INT_NACK | I2C_INT_STOP, DISABLE);
 		I2C_Cmd(i2c, DISABLE);
 	}
 
@@ -229,7 +130,19 @@ void hc32_i2c_tei_isr(void *arg)
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
 
-
+#if CONFIG_I2C_SLAVE
+	const struct i2c_slave_callbacks *slave_cb =
+		data->slave_cfg->callbacks;
+	u8_t val;
+	if (data->slave_attached && !data->master_active) {
+		if (I2C_INT_TX_CPLT == READ_REG32_BIT(i2c->CR2, I2C_INT_TX_CPLT) && \
+			RESET == I2C_GetStatus(i2c, I2C_FLAG_ACKR)) {
+			slave_cb->read_processed(data->slave_cfg, &val);
+			I2C_WriteData(i2c, val);
+		}
+		return;
+	}
+#endif
 	if (data->len == 0) {
 		if (data->msg->flags & I2C_MSG_STOP) {
 			I2C_IntCmd(i2c, I2C_INT_STOP, ENABLE);
@@ -263,6 +176,16 @@ void hc32_i2c_rxi_isr(void *arg)
 	const struct i2c_hc32_config *cfg = dev->config->config_info;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
+
+#if CONFIG_I2C_SLAVE
+	const struct i2c_slave_callbacks *slave_cb =
+		data->slave_cfg->callbacks;
+	
+	if (data->slave_attached && !data->master_active) {
+		slave_cb->write_received(data->slave_cfg, I2C_ReadData(i2c));
+		return;
+	}
+#endif
 
 	if (data->msg->flags & I2C_MSG_STOP) {
 		if (data->len == 2) {
@@ -321,7 +244,7 @@ static int hc32_i2c_msg_transaction(struct device *dev)
 	
 	if (k_sem_take(&data->device_sync_sem,
 			K_MSEC(HC32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		I2C_IntCmd(i2c, I2C_INT_NACK | I2C_INT_STOP, DISABLE);
+		I2C_IntCmd(i2c, I2C_INT_START | I2C_INT_NACK | I2C_INT_STOP, DISABLE);
 		hc32_hw_i2c_stop(cfg);
 		hc32_i2c_transaction_end(dev);
 		I2C_Cmd(i2c, DISABLE);
@@ -510,7 +433,7 @@ static int hc32_i2c_config(struct device *dev)
 {
 	stc_i2c_init_t stcI2cInit;
 	float f32Error = 0.0F;
-    uint32_t I2cSrcClk;
+    u32_t I2cSrcClk;
     uint32_t I2cClkDiv;
     uint32_t I2cClkDivReg;
 	uint32_t baudrate;
@@ -558,7 +481,7 @@ static int hc32_i2c_config(struct device *dev)
 	return -EFAULT;
 }
 
-int i2c_hc32_runtime_configure(struct device *dev, uint32_t config)
+int i2c_hc32_runtime_configure(struct device *dev, u32_t config)
 {
 	struct i2c_hc32_data *data = dev->driver_data;
 	int ret;
@@ -673,6 +596,9 @@ static int i2c_hc32_transfer(struct device *dev, struct i2c_msg *msg,
 
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
+#if defined(CONFIG_I2C_SLAVE)
+		data->master_active = true;
+#endif
 	data->slaver_addr = slave;
 	for (i = 0; i < num_msgs; i++){
 		current = &msg[i];
@@ -691,11 +617,138 @@ static int i2c_hc32_transfer(struct device *dev, struct i2c_msg *msg,
 			break;
 		}
 	}
-
+#if defined(CONFIG_I2C_SLAVE)
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
+	data->master_active = false;
+	if (data->slave_attached) {
+		I2C_Cmd(cfg->i2c, ENABLE);
+		hc32_hw_i2c_reset(cfg);
+	}
+#endif
 	k_sem_give(&data->bus_mutex);
 
 	return ret;
 }
+
+#if defined(CONFIG_I2C_SLAVE)
+#if CONFIG_I2C_HC32_INTERRUPT
+static void hc32_i2c_slaver_eei_isr(struct device *dev)
+{
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
+	CM_I2C_TypeDef *i2c = cfg->i2c;
+	struct i2c_hc32_data *data = dev->driver_data;
+	const struct i2c_slave_callbacks *slave_cb =
+		data->slave_cfg->callbacks;
+	u8_t val;
+
+	if (SET == I2C_GetStatus(i2c, I2C_FLAG_MATCH_ADDR0)) {
+		I2C_ClearStatus(i2c, I2C_CLR_SLADDR0FCLR | I2C_CLR_NACKFCLR);
+
+		if (SET == I2C_GetStatus(i2c, I2C_FLAG_TRA)) {
+			I2C_IntCmd(i2c, I2C_INT_TX_CPLT, ENABLE);
+			slave_cb->read_requested(data->slave_cfg, &val);
+			I2C_WriteData(i2c, val);
+			I2C_IntCmd(i2c, I2C_INT_STOP | I2C_INT_NACK, ENABLE);
+		} else {
+			slave_cb->write_requested(data->slave_cfg);
+			I2C_IntCmd(i2c, (I2C_INT_RX_FULL | I2C_INT_STOP | I2C_INT_NACK), ENABLE);
+		}
+	}
+
+	if (SET == I2C_GetStatus(i2c, I2C_FLAG_NACKF)) {
+		I2C_ClearStatus(i2c, I2C_CLR_NACKFCLR);
+
+		if (SET == I2C_GetStatus(i2c, I2C_FLAG_TRA)) {
+			I2C_IntCmd(i2c, I2C_INT_TX_CPLT, DISABLE);
+			I2C_ClearStatus(i2c, I2C_CLR_TENDFCLR);
+			(void)I2C_ReadData(i2c);
+		} else {
+			I2C_IntCmd(i2c, I2C_INT_RX_FULL, DISABLE);
+		}
+	}
+
+	if (SET == I2C_GetStatus(i2c, I2C_FLAG_STOP)) {
+		I2C_ClearStatus(i2c, I2C_CLR_STOPFCLR);
+		I2C_IntCmd(i2c, I2C_INT_TX_CPLT | I2C_INT_RX_FULL | I2C_INT_STOP | I2C_INT_NACK, DISABLE);
+		slave_cb->stop(data->slave_cfg);
+	}
+}
+#endif
+
+/* Attach and start I2C as slave */
+int i2c_hc32_slave_register(struct device *dev,
+				struct i2c_slave_config *config)
+{
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
+	struct i2c_hc32_data *data = dev->driver_data;
+	u32_t bitrate_cfg;
+	int ret;
+
+	if (!config) {
+		return -EINVAL;
+	}
+
+	if (data->slave_attached) {
+		return -EBUSY;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+#ifndef CONFIG_I2C_HC32_INTERRUPT
+	return ENOTSUP;
+#endif // !CONFIG_I2C_HC32_INTERRUPT
+
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
+	ret = i2c_hc32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	if (ret < 0) {
+		LOG_ERR("i2c: failure initializing");
+		return ret;
+	}
+
+	data->slave_cfg = config;
+
+	data->slave_attached = true;
+
+	I2C_SlaveAddrConfig(cfg->i2c, I2C_ADDR0, I2C_ADDR_7BIT, config->address);
+
+	I2C_Cmd(cfg->i2c, ENABLE);
+
+	hc32_hw_i2c_reset(cfg);
+
+	I2C_IntCmd(cfg->i2c, (I2C_INT_MATCH_ADDR0 | I2C_INT_RX_FULL), ENABLE);
+
+	return 0;
+}
+
+int i2c_hc32_slave_unregister(struct device *dev,
+				struct i2c_slave_config *config)
+{
+	const struct i2c_hc32_config *cfg = dev->config->config_info;
+	struct i2c_hc32_data *data = dev->driver_data;
+
+	if (!data->slave_attached) {
+		return -EINVAL;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+	data->slave_cfg = NULL;
+
+	data->slave_attached = false;
+
+	I2C_Cmd(cfg->i2c, DISABLE);
+
+	hc32_hw_i2c_reset(cfg);
+
+	LOG_DBG("i2c: slave unregistered");
+
+	return 0;
+}
+#endif // !CONFIG_I2C_SLAVE
 
 static struct i2c_driver_api api_funcs = {
 	.configure = i2c_hc32_runtime_configure,
@@ -703,6 +756,10 @@ static struct i2c_driver_api api_funcs = {
 #if CONFIG_I2C_HC32_BUS_RECOVERY
 	.recover_bus = i2c_hc32_recover_bus,
 #endif /* CONFIG_I2C_HC32_BUS_RECOVERY */
+#if CONFIG_I2C_SLAVE
+	.slave_register = i2c_hc32_slave_register,
+	.slave_unregister = i2c_hc32_slave_unregister,
+#endif
 };
 
 static int i2c_hc32_activate(struct device *dev)
@@ -845,9 +902,6 @@ static void i2c_hc32_irq_config_func_##index(struct device *dev)	\
 #endif /* CONFIG_I2C_HC32_INTERRUPT */
 
 #ifdef CONFIG_I2C_HC32_DMA
-#define GET_HC32_I2C_DMA_UINT(x)	((x >> 8) & 0xF)
-#define GET_HC32_I2C_DMA_CHAN(x)	(x & 0xFF)
-#define GET_HC32_I2C_DMA_SLOT(x)	((x >> 12) & 0xFFF)
 #define HC32_I2C_DMA_INIT(inst)	\
 static void hc32_dma_callback(void *user_data,	\
 				uint32_t channel, int status);	\
@@ -868,10 +922,10 @@ struct dma_block_config dma_block_config_##inst[2] = \
 struct dma_hc32_config_user_data i2c_dma_user_data_##inst[2] = \
 {	\
 	{	\
-		.slot = GET_HC32_I2C_DMA_SLOT(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),\
+		.slot = HC32_DT_GET_DMA_SLOT(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),\
 	},	\
 	{	\
-		.slot = GET_HC32_I2C_DMA_SLOT(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),\
+		.slot = HC32_DT_GET_DMA_SLOT(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),\
 	},	\
 }; 	\
 struct dma_config dma_config_##inst[2] = \
@@ -903,25 +957,17 @@ struct dma_config dma_config_##inst[2] = \
 #define HC32_I2C_DMA_CONFIG(inst)	\
 	.dma_conf = dma_config_##inst,		\
 	.uints = {	\
-		GET_HC32_I2C_DMA_UINT(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
-		GET_HC32_I2C_DMA_UINT(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
+		HC32_DT_GET_DMA_UNIT(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
+		HC32_DT_GET_DMA_UNIT(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
 	},	\
 	.channel = {	\
-		GET_HC32_I2C_DMA_CHAN(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
-		GET_HC32_I2C_DMA_CHAN(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
+		HC32_DT_GET_DMA_CH(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
+		HC32_DT_GET_DMA_CH(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
 	}
 #else
 #define HC32_I2C_DMA_INIT(inst)
 #define HC32_I2C_DMA_CONFIG(inst)
 #endif /* CONFIG_I2C_HC32_DMA */
-
-#ifdef CONFIG_I2C_HC32_BUS_RECOVERY
-#define I2C_HC32_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
-#define I2C_HC32_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
-#else
-#define I2C_HC32_SCL_INIT(n)
-#define I2C_HC32_SDA_INIT(n)
-#endif // #ifdef CONFIG_I2C_HC32_BUS_RECOVERY
 
 #define HC32_I2C_INIT(index)						\
 HC32_I2C_IRQ_HANDLER_DECL(index);					\
@@ -936,8 +982,6 @@ static struct i2c_hc32_config i2c_hc32_cfg_##index = {		\
 	.mod_clk = mudules_clk_##index,					\
 	HC32_I2C_IRQ_HANDLER_FUNCTION(index)				\
 	.bitrate = DT_XHSC_HC32_I2C_##index##_CLOCK_FREQUENCY,		\
-	I2C_HC32_SCL_INIT(index)					\
-	I2C_HC32_SDA_INIT(index)					\
 	HC32_I2C_FLAG_TIMEOUT			\
 };									\
 									\
@@ -952,7 +996,6 @@ DEVICE_AND_API_INIT(i2c_hc32_##index, DT_XHSC_HC32_I2C_##index##_LABEL,	\
 			&api_funcs);	\
 									\
 HC32_I2C_IRQ_HANDLER(index)
-
 
 #if DT_XHSC_HC32_I2C_0
 HC32_I2C_INIT(0);

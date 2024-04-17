@@ -3,7 +3,7 @@
 
 menuconfig I2C_HC32
 	bool "HC32 I2C driver"
-	default y
+	depends on SOC_FAMILY_HC32
 	select HC32_LL_I2C
 	help
 	  Enable I2C support on the HC32 SoCs
@@ -27,49 +27,4 @@ config I2C_HC32_DMA
 	  Enable DMA support for the I2C Driver
 endchoice
 
-if I2C_HC32_DMA
-
-config I2C_0_DMA_TX_CHANNEL
-	int "Select i2c1 write channel"
-	default 0
-	help
-	  Select DMA Channel for I2C1 Bus Wtite
-
-config I2C_0_DMA_RX_CHANNEL
-	int "Select i2c1 read channel"
-	default 1
-	help
-	  Select DMA Channel for I2C1 Bus Read
-
-config I2C_1_DMA_TX_CHANNEL
-	int "Select i2c2 write channel"
-	default 0
-	help
-	  Select DMA Channel for I2C2 Bus Wtite
-
-config I2C_1_DMA_RX_CHANNEL
-	int "Select i2c2 read channel"
-	default 1
-	help
-	  Select DMA Channel for I2C2 Bus Read
-
-config I2C_2_DMA_TX_CHANNEL
-	int "Select i2c3 write channel"
-	default 0
-	help
-	  Select DMA Channel for I2C3 Bus Wtite
-
-config I2C_2_DMA_RX_CHANNEL
-	int "Select i2c3 read channel"
-	default 1
-	help
-	  Select DMA Channel for I2C3 Bus Read
-endif
-
-config I2C_HC32_BUS_RECOVERY
-	bool "Bus recovery support"
-	default n
-	select I2C_BITBANG
-	help
-	  Enable HC32 driver bus recovery support via GPIO bitbanging.
 endif # I2C_HC32

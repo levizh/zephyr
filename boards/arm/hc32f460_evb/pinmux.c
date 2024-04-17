@@ -24,6 +24,9 @@ static int hc32_pinmux_init(struct device *dev)
 	struct device *porte =
 		device_get_binding(CONFIG_PINMUX_HC32_PORTE_NAME);
 
+	struct device *portd =
+		device_get_binding(CONFIG_PINMUX_HC32_PORTD_NAME);
+
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(porta, 8, 43); /* SCK */
 	pinmux_pin_set(portb, 0, 40); /* MOSI */
@@ -40,6 +43,10 @@ static int hc32_pinmux_init(struct device *dev)
 	/* uart2 */
 	pinmux_pin_set(porta, 2, 36); /* tx */
 	pinmux_pin_set(porta, 3, 37); /* rx */
+
+	/* i2c1 */
+	pinmux_pin_set(portd, 1, 49); /* scl */
+	pinmux_pin_set(portd, 2, 48); /* sda */
 
 #endif
 	return 0;

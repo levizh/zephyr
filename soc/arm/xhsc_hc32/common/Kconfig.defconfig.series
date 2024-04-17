@@ -17,4 +17,11 @@ config UART_HC32
 
 endif #SERIAL
 
+if I2C
+
+config I2C_HC32
+	default y
+
+endif #I2C
+
 endif # SOC_FAMILY_HC32

@@ -22,8 +22,8 @@ struct i2c_hc32_config {
 
 	uint32_t bitrate;
 #ifdef CONFIG_I2C_HC32_BUS_RECOVERY
-	struct gpio_dt_spec scl;
-	struct gpio_dt_spec sda;
+	struct gpio_pin_config scl;
+	struct gpio_pin_config sda;
 #endif
 	uint32_t time_out;
 };
@@ -46,11 +46,17 @@ struct i2c_hc32_data {
 	uint32_t len;
 	uint8_t *dat;
 	struct i2c_msg *msg;
+
+#ifdef CONFIG_I2C_SLAVE
+	bool master_active;
+	struct i2c_slave_config *slave_cfg;
+	bool slave_attached;
+#endif
 };
 
 int32_t hc32_i2c_transaction(struct device *dev,
 			    struct i2c_msg msg, uint8_t *next_msg_flags,
 			    uint16_t periph);
-int i2c_hc32_runtime_configure(struct device *dev, uint32_t config);
+int i2c_hc32_runtime_configure(struct device *dev, u32_t config);
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_HC32_H_ */

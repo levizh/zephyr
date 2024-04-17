@@ -21,7 +21,7 @@
 LOG_MODULE_REGISTER(counter_hc32_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
 /* Seconds from 1970-01-01T00:00:00 to 2000-01-01T00:00:00 */
-#define T_TIME_OFFSET				(946684800)
+#define T_TIME_OFFSET				(946684800UL)
 
 /* One week: 7days * 24h * 60min * 60s */
 #define MAX_RELATIVE_ALARM_SECONDS	(604800UL)

@@ -78,3 +78,8 @@
 	status = "okay";
 	clock-frequency = < 100000 >;
 };
+
+&rtc{
+	status = "ok";
+	clock-src = <HC32_CLK_SRC_XTAL32>;
+};

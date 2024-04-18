@@ -36,11 +36,11 @@ static int hc32_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 15, 49); /* scl */
 	pinmux_pin_set(portb, 5, 48); /* sda */
 
-	/* default console uart4 */
+	/* uart4, default console */
 	pinmux_pin_set(porte, 6, 36); /* tx */
 	pinmux_pin_set(portb, 9, 37); /* rx */
 
-	/* uart2 */
+	/* uart2, used in async uart test */
 	pinmux_pin_set(porta, 2, 36); /* tx */
 	pinmux_pin_set(porta, 3, 37); /* rx */
 

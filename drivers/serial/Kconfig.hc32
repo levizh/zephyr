@@ -5,6 +5,7 @@ menuconfig UART_HC32
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select HC32_LL_USART
+	select DMA if UART_ASYNC_API
 	depends on SOC_FAMILY_HC32
 	help
 	  This option enables the UART driver for HC32 family of
@@ -39,3 +40,4 @@ config UART_4
 
 
 endif # UART_HC32
+

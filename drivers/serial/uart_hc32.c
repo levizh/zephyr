@@ -1,4 +1,11 @@
 
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <misc/util.h>
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <misc/__assert.h>
@@ -12,38 +19,127 @@
 
 #include <linker/sections.h>
 
+#ifdef CONFIG_UART_ASYNC_API
+#include <drivers/dma/dma_hc32.h>
+#include <dma.h>
+#endif /* CONFIG_UART_ASYNC_API */
+
+#include <logging/log.h>
+#define LOG_LEVEL LOG_LEVEL_ERR
+LOG_MODULE_REGISTER(uart_hc32);
+
 #if CONFIG_UART_INTERRUPT_DRIVEN
 enum usart_isr_type{
-    UART_INT_IDX_EI,
-    UART_INT_IDX_RI,
-    UART_INT_IDX_TI,
-    UART_INT_IDX_TCI,
-    UART_INT_IDX_RTO,
-    UART_INT_NUM
+	UART_INT_IDX_EI,
+	UART_INT_IDX_RI,
+	UART_INT_IDX_TI,
+	UART_INT_IDX_TCI,
+	UART_INT_IDX_RTO,
+	UART_INT_NUM
 };
 #endif /* UART_INTERRUPT_DRIVEN */
 
 struct hc32_usart_cb_data {
-    /** Callback function */
-    uart_irq_callback_user_data_t user_cb;
-    /** User data. */
-    void *user_data;
+	/** Callback function */
+	uart_irq_callback_user_data_t user_cb;
+	/** User data. */
+	void *user_data;
 };
 
-struct uart_hc32_pin_cfg
-{
-	const char *gpio_name;
-	uint32_t pin_cfg_val;
-};
+#ifdef CONFIG_UART_ASYNC_API
 
+#ifdef DT_XHSC_HC32_USART_0
+#ifdef DT_XHSC_HC32_USART_0_DMA_TX
+#define DMA_RX_FLAG_0	1
+#else
+#define DMA_RX_FLAG_0	0
+#endif
+
+#ifdef DT_XHSC_HC32_USART_0_DMA_TX
+#define DMA_TX_FLAG_0	1
+#else
+#define DMA_TX_FLAG_0	0
+#endif
+#endif /* DT_XHSC_HC32_USART_0 */
+
+#ifdef DT_XHSC_HC32_USART_1
+#ifdef DT_XHSC_HC32_USART_1_DMA_TX
+#define DMA_RX_FLAG_1	1
+#else
+#define DMA_RX_FLAG_1	0
+#endif
+
+#ifdef DT_XHSC_HC32_USART_1_DMA_TX
+#define DMA_TX_FLAG_1	1
+#else
+#define DMA_TX_FLAG_1	0
+#endif
+#endif /* DT_XHSC_HC32_USART_1 */
+
+#ifdef DT_XHSC_HC32_USART_2
+#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#define DMA_RX_FLAG_2	1
+#else
+#define DMA_RX_FLAG_2	0
+#endif
+
+#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#define DMA_TX_FLAG_2	1
+#else
+#define DMA_TX_FLAG_2	0
+#endif
+#endif /* DT_XHSC_HC32_USART_2 */
+
+#ifdef DT_XHSC_HC32_USART_2
+#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#define DMA_RX_FLAG_2	1
+#else
+#define DMA_RX_FLAG_2	0
+#endif
+
+#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#define DMA_TX_FLAG_2	1
+#else
+#define DMA_TX_FLAG_2	0
+#endif
+#endif /* DT_XHSC_HC32_USART_2 */
+
+#ifdef DT_XHSC_HC32_USART_3
+#ifdef DT_XHSC_HC32_USART_3_DMA_TX
+#define DMA_RX_FLAG_3	1
+#else
+#define DMA_RX_FLAG_3	0
+#endif
+
+#ifdef DT_XHSC_HC32_USART_3_DMA_TX
+#define DMA_TX_FLAG_3	1
+#else
+#define DMA_TX_FLAG_3	0
+#endif
+#endif /* DT_XHSC_HC32_USART_3 */
+
+struct usart_hc32_dma_config {
+	char dma_unit;
+	struct device *dma_dev;
+	uint32_t dma_channel;
+	struct dma_config dma_cfg;
+	uint8_t *buffer;
+	size_t buffer_length;
+	size_t offset;
+	volatile size_t counter;
+	int32_t timeout;
+	struct k_timer timer;
+	bool enabled;
+	struct dma_hc32_config_user_data user_cfg;
+	struct dma_block_config dma_blk_cfg;
+};
+#endif /* CONFIG_UART_ASYNC_API */
 
 /* device config */
 struct uart_hc32_config {
 	struct uart_device_config uart_cfg;
 	/* clock subsystem driving this peripheral */
 	struct hc32_modules_clock_sys uart_clock;
-	struct uart_hc32_pin_cfg tx_pin_cfg;
-	struct uart_hc32_pin_cfg rx_pin_cfg;
 };
 
 /* driver data */
@@ -54,8 +150,22 @@ struct uart_hc32_data {
 	struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	struct hc32_usart_cb_data cb[UART_INT_NUM];
-#endif
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+#ifdef CONFIG_UART_ASYNC_API
+	struct usart_hc32_dma_config dma_rx;
+	struct usart_hc32_dma_config dma_tx;
+	const struct device *uart_dev;
+	uart_callback_t async_cb;
+	void *async_user_data;
+	uint8_t *rx_next_buffer;
+	size_t rx_next_buffer_len;
+#endif /* CONFIG_UART_ASYNC_API */
 };
+
+#ifdef CONFIG_UART_ASYNC_API
+static void inline uart_hc32_async_rx_timeout(struct k_timer *timer);
+#endif /* CONFIG_UART_ASYNC_API */
 
 /* convenience defines */
 #define DEV_USART_CFG(dev)												\
@@ -322,45 +432,429 @@ static void uart_hc32_poll_out(struct device *dev,
 	USART_WriteData(USARTx, (uint16_t)c);
 }
 
-// static inline void __uart_hc32_get_clock(struct device *dev)
-// {
-// 	struct uart_hc32_data *data = DEV_USART_DATA(dev);
-// 	struct device *clk =
-// 		device_get_binding(HC32_CLOCK_CONTROL_NAME);
-
-// 	__ASSERT_NO_MSG(clk);
-
-// 	data->clock = clk;
-// }
-
 #ifdef CONFIG_UART_ASYNC_API
-int uart_hc32_callback_set(struct device *dev, uart_callback_t callback,
-			void *user_data)
+
+static inline void async_user_callback(struct uart_hc32_data *data,
+				struct uart_event *event)
 {
+	if (data->async_cb) {
+		data->async_cb(event, data->async_user_data);
+	}
+}
+
+int uart_hc32_async_tx_abort(struct device *dev)
+{
+	struct uart_event event;
+	struct uart_hc32_data *data = dev->driver_data;
+	size_t tx_buffer_length = data->dma_tx.buffer_length;
+
+	if (tx_buffer_length == 0) {
+		return -EFAULT;
+	}
+
+	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+
+	data->dma_tx.buffer_length = 0;
+	data->dma_tx.counter = 0;
+
+	event.type = UART_TX_ABORTED;
+	event.data.tx.buf = data->dma_tx.buffer;
+	event.data.tx.len = data->dma_tx.counter;
+	async_user_callback(data, &event);
+
 	return 0;
 }
-int uart_hc32_tx(struct device *dev, const u8_t *buf, size_t len,
-		  u32_t timeout)
+
+static inline void async_evt_rx_rdy(struct uart_hc32_data *data)
 {
+	LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
+
+	struct uart_event event = {
+		.type = UART_RX_RDY,
+		.data.rx.buf = data->dma_rx.buffer,
+		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset
+	};
+
+	/* update the current pos for new data */
+	data->dma_rx.offset = data->dma_rx.counter;
+
+	async_user_callback(data, &event);
+}
+
+static inline void async_evt_rx_buf_request(struct uart_hc32_data *data)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_REQUEST,
+	};
+
+	async_user_callback(data, &evt);
+}
+
+static void uart_hc32_dma_replace_buffer(const struct device *dev)
+{
+	struct uart_hc32_data *data = dev->driver_data;
+
+	/* Replace the buffer and reload the DMA */
+	LOG_DBG("Replacing RX buffer: %d", data->rx_next_buffer_len);
+
+	/* stop DMA before reconfigure */
+	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+	/* reload DMA */
+	data->dma_rx.offset = 0;
+	data->dma_rx.counter = 0;
+	data->dma_rx.buffer = data->rx_next_buffer;
+	data->dma_rx.buffer_length = data->rx_next_buffer_len;
+	data->dma_rx.dma_cfg.head_block->block_size = data->dma_rx.buffer_length;
+	data->dma_rx.dma_cfg.head_block->dest_address = (uint32_t)data->dma_rx.buffer;
+	dma_reload(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
+			data->dma_rx.dma_cfg.head_block->source_address,
+			data->dma_rx.dma_cfg.head_block->dest_address,
+			data->dma_rx.dma_cfg.head_block->block_size);
+
+	dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+
+	/* Clear rx next after using */
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_len = 0;
+	/* Request next buffer if needed */
+	async_evt_rx_buf_request(data);
+
+	k_timer_init(&data->dma_rx.timer, uart_hc32_async_rx_timeout, NULL);
+	k_timer_start(&data->dma_rx.timer, data->dma_rx.timeout, 0);
+}
+
+static inline void async_evt_tx_abort(struct uart_hc32_data *data)
+{
+	LOG_DBG("tx abort: %d", data->dma_tx.counter);
+
+	struct uart_event event = {
+		.type = UART_TX_ABORTED,
+		.data.tx.buf = data->dma_tx.buffer,
+		.data.tx.len = data->dma_tx.counter
+	};
+
+	/* Reset tx buffer */
+	data->dma_tx.buffer_length = 0;
+	data->dma_tx.counter = 0;
+
+	async_user_callback(data, &event);
+}
+
+static void inline uart_hc32_async_rx_timeout(struct k_timer *timer)
+{
+	struct uart_event event;
+	struct usart_hc32_dma_config *dma_rx =
+		CONTAINER_OF(timer, struct usart_hc32_dma_config, timer);
+	struct uart_hc32_data *data =
+		CONTAINER_OF(dma_rx, struct uart_hc32_data, dma_rx);
+
+	k_timer_stop(timer);
+
+	LOG_ERR("rx timeout");
+	/* Todo: already recv count, update the current pos for new data */
+	// data->dma_rx.offset += data->dma_tx.dma_cfg.head_block->block_size; /* temp using */
+	// event.data.rx.offset = data->dma_rx.offset;
+	event.type = UART_RX_RDY;
+	event.data.rx.buf = data->dma_rx.buffer;
+	event.data.rx.len = data->dma_rx.counter - data->dma_rx.offset;
+	async_user_callback(data, &event);
+
+	// async_evt_rx_rdy(data);
+	// if (data->rx_next_buffer != NULL) {
+	// 	uart_hc32_dma_replace_buffer(data->uart_dev);
+	// }
+}
+
+static inline void async_evt_rx_err(struct uart_hc32_data *data, int err_code)
+{
+	LOG_DBG("rx error: %d", err_code);
+
+	struct uart_event event = {
+		.type = UART_RX_STOPPED,
+		.data.rx_stop.reason = err_code,
+		.data.rx_stop.data.len = data->dma_rx.counter,
+		.data.rx_stop.data.offset = 0,
+		.data.rx_stop.data.buf = data->dma_rx.buffer
+	};
+
+	async_user_callback(data, &event);
+}
+
+static inline void async_evt_tx_done(struct uart_hc32_data *data)
+{
+	LOG_DBG("tx done: %d", data->dma_tx.counter);
+
+	struct uart_event event = {
+		.type = UART_TX_DONE,
+		.data.tx.buf = data->dma_tx.buffer,
+		.data.tx.len = data->dma_tx.counter
+	};
+
+	/* Reset tx buffer */
+	data->dma_tx.buffer_length = 0;
+	data->dma_tx.counter = 0;
+	/* Send tx done to callback */
+	async_user_callback(data, &event);
+}
+
+static inline void async_evt_rx_buf_release(struct uart_hc32_data *data)
+{
+	struct uart_event evt = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx_buf.buf = data->dma_rx.buffer,
+	};
+
+	async_user_callback(data, &evt);
+}
+
+static int uart_hc32_async_rx_disable(struct device *dev)
+{
+	CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
+	struct uart_hc32_data *data = dev->driver_data;
+	struct uart_event event;
+
+	if (!data->dma_rx.enabled) {
+		event.type = UART_RX_DISABLED;
+		async_user_callback(data, &event);
+		return -EFAULT;
+	}
+
+	/* Stop dma */
+	data->dma_rx.enabled = false;
+	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+	if (data->rx_next_buffer) {
+		event.type = UART_RX_BUF_RELEASED;
+		event.data.rx_buf.buf = data->rx_next_buffer;
+		async_user_callback(data, &event);
+	}
+
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_len = 0;
+
+	/* When async rx is disabled, enable instance of uart to function normally */
+	USART_FuncCmd(USARTx, USART_INT_RX, ENABLE);
+
+	LOG_DBG("dma rx disabled");
+
+	event.type = UART_RX_DISABLED;
+	async_user_callback(data, &event);
+
 	return 0;
 }
-int uart_hc32_tx_abort(struct device *dev)
+
+static int uart_hc32_async_rx_buf_rsp(struct device *dev, u8_t *buf, size_t len)
 {
+	struct uart_hc32_data *data = dev->driver_data;
+
+	LOG_DBG("replace buffer (%d)", len);
+
+	data->rx_next_buffer = buf;
+	data->rx_next_buffer_len = len;
+
 	return 0;
 }
-int uart_hc32_rx_enable(struct device *dev, u8_t *buf, size_t len,
+
+static void uart_hc32_dma_tx_cb(void *user_data, uint32_t channel, int status)
+{
+	struct dma_hc32_config_user_data *cfg = user_data;
+	struct device *uart_dev = cfg->user_data;
+	struct uart_hc32_data *data = uart_dev->driver_data;
+
+	unsigned int key = irq_lock();
+
+	/* Disable TX */
+	data->dma_tx.buffer_length = 0;
+	async_evt_tx_done(data);
+
+	irq_unlock(key);
+}
+
+static void uart_hc32_dma_rx_cb(void *user_data, uint32_t channel, int status)
+{
+	struct dma_hc32_config_user_data *cfg = user_data;
+	struct device *uart_dev = cfg->user_data;
+	struct uart_hc32_data *data = uart_dev->driver_data;
+
+	k_timer_stop(&data->dma_rx.timer);
+
+	if (status < 0) {
+		async_evt_rx_err(data, status);
+		return;
+	}
+
+	/* true since this functions occurs when buffer if full */
+	data->dma_rx.counter = data->dma_rx.buffer_length;
+	async_evt_rx_rdy(data);
+
+	if (data->rx_next_buffer != NULL) {
+		uart_hc32_dma_replace_buffer(uart_dev);
+	} else {
+		/* Send rx buf release to callback */
+		async_evt_rx_buf_release(data);
+		/* Disable dma rx */
+		uart_hc32_async_rx_disable(uart_dev);
+	}
+}
+
+static inline int usart_dma_config(struct usart_hc32_dma_config *config,
+	const uint8_t *src_buf, const uint8_t *dst_buf, size_t len, u32_t timeout)
+{
+	struct device *dma_dev;
+	int ret;
+
+	dma_dev = device_get_binding(
+			dma_hc32_get_device_name(config->dma_unit));
+	config->dma_dev = dma_dev;
+	if (config->dma_dev == NULL) {
+		LOG_ERR("dma device error!");
+		return -ENODEV;
+	}
+
+	config->timeout = timeout;
+	config->dma_blk_cfg.source_address = (uint32_t)src_buf;
+	config->dma_blk_cfg.dest_address = (uint32_t)dst_buf;
+	config->dma_blk_cfg.block_size = len;
+	config->buffer_length = len;
+	if (config->dma_cfg.channel_direction == PERIPHERAL_TO_MEMORY) {
+		config->dma_cfg.dma_callback = uart_hc32_dma_rx_cb;
+		config->dma_blk_cfg.source_addr_adj = 0x02; /* fixed address */
+		config->dma_blk_cfg.dest_addr_adj = 0x00; /* increment */
+	} else {
+		config->dma_cfg.dma_callback = uart_hc32_dma_tx_cb;
+		config->dma_blk_cfg.source_addr_adj = 0x00; /* increment */
+		config->dma_blk_cfg.dest_addr_adj = 0x02; /* fixed address */
+	}
+	config->dma_cfg.head_block = &config->dma_blk_cfg;
+	ret = dma_config(dma_dev, config->dma_channel, &config->dma_cfg);
+	if (ret != 0) {
+		LOG_ERR("dma ch%d config error!", config->dma_unit);
+		return -EINVAL;
+	}
+
+	/* Start and enable TX DMA requests */
+	ret = dma_start(dma_dev, config->dma_channel);
+	if (ret != 0) {
+		LOG_ERR("dma ch%d start failed!", config->dma_unit);
+		return -EFAULT;
+	}
+
+	return ret;
+}
+
+static int uart_hc32_async_rx_enable(struct device *dev, u8_t *buf, size_t len,
 			 u32_t timeout)
 {
+	struct uart_event event;
+	struct uart_hc32_data *data = DEV_USART_DATA(dev);
+	CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
+	int ret;
+
+	if (data->dma_rx.enabled) {
+		LOG_WRN("RX was already enabled");
+		return -EBUSY;
+	}
+
+	USART_FuncCmd(USARTx, USART_RX | USART_INT_RX, DISABLE);
+
+	/* Configure dma rx */
+	data->dma_rx.user_cfg.user_data = (void *)dev;
+	data->dma_rx.dma_cfg.callback_arg = (void *)&data->dma_rx.user_cfg;
+	data->dma_rx.dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	data->dma_rx.buffer = buf;
+	data->dma_rx.buffer_length = len;
+	data->dma_rx.timeout = timeout;
+	data->rx_next_buffer = NULL;
+	data->rx_next_buffer_len = 0U;
+	/* Config dma */
+	ret = usart_dma_config(&data->dma_rx, (uint8_t *)&USARTx->RDR, buf,
+							len, timeout);
+	if (ret != 0) {
+		LOG_ERR("failed to config rx dma");
+		return ret;
+	}
+
+	/*
+	TC flag = 1 after init and not generate TC event request.
+	To create TC event request disabling tx before dma configuration and
+	enable tx after dma start
+	*/
+
+	USART_FuncCmd(USARTx, USART_RX, ENABLE);
+	data->dma_rx.enabled = true;
+
+	event.type = UART_RX_BUF_REQUEST;
+	async_user_callback(data, &event);
+
+	k_timer_init(&data->dma_rx.timer, uart_hc32_async_rx_timeout, NULL);
+	k_timer_start(&data->dma_rx.timer, timeout, 0);
+
 	return 0;
 }
-int uart_hc32_rx_buf_rsp(struct device *dev, u8_t *buf, size_t len)
+
+static int uart_hc32_async_init(struct device *dev)
 {
+	/* Disable both TX and RX DMA requests */
+	uart_hc32_async_rx_disable(dev);
+
+	((struct uart_hc32_data *)dev->driver_data)->uart_dev = dev;
+
 	return 0;
 }
-int uart_hc32_rx_disable(struct device *dev)
+
+int uart_hc32_async_callback_set(struct device *dev, uart_callback_t callback,
+			void *user_data)
 {
+	struct uart_hc32_data *data = dev->driver_data;
+
+	data->async_cb = callback;
+	data->async_user_data = user_data;
+
 	return 0;
 }
+
+int uart_hc32_async_tx(struct device *dev, const u8_t *buf, size_t len,
+		  u32_t timeout)
+{
+	struct uart_hc32_data *data = DEV_USART_DATA(dev);
+	CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
+	int ret;
+
+	if (data->dma_tx.buffer_length != 0) {
+		return -EBUSY;
+	}
+
+	LOG_DBG("tx: l=%d", data->dma_tx.buffer_length);
+	USART_FuncCmd(USARTx, USART_INT_TX_EMPTY, DISABLE);
+	/*
+	TC flag = 1 after init and not generate TC event request.
+	To create TC event request disabling tx before dma configuration and
+	enable tx after dma start
+	*/
+	USART_FuncCmd(USARTx, USART_TX, DISABLE);
+
+	/* Configure dma tx */
+	data->dma_tx.user_cfg.user_data = (void *)dev;
+	data->dma_tx.dma_cfg.callback_arg = (void *)&data->dma_tx.user_cfg;
+	data->dma_tx.dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	/* Config dma */
+	ret = usart_dma_config(&data->dma_tx, buf, (uint8_t *)&USARTx->TDR,
+							len, timeout);
+	if (ret != 0) {
+		LOG_ERR("failed to config tx dma");
+		return ret;
+	}
+	/*
+	TC flag = 1 after init and not generate TC event request.
+	To create TC event request disabling tx before dma configuration and
+	enable tx after dma start
+	*/
+	USART_FuncCmd(USARTx, USART_TX, ENABLE);
+
+	// /* Start TX timer */
+
+	return 0;
+}
+
 #endif /* CONFIG_UART_ASYNC_API */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -518,12 +1012,12 @@ static const struct uart_driver_api uart_hc32_driver_api = {
 	.configure = uart_device_configure,
 	.config_get = uart_device_config_get,
 #ifdef CONFIG_UART_ASYNC_API
-	.callback_set = uart_hc32_callback_set,
-	.tx = uart_hc32_tx,
-	.tx_abort = uart_hc32_tx_abort,
-	.rx_enable = uart_hc32_rx_enable,
-	.rx_buf_rsp = uart_hc32_rx_buf_rsp,
-	.rx_disable = uart_hc32_rx_disable,
+	.callback_set = uart_hc32_async_callback_set,
+	.tx = uart_hc32_async_tx,
+	.tx_abort = uart_hc32_async_tx_abort,
+	.rx_enable = uart_hc32_async_rx_enable,
+	.rx_buf_rsp = uart_hc32_async_rx_buf_rsp,
+	.rx_disable = uart_hc32_async_rx_disable,
 #endif /* CONFIG_UART_ASYNC_API */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_hc32_fifo_fill,
@@ -561,20 +1055,6 @@ static int uart_hc32_registers_configure(const struct device *dev)
 	return 0;
 }
 
-static inline void uart_hc32_pin_config(struct uart_hc32_pin_cfg *pin_cfg)
-{
-	uint8_t port, pin, fun;
-	uint32_t pin_val = pin_cfg->pin_cfg_val;
-	static struct device *dev;
-
-	pin = (pin_val & 0x00FU) >> 0U;
-	port = (pin_val & 0x0F0U) >> 8U;
-	fun = (pin_val & 0xF00U) >> 16U;
-	dev = device_get_binding(pin_cfg->gpio_name);
-
-	pinmux_pin_set(dev, pin, fun);
-}
-
 /**
  * @brief Initialize UART channel
  *
@@ -589,15 +1069,15 @@ static int uart_hc32_init(struct device *dev)
 {
 	// struct uart_hc32_data *data = DEV_USART_DATA(dev);
 	// CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
-	struct device* dev_clock;
+	struct device* clock_dev;
 	const struct uart_hc32_config *hc32_config = dev->config->config_info;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct uart_device_config *config = DEV_USART_CFG(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	int err;
 
-	dev_clock = device_get_binding(CLOCK_CONTROL);
-	err = clock_control_on(dev_clock,
+	clock_dev = device_get_binding(CLOCK_CONTROL);
+	err = clock_control_on(clock_dev,
 							(clock_control_subsys_t)&hc32_config->uart_clock);
 	if (err < 0) {
 		return err;
@@ -611,7 +1091,13 @@ static int uart_hc32_init(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+	/* config DMA  */
+#ifdef CONFIG_UART_ASYNC_API
+	return uart_hc32_async_init(dev);
+#else
 	return 0;
+#endif
 }
 
 
@@ -628,7 +1114,7 @@ static int uart_hc32_init(struct device *dev)
 		DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx##_INT_SRC);				\
 	irq_enable(DT_XHSC_HC32_USART_##index##_IRQ_##isr_idx);
 
-#define HC32_UART_IRQ_HANDLER_DECL(index)									\
+#define UART_HC32_IRQ_HANDLER_DECL(index)									\
 	static void usart_hc32_isr_func_cfg_##index(struct device *dev);		\
 	static void	usart_hc32_rx_error_isr_##index(const struct device *dev);	\
 	static void usart_hc32_rx_full_isr_##index(const struct device *dev);	\
@@ -646,7 +1132,7 @@ static inline void usart_hc32_common_isr(const struct device *dev,
 	}
 }
 
-#define HC32_UART_ISR_DEF(index)											\
+#define UART_HC32_ISR_DEF(index)											\
 	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
 	{																		\
 		usart_hc32_common_isr(dev, UART_INT_IDX_EI);						\
@@ -682,21 +1168,54 @@ static inline void usart_hc32_common_isr(const struct device *dev,
 		USART_IRQ_ISR_CONFIG(usart_hc32_rx_timeout_isr, 4, index)			\
 	}
 
-#define HC32_UART_ISR_FUN_CONFIG(index)										\
+#define UART_HC32_ISR_FUN_CONFIG(index)										\
 	.irq_config_func = usart_hc32_isr_func_cfg_##index,
 
 #else  /* CONFIG_UART_INTERRUPT_DRIVEN */
-#define HC32_UART_IRQ_HANDLER_DECL(index)
-#define HC32_UART_ISR_DEF(index)
-#define HC32_UART_ISR_FUN_CONFIG(index)
+#define UART_HC32_IRQ_HANDLER_DECL(index)
+#define UART_HC32_ISR_DEF(index)
+#define UART_HC32_ISR_FUN_CONFIG(index)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define HC32_UART_INIT(index)												\
-HC32_UART_IRQ_HANDLER_DECL(index);											\
+#ifdef CONFIG_UART_ASYNC_API
+
+#define M_COND_CODE_1(flag_1, code)	COND_CODE_1(flag_1, code, ())
+
+#define UART_HC32_DMA_CFG(dir, cfg_val)										\
+	.dma_##dir = {															\
+		.dma_unit = HC32_DT_GET_DMA_UNIT(cfg_val),							\
+		.dma_channel = (uint8_t)HC32_DT_GET_DMA_CH(cfg_val), 				\
+		.user_cfg = {														\
+			.slot = HC32_DT_GET_DMA_SLOT(cfg_val), 							\
+		},																	\
+		.dma_cfg = {														\
+			.source_burst_length = 1,  /* SINGLE transfer */				\
+			.source_data_size = 1, 											\
+			.dest_burst_length = 1,	/* SINGLE transfer */					\
+			.dest_data_size = 1,											\
+			.block_count = 1,												\
+		},																	\
+	},
+
+#define UART_HC32_DMA_CFG_PRE(index)										\
+	M_COND_CODE_1(															\
+		DMA_RX_FLAG_##index, 												\
+		(UART_HC32_DMA_CFG(rx, DT_XHSC_HC32_USART_##index##_DMA_RX)) 		\
+	) 																		\
+	M_COND_CODE_1(															\
+		DMA_TX_FLAG_##index, 												\
+		(UART_HC32_DMA_CFG(tx, DT_XHSC_HC32_USART_##index##_DMA_TX)) 		\
+	)
+#else /* CONFIG_UART_ASYNC_API */
+#define UART_HC32_DMA_CFG_PRE(index)
+#endif /* CONFIG_UART_ASYNC_API */
+
+#define UART_HC32_INIT(index)												\
+UART_HC32_IRQ_HANDLER_DECL(index);											\
 static const struct uart_hc32_config uart_hc32_cfg_##index = {				\
 	.uart_cfg = {															\
 		.base = (u8_t *)DT_XHSC_HC32_USART_##index##_BASE_ADDRESS,			\
-		HC32_UART_ISR_FUN_CONFIG(index)										\
+		UART_HC32_ISR_FUN_CONFIG(index)										\
 	},																		\
 	.uart_clock = {															\
 		.bus = DT_XHSC_HC32_USART_##index##_CLOCK_BUS,						\
@@ -705,7 +1224,8 @@ static const struct uart_hc32_config uart_hc32_cfg_##index = {				\
 	},																		\
 };																			\
 static struct uart_hc32_data uart_hc32_data_##index = {						\
-	.baud_rate = DT_XHSC_HC32_USART_##index##_CURRENT_SPEED					\
+	.baud_rate = DT_XHSC_HC32_USART_##index##_CURRENT_SPEED,				\
+	UART_HC32_DMA_CFG_PRE(index)											\
 };																			\
 DEVICE_AND_API_INIT(uart_hc32_##index, 										\
 		DT_XHSC_HC32_USART_##index##_LABEL,									\
@@ -713,20 +1233,20 @@ DEVICE_AND_API_INIT(uart_hc32_##index, 										\
 		&uart_hc32_data_##index, &uart_hc32_cfg_##index,					\
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					\
 		&uart_hc32_driver_api);												\
-HC32_UART_ISR_DEF(index)
+UART_HC32_ISR_DEF(index)
 
 #ifdef DT_XHSC_HC32_USART_0
-HC32_UART_INIT(0)
+UART_HC32_INIT(0)
 #endif
 
 #ifdef DT_XHSC_HC32_USART_1
-HC32_UART_INIT(1)
+UART_HC32_INIT(1)
 #endif
 
 #ifdef DT_XHSC_HC32_USART_2
-HC32_UART_INIT(2)
+UART_HC32_INIT(2)
 #endif
 
 #ifdef DT_XHSC_HC32_USART_3
-HC32_UART_INIT(3)
+UART_HC32_INIT(3)
 #endif

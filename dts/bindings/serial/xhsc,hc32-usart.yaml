@@ -29,4 +29,16 @@ properties:
       type: stringlist
       description: names of required interrupts
       generation: define
+
+    dma-tx:
+      type: int
+      category: optional
+      description: dma configuration
+      generation: define
+
+    dma-rx:
+      type: int
+      category: optional
+      description: dma configuration
+      generation: define
 ...

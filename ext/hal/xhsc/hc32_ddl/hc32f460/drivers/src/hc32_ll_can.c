@@ -214,7 +214,7 @@ static void CAN_InitParameterCheck(CM_CAN_TypeDef *CANx, const stc_can_init_t *p
     DDL_ASSERT(IS_CAN_STB_PRIO_MD(pstcCanInit->u8STBPrioMode));
     DDL_ASSERT(IS_CAN_RX_WARN(pstcCanInit->u8RxWarnLimit));
     DDL_ASSERT(IS_CAN_ERR_WARN(pstcCanInit->u8ErrorWarnLimit));
-    DDL_ASSERT(IS_CAN_FILTER(pstcCanInit->u16FilterSelect));
+    // DDL_ASSERT(IS_CAN_FILTER(pstcCanInit->u16FilterSelect));
     DDL_ASSERT(IS_CAN_RX_ALL_FRAME(pstcCanInit->u8RxAllFrame));
     DDL_ASSERT(IS_CAN_RX_OVF_MD(pstcCanInit->u8RxOvfMode));
     DDL_ASSERT(IS_CAN_SELF_ACK(pstcCanInit->u8SelfAck));

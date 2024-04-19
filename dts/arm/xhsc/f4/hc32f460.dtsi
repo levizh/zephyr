@@ -571,18 +571,18 @@
 		can1: can@40070400  {
 			compatible = "xhsc,hc32-can";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40070400 0x400>;
-			clocks = <&bus_fcg HC32_CLK_SRC_XTAL HC32_CLK_FCG1 HC32_FCG1_PERIPH_CAN1>;
+			clocks = <&bus_fcg HC32_CLK_SRC_XTAL HC32_CLK_FCG1 HC32_FCG1_PERIPH_CAN>;
 			interrupt-parent = <&intc>;
 			interrupts = <HC32_CAN1_GLB_IRQ_NUM HC32_CAN1_GLB_IRQ_PRIO INT_SRC_CAN_INT>;
-			interrupt-names = "global";
+			interrupt-names = "glb";
+			bus-speed = <500000>;
+			prop_seg_phase_seg1 = <5>;
+			phase_seg2 = <2>;
+			sjw = <2>;
 			status = "disabled";
 			label = "CAN1";
-			bus-speed = <500000>;
-			prop-seg-phase-seg1 = <6>;
-			phase-seg2 = <2>;
-			sjw = <2>;
 		};
 
 		rtc: rtc@4004c000 {

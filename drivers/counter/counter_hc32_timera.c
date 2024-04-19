@@ -126,11 +126,11 @@ static int counter_hc32_stop(struct device *dev)
 	return 0;
 }
 
-static uint32_t counter_hc32_get_top_value(struct device *dev)
+static u32_t counter_hc32_get_top_value(struct device *dev)
 {
 	struct counter_hc32_config *config = COUNTER_DEV_CFG(dev);
 	struct counter_hc32_data *data = COUNTER_DEV_DATA(dev);
-	uint32_t value;
+	u32_t value;
 
 	value = TMRA_GetPeriodValue(config->timer);
 	value += (((uint32_t)data->h16_period) << TIMERA_H16B_POS);
@@ -138,11 +138,11 @@ static uint32_t counter_hc32_get_top_value(struct device *dev)
 	return value;
 }
 
-static uint32_t counter_hc32_read(struct device *dev)
+static u32_t counter_hc32_read(struct device *dev)
 {
 	struct counter_hc32_config *config = COUNTER_DEV_CFG(dev);
 	struct counter_hc32_data *data = COUNTER_DEV_DATA(dev);
-	uint32_t value;
+	u32_t value;
 	unsigned int s_count_lock;
 
 	s_count_lock = irq_lock();
@@ -280,7 +280,7 @@ static int counter_hc32_set_alarm(struct device *dev, u8_t chan_id,
 	return counter_hc32_set_cc(dev, chan_id, alarm_cfg);
 }
 
-static int counter_hc32_cancel_alarm(struct device *dev, uint8_t chan_id)
+static int counter_hc32_cancel_alarm(struct device *dev, u8_t chan_id)
 {
 	struct counter_hc32_config *config = COUNTER_DEV_CFG(dev);
 	struct counter_hc32_data *data = COUNTER_DEV_DATA(dev);
@@ -322,17 +322,17 @@ static int counter_hc32_set_top_value(struct device *dev, u32_t ticks,
 	return err;
 }
 
-static uint32_t counter_hc32_get_pending_int(struct device *dev)
+static u32_t counter_hc32_get_pending_int(struct device *dev)
 {
 	struct counter_hc32_config *config = COUNTER_DEV_CFG(dev);
-	uint32_t pending = 0;
+	u32_t pending = 0;
 
 	pending = NVIC_GetPendingIRQ(config->irqn);
 
 	return !!pending;
 }
 
-static uint32_t counter_hc32_get_max_relative_alarm(struct device *dev)
+static u32_t counter_hc32_get_max_relative_alarm(struct device *dev)
 {
 	struct counter_hc32_config *config = COUNTER_DEV_CFG(dev);
 
@@ -345,7 +345,7 @@ static int counter_hc32_init_timer(struct device *dev)
 	CM_TMRA_TypeDef *timer = config->timer;
 	struct device *clk_node;
 	stc_tmra_init_t stcTmraInit;
-	uint32_t tim_clk;
+	u32_t tim_clk;
 	int ret;
 
 	/* initialize clock and check its speed  */

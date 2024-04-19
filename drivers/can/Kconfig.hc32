@@ -1,0 +1,23 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_HC32
+	bool "HC32 CAN Driver"
+	depends on SOC_FAMILY_HC32
+    select HC32_LL_CAN
+	help
+	  Enable HC32 CAN Driver
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	depends on CAN_HC32
+	default 4
+	range 1 8
+	help
+	  Defines the array size of the callback/msgq pointers.
+
+config CAN_TIMEOUT_WAIT_CONFIG
+	int "Maximum timeout time(ms) for waiting to configure CAN"
+	depends on CAN_HC32
+	default 100

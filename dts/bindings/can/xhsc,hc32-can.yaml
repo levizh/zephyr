@@ -4,6 +4,10 @@ version: 0.1
 
 description: >
   This binding gives a base representation of the HC32 CAN controller
+  variable value range:
+    prop_seg_phase_seg1: 1-64
+    phase_seg2: 1-8
+    sjw: 1-8
 
 inherits: !include can.yaml
 

@@ -37,4 +37,6 @@ config CAN_1
 
 source "drivers/can/Kconfig.stm32"
 
+source "drivers/can/Kconfig.hc32"
+
 endif # CAN

@@ -91,13 +91,6 @@ static int dma_hc32_init_check(CM_DMA_TypeDef *DMAx, uint32_t channel,
 	return 0;
 }
 
-static void dma_hc_sw_trigger(CM_DMA_TypeDef *DMAx, uint32_t channel)
-{
-	__IO uint32_t *SWREQ;
-	SWREQ = (__IO uint32_t *)((uint32_t)DMAx + 0x30U);
-	WRITE_REG32(*SWREQ, (0xA1UL << 16U) | (0x01UL << channel));
-}
-
 static u32_t dma_hc32_ch_is_en(CM_DMA_TypeDef *DMAx, uint32_t channel)
 {
 	u32_t u32ChEn;
@@ -139,6 +132,13 @@ static void dma_hc32_ch_cmd(CM_DMA_TypeDef *DMAx, uint32_t channel,
 		dma_hc32_force_ch_cmd(DMAx, channel, enNewState);
 	}
 	irq_unlock(key);
+}
+
+static void dma_hc_sw_trigger(CM_DMA_TypeDef *DMAx, uint32_t channel)
+{
+	__IO uint32_t *SWREQ;
+	SWREQ = (__IO uint32_t *)((uint32_t)DMAx + 0x30U);
+	WRITE_REG32(*SWREQ, (0xA1UL << 16U) | (0x01UL << channel));
 }
 
 static int dma_hc32_get_aos_target(CM_DMA_TypeDef *DMAx, u32_t channel,
@@ -516,12 +516,7 @@ static int dma_hc32_stop(struct device *dev, u32_t channel)
 			cfg->channels, channel);
 		return -EINVAL;
 	}
-	if (dma_hc32_ch_is_en(DMAx, channel)) {
-		if (LL_OK != DMA_ChCmd(DMAx, channel, DISABLE)) {
-			LOG_ERR("could not disable dma ch %d.", channel);
-			return -EBUSY;
-		}
-	}
+	dma_hc32_ch_cmd(DMAx, channel, DISABLE);
 	data->channels[channel].busy = false;
 
 	return 0;

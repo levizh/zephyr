@@ -49,7 +49,7 @@ struct hc32_usart_cb_data {
 #ifdef CONFIG_UART_ASYNC_API
 
 #ifdef DT_XHSC_HC32_USART_0
-#ifdef DT_XHSC_HC32_USART_0_DMA_TX
+#ifdef DT_XHSC_HC32_USART_0_DMA_RX
 #define DMA_RX_FLAG_0	1
 #else
 #define DMA_RX_FLAG_0	0
@@ -63,7 +63,7 @@ struct hc32_usart_cb_data {
 #endif /* DT_XHSC_HC32_USART_0 */
 
 #ifdef DT_XHSC_HC32_USART_1
-#ifdef DT_XHSC_HC32_USART_1_DMA_TX
+#ifdef DT_XHSC_HC32_USART_1_DMA_RX
 #define DMA_RX_FLAG_1	1
 #else
 #define DMA_RX_FLAG_1	0
@@ -77,13 +77,13 @@ struct hc32_usart_cb_data {
 #endif /* DT_XHSC_HC32_USART_1 */
 
 #ifdef DT_XHSC_HC32_USART_2
-#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#ifdef DT_XHSC_HC32_USART_2_DMA_RX
 #define DMA_RX_FLAG_2	1
 #else
 #define DMA_RX_FLAG_2	0
 #endif
 
-#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#ifdef DT_XHSC_HC32_USART_2_DMA_RX
 #define DMA_TX_FLAG_2	1
 #else
 #define DMA_TX_FLAG_2	0
@@ -91,7 +91,7 @@ struct hc32_usart_cb_data {
 #endif /* DT_XHSC_HC32_USART_2 */
 
 #ifdef DT_XHSC_HC32_USART_2
-#ifdef DT_XHSC_HC32_USART_2_DMA_TX
+#ifdef DT_XHSC_HC32_USART_2_DMA_RX
 #define DMA_RX_FLAG_2	1
 #else
 #define DMA_RX_FLAG_2	0
@@ -105,7 +105,7 @@ struct hc32_usart_cb_data {
 #endif /* DT_XHSC_HC32_USART_2 */
 
 #ifdef DT_XHSC_HC32_USART_3
-#ifdef DT_XHSC_HC32_USART_3_DMA_TX
+#ifdef DT_XHSC_HC32_USART_3_DMA_RX
 #define DMA_RX_FLAG_3	1
 #else
 #define DMA_RX_FLAG_3	0
@@ -467,18 +467,22 @@ int uart_hc32_async_tx_abort(struct device *dev)
 
 static inline void async_evt_rx_rdy(struct uart_hc32_data *data)
 {
-	LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
-
+	struct dma_hc32_status status;
 	struct uart_event event = {
 		.type = UART_RX_RDY,
 		.data.rx.buf = data->dma_rx.buffer,
+		.data.rx.offset = data->dma_rx.offset,
 		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset
 	};
 
-	/* update the current pos for new data */
-	data->dma_rx.offset = data->dma_rx.counter;
-
 	async_user_callback(data, &event);
+
+	if (0 != dma_hc32_get_status(data->dma_rx.dma_dev,
+				data->dma_rx.dma_channel, &status)) {
+		LOG_ERR("failed to get dma rx info");
+	}
+	data->dma_rx.counter = data->dma_rx.buffer_length - status.pending_length;
+	data->dma_rx.offset = data->dma_rx.buffer_length - status.pending_length;
 }
 
 static inline void async_evt_rx_buf_request(struct uart_hc32_data *data)
@@ -542,7 +546,6 @@ static inline void async_evt_tx_abort(struct uart_hc32_data *data)
 
 static void inline uart_hc32_async_rx_timeout(struct k_timer *timer)
 {
-	struct uart_event event;
 	struct usart_hc32_dma_config *dma_rx =
 		CONTAINER_OF(timer, struct usart_hc32_dma_config, timer);
 	struct uart_hc32_data *data =
@@ -551,18 +554,11 @@ static void inline uart_hc32_async_rx_timeout(struct k_timer *timer)
 	k_timer_stop(timer);
 
 	LOG_ERR("rx timeout");
-	/* Todo: already recv count, update the current pos for new data */
-	// data->dma_rx.offset += data->dma_tx.dma_cfg.head_block->block_size; /* temp using */
-	// event.data.rx.offset = data->dma_rx.offset;
-	event.type = UART_RX_RDY;
-	event.data.rx.buf = data->dma_rx.buffer;
-	event.data.rx.len = data->dma_rx.counter - data->dma_rx.offset;
-	async_user_callback(data, &event);
 
-	// async_evt_rx_rdy(data);
-	// if (data->rx_next_buffer != NULL) {
-	// 	uart_hc32_dma_replace_buffer(data->uart_dev);
-	// }
+	async_evt_rx_rdy(data);
+
+	k_timer_init(&data->dma_rx.timer, uart_hc32_async_rx_timeout, NULL);
+	k_timer_start(&data->dma_rx.timer, data->dma_rx.timeout, 0);
 }
 
 static inline void async_evt_rx_err(struct uart_hc32_data *data, int err_code)
@@ -612,6 +608,9 @@ static int uart_hc32_async_rx_disable(struct device *dev)
 	CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
 	struct uart_hc32_data *data = dev->driver_data;
 	struct uart_event event;
+
+	/* stop timer */
+	k_timer_stop(&data->dma_rx.timer);
 
 	if (!data->dma_rx.enabled) {
 		event.type = UART_RX_DISABLED;
@@ -685,6 +684,7 @@ static void uart_hc32_dma_rx_cb(void *user_data, uint32_t channel, int status)
 	/* true since this functions occurs when buffer if full */
 	data->dma_rx.counter = data->dma_rx.buffer_length;
 	async_evt_rx_rdy(data);
+	data->dma_rx.offset = data->dma_rx.buffer_length;
 
 	if (data->rx_next_buffer != NULL) {
 		uart_hc32_dma_replace_buffer(uart_dev);
@@ -765,6 +765,8 @@ static int uart_hc32_async_rx_enable(struct device *dev, u8_t *buf, size_t len,
 	data->dma_rx.timeout = timeout;
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0U;
+	data->dma_rx.offset = 0;
+	data->dma_rx.counter = 0;
 	/* Config dma */
 	ret = usart_dma_config(&data->dma_rx, (uint8_t *)&USARTx->RDR, buf,
 							len, timeout);

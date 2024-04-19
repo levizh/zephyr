@@ -89,6 +89,24 @@ static int test_task(u32_t chan_id, u32_t blen)
 	TC_PRINT("%s\n", rx_data);
 	if (strcmp(tx_data, rx_data) != 0)
 		return TC_FAIL;
+
+	/* reload test */
+
+	(void)memset(rx_data, 0, sizeof(rx_data));
+	if (dma_reload(dma, chan_id, dma_block_cfg.source_address, dma_block_cfg.dest_address, dma_block_cfg.block_size)) {
+		TC_PRINT("ERROR: transfer\n");
+		return TC_FAIL;
+	}
+
+	if (dma_start(dma, chan_id)) {
+		TC_PRINT("ERROR: transfer\n");
+		return TC_FAIL;
+	}
+	k_sleep(2000);
+	TC_PRINT("%s\n", rx_data);
+	if (strcmp(tx_data, rx_data) != 0)
+		return TC_FAIL;
+
 	return TC_PASS;
 }
 

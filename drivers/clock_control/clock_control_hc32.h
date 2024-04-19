@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _HC32F4_CLOCK_
 #define _HC32F4_CLOCK_
 

@@ -43,9 +43,10 @@
 	 * contiguous block in the memory map, however misaligned accesses
 	 * across the 0x2000_0000 boundary are not supported in the Arm
 	 * Cortex-M4 architecture.*/
- 	sramH: memory@1fff8000 {
+ 	sramh: memory@1fff8000 {
 		device_type = "memory";
-		compatible = "mmio-sram";
+		compatible ="zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAMH";
 		reg = <0x1fff8000 DT_SIZE_K(32)>;
 	};
 
@@ -55,9 +56,10 @@
 		reg = <0x20000000 DT_SIZE_K(156)>;
 	};
 
-	sramB: memory@200F0000 {
+	sramb: memory@200F0000 {
 		device_type = "memory";
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region","mmio-sram";
+		zephyr,memory-region = "SRAMB";
 		reg = <0x200F0000 DT_SIZE_K(4)>;
 	};
 

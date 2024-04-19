@@ -46,11 +46,17 @@ struct i2c_hc32_data {
 	uint32_t len;
 	uint8_t *dat;
 	struct i2c_msg *msg;
+
+#ifdef CONFIG_I2C_TARGET
+	bool master_active;
+	struct i2c_target_config *slave_cfg;
+	bool slave_attached;
+#endif
 };
 
 int32_t hc32_i2c_transaction(const struct device *dev,
-			    struct i2c_msg msg, uint8_t *next_msg_flags,
-			    uint16_t periph);
+				struct i2c_msg msg, uint8_t *next_msg_flags,
+				uint16_t periph);
 int i2c_hc32_runtime_configure(const struct device *dev, uint32_t config);
 
 #endif	/* ZEPHYR_DRIVERS_I2C_I2C_HC32_H_ */

@@ -45,4 +45,9 @@ config PINMUX_HC32
 
 endif #PINMUX
 
+if I2C
+config I2C_HC32
+	default y
+endif # I2C
+
 endif # SOC_HC32F460

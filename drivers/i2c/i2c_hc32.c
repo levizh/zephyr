@@ -38,6 +38,12 @@ static int hc32_hw_i2c_restart(const struct i2c_hc32_config *cfg);
 static int hc32_hw_i2c_send_addr(const struct device *dev);
 static int hc32_hw_i2c_stop(const struct i2c_hc32_config *cfg);
 
+#if CONFIG_I2C_TARGET
+static void hc32_i2c_slaver_eei_isr(const struct device *dev);
+static void hc32_i2c_slaver_tei_isr(const struct device *dev);
+static void hc32_i2c_slaver_rxi_isr(const struct device *dev);
+#endif
+
 #ifdef CONFIG_I2C_HC32_BUS_RECOVERY
 pinctrl_soc_pin_t pins[2];
 struct pinctrl_state pinctl_default_sta = \
@@ -186,6 +192,13 @@ void hc32_i2c_eei_isr(void *arg)
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->data;
 
+#if CONFIG_I2C_TARGET
+	if (data->slave_attached && !data->master_active) {
+		hc32_i2c_slaver_eei_isr(dev);
+		return;
+	}
+#endif
+
 	if (SET == I2C_GetStatus(i2c, I2C_FLAG_START)) {
 		I2C_ClearStatus(i2c, I2C_CLR_STARTFCLR | I2C_CLR_NACKFCLR);
 		I2C_IntCmd(i2c, I2C_INT_STOP | I2C_INT_NACK, ENABLE);
@@ -204,7 +217,7 @@ void hc32_i2c_eei_isr(void *arg)
 	if (SET == I2C_GetStatus(i2c, I2C_FLAG_STOP)) {
 		I2C_ClearStatus(i2c, I2C_CLR_STOPFCLR);
 		hc32_i2c_transaction_end(dev);
-		I2C_IntCmd(i2c, I2C_INT_NACK | I2C_INT_STOP, DISABLE);
+		I2C_IntCmd(i2c, I2C_INT_START | I2C_INT_NACK | I2C_INT_STOP, DISABLE);
 		I2C_Cmd(i2c, DISABLE);
 	}
 
@@ -227,6 +240,12 @@ void hc32_i2c_tei_isr(void *arg)
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->data;
 
+#if CONFIG_I2C_TARGET
+	if (data->slave_attached && !data->master_active) {
+		hc32_i2c_slaver_tei_isr(dev);
+		return;
+	}
+#endif
 
 	if (data->len == 0) {
 		if (data->msg->flags & I2C_MSG_STOP) {
@@ -261,6 +280,13 @@ void hc32_i2c_rxi_isr(void *arg)
 	const struct i2c_hc32_config *cfg = dev->config;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->data;
+
+#if CONFIG_I2C_TARGET
+	if (data->slave_attached && !data->master_active) {
+		hc32_i2c_slaver_rxi_isr(dev);
+		return;
+	}
+#endif
 
 	if (data->msg->flags & I2C_MSG_STOP) {
 		if (data->len == 2) {
@@ -319,7 +345,7 @@ static int hc32_i2c_msg_transaction(const struct device *dev)
 	
 	if (k_sem_take(&data->device_sync_sem,
 			K_MSEC(HC32_I2C_TRANSFER_TIMEOUT_MSEC)) != 0) {
-		I2C_IntCmd(i2c, I2C_INT_NACK | I2C_INT_STOP, DISABLE);
+		I2C_IntCmd(i2c, I2C_INT_START | I2C_INT_NACK | I2C_INT_STOP, DISABLE);
 		hc32_hw_i2c_stop(cfg);
 		hc32_i2c_transaction_end(dev);
 		I2C_Cmd(i2c, DISABLE);
@@ -671,6 +697,10 @@ static int i2c_hc32_transfer(const struct device *dev, struct i2c_msg *msg,
 
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
+#if defined(CONFIG_I2C_TARGET)
+		data->master_active = true;
+#endif
+
 	data->slaver_addr = slave;
 	for (i = 0; i < num_msgs; i++){
 		current = &msg[i];
@@ -690,10 +720,162 @@ static int i2c_hc32_transfer(const struct device *dev, struct i2c_msg *msg,
 		}
 	}
 
+#if defined(CONFIG_I2C_TARGET)
+	const struct i2c_hc32_config *cfg = dev->config;
+	data->master_active = false;
+	if (data->slave_attached) {
+		I2C_Cmd(cfg->i2c, ENABLE);
+		hc32_hw_i2c_reset(cfg);
+	}
+#endif
+
 	k_sem_give(&data->bus_mutex);
 
 	return ret;
 }
+
+#if defined(CONFIG_I2C_TARGET)
+#if CONFIG_I2C_HC32_INTERRUPT
+static void hc32_i2c_slaver_eei_isr(const struct device *dev)
+{
+	const struct i2c_hc32_config *cfg = dev->config;
+	CM_I2C_TypeDef *i2c = cfg->i2c;
+	struct i2c_hc32_data *data = dev->data;
+	const struct i2c_target_callbacks *slave_cb =
+		data->slave_cfg->callbacks;
+	uint8_t val;
+
+	if (SET == I2C_GetStatus(i2c, I2C_FLAG_MATCH_ADDR0)) {
+		I2C_ClearStatus(i2c, I2C_CLR_SLADDR0FCLR | I2C_CLR_NACKFCLR);
+
+		if (SET == I2C_GetStatus(i2c, I2C_FLAG_TRA)) {
+			I2C_IntCmd(i2c, I2C_INT_TX_CPLT, ENABLE);
+			slave_cb->read_requested(data->slave_cfg, &val);
+			I2C_WriteData(i2c, val);
+			I2C_IntCmd(i2c, I2C_INT_STOP | I2C_INT_NACK, ENABLE);
+		} else {
+			slave_cb->write_requested(data->slave_cfg);
+			I2C_IntCmd(i2c, (I2C_INT_RX_FULL | I2C_INT_STOP | I2C_INT_NACK), ENABLE);
+		}
+	}
+
+	if (SET == I2C_GetStatus(i2c, I2C_FLAG_NACKF)) {
+		I2C_ClearStatus(i2c, I2C_CLR_NACKFCLR);
+
+		if (SET == I2C_GetStatus(i2c, I2C_FLAG_TRA)) {
+			I2C_IntCmd(i2c, I2C_INT_TX_CPLT, DISABLE);
+			I2C_ClearStatus(i2c, I2C_CLR_TENDFCLR);
+			(void)I2C_ReadData(i2c);
+		} else {
+			I2C_IntCmd(i2c, I2C_INT_RX_FULL, DISABLE);
+		}
+	}
+
+	if (SET == I2C_GetStatus(i2c, I2C_FLAG_STOP)) {
+		I2C_ClearStatus(i2c, I2C_CLR_STOPFCLR);
+		I2C_IntCmd(i2c, I2C_INT_TX_CPLT | I2C_INT_RX_FULL | I2C_INT_STOP | I2C_INT_NACK, DISABLE);
+		slave_cb->stop(data->slave_cfg);
+	}
+}
+
+static void hc32_i2c_slaver_tei_isr(const struct device *dev)
+{
+	const struct i2c_hc32_config *cfg = dev->config;
+	CM_I2C_TypeDef *i2c = cfg->i2c;
+	struct i2c_hc32_data *data = dev->data;
+	const struct i2c_target_callbacks *slave_cb = data->slave_cfg->callbacks;
+	uint8_t val;
+
+	if (I2C_INT_TX_CPLT == READ_REG32_BIT(i2c->CR2, I2C_INT_TX_CPLT) && \
+		RESET == I2C_GetStatus(i2c, I2C_FLAG_ACKR)) {
+		slave_cb->read_processed(data->slave_cfg, &val);
+		I2C_WriteData(i2c, val);
+	}
+}
+
+static void hc32_i2c_slaver_rxi_isr(const struct device *dev)
+{
+	const struct i2c_hc32_config *cfg = dev->config;
+	CM_I2C_TypeDef *i2c = cfg->i2c;
+	struct i2c_hc32_data *data = dev->data;
+	const struct i2c_target_callbacks *slave_cb = data->slave_cfg->callbacks;
+
+	slave_cb->write_received(data->slave_cfg, I2C_ReadData(i2c));
+}
+#endif
+
+/* Attach and start I2C as slave */
+int i2c_hc32_slave_register(const struct device *dev,
+				struct i2c_target_config *config)
+{
+	const struct i2c_hc32_config *cfg = dev->config;
+	struct i2c_hc32_data *data = dev->data;
+	uint32_t bitrate_cfg;
+	int ret;
+
+	if (!config) {
+		return -EINVAL;
+	}
+
+	if (data->slave_attached) {
+		return -EBUSY;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+#ifndef CONFIG_I2C_HC32_INTERRUPT
+	return -ENOTSUP
+#endif // !CONFIG_I2C_HC32_INTERRUPT
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
+	ret = i2c_hc32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+	if (ret < 0) {
+		LOG_ERR("i2c: failure initializing");
+		return ret;
+	}
+
+	data->slave_cfg = config;
+
+	data->slave_attached = true;
+
+	I2C_SlaveAddrConfig(cfg->i2c, I2C_ADDR0, I2C_ADDR_7BIT, config->address);
+
+	I2C_Cmd(cfg->i2c, ENABLE);
+
+	hc32_hw_i2c_reset(cfg);
+
+	I2C_IntCmd(cfg->i2c, (I2C_INT_MATCH_ADDR0 | I2C_INT_RX_FULL), ENABLE);
+	return 0;
+}
+
+int i2c_hc32_slave_unregister(const struct device *dev,
+				struct i2c_target_config *config)
+{
+	const struct i2c_hc32_config *cfg = dev->config;
+	struct i2c_hc32_data *data = dev->data;
+
+	if (!data->slave_attached) {
+		return -EINVAL;
+	}
+
+	if (data->master_active) {
+		return -EBUSY;
+	}
+
+	data->slave_cfg = NULL;
+
+	data->slave_attached = false;
+
+	I2C_Cmd(cfg->i2c, DISABLE);
+
+	hc32_hw_i2c_reset(cfg);
+
+	LOG_DBG("i2c: slave unregistered");
+
+	return 0;
+}
+#endif // !CONFIG_I2C_TARGET
 
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_hc32_runtime_configure,
@@ -701,6 +883,10 @@ static const struct i2c_driver_api api_funcs = {
 #if CONFIG_I2C_HC32_BUS_RECOVERY
 	.recover_bus = i2c_hc32_recover_bus,
 #endif /* CONFIG_I2C_HC32_BUS_RECOVERY */
+#if CONFIG_I2C_TARGET
+	.target_register = i2c_hc32_slave_register,
+	.target_unregister = i2c_hc32_slave_unregister,
+#endif
 };
 
 static int i2c_hc32_activate(const struct device *dev)
@@ -811,18 +997,18 @@ static void i2c_hc32_irq_config_func_##index(const struct device *dev)	\
 #define HC32_I2C_DMA_INIT(inst)	\
 static void hc32_dma_callback(const struct device *dev, void *user_data,	\
 				uint32_t channel, int status);	\
-const uint32_t dma_config_vaule[2] = {HC32_DMA_CHANNEL_CONFIG(inst, tx_dma), \
+const uint32_t dma_config_vaule_##inst[2] = {HC32_DMA_CHANNEL_CONFIG(inst, tx_dma), \
 								HC32_DMA_CHANNEL_CONFIG(inst, rx_dma)}; \
 struct dma_block_config dma_block_config_##inst[2] = \
 {	\
 	{	\
-		.dest_addr_adj = HC32_DMA_CONFIG_DEST_ADDR_INC(dma_config_vaule[0]), \
-		.source_addr_adj = HC32_DMA_CONFIG_SOURCE_ADDR_INC(dma_config_vaule[0]), \
+		.dest_addr_adj = HC32_DMA_CONFIG_DEST_ADDR_INC(dma_config_vaule_##inst[0]), \
+		.source_addr_adj = HC32_DMA_CONFIG_SOURCE_ADDR_INC(dma_config_vaule_##inst[0]), \
 		.dest_address = (uint32_t)&(((CM_I2C_TypeDef *)DT_INST_REG_ADDR(inst))->DTR),	\
 	},		\
 	{	\
-		.source_addr_adj = HC32_DMA_CONFIG_SOURCE_ADDR_INC(dma_config_vaule[1]), \
-		.dest_addr_adj = HC32_DMA_CONFIG_DEST_ADDR_INC(dma_config_vaule[1]), \
+		.source_addr_adj = HC32_DMA_CONFIG_SOURCE_ADDR_INC(dma_config_vaule_##inst[1]), \
+		.dest_addr_adj = HC32_DMA_CONFIG_DEST_ADDR_INC(dma_config_vaule_##inst[1]), \
 		.source_address = (uint32_t)&(((CM_I2C_TypeDef *)DT_INST_REG_ADDR(inst))->DRR),	\
 	}		\
 };	\
@@ -840,23 +1026,23 @@ struct dma_hc32_config_user_data i2c_dma_user_data_##inst[2] = \
 struct dma_config dma_config_##inst[2] = \
 {	\
 	{	\
-		.channel_direction = HC32_DMA_CONFIG_DIRECTION(dma_config_vaule[0]), \
+		.channel_direction = HC32_DMA_CONFIG_DIRECTION(dma_config_vaule_##inst[0]), \
 		.block_count = 1,	\
 		.source_burst_length = 1,	\
 		.dest_burst_length = 1,	\
-		.source_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[0]),	\
-		.dest_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[0]),	\
+		.source_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule_##inst[0]),	\
+		.dest_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule_##inst[0]),	\
 		.head_block = &dma_block_config_##inst[0],	\
 		.user_data = &i2c_dma_user_data_##inst[0],	\
 		.dma_callback = hc32_dma_callback,	\
 	},	\
 	{	\
-		.channel_direction = HC32_DMA_CONFIG_DIRECTION(dma_config_vaule[1]), \
+		.channel_direction = HC32_DMA_CONFIG_DIRECTION(dma_config_vaule_##inst[1]), \
 		.block_count = 1,	\
 		.source_burst_length = 1,	\
 		.dest_burst_length = 1,	\
-		.source_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[1]),	\
-		.dest_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule[1]),	\
+		.source_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule_##inst[1]),	\
+		.dest_data_size = HC32_DMA_CONFIG_DATA_SIZE(dma_config_vaule_##inst[1]),	\
 		.head_block = &dma_block_config_##inst[1],	\
 		.user_data = &i2c_dma_user_data_##inst[1],	\
 		.dma_callback = hc32_dma_callback,	\

@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <soc.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
@@ -32,6 +38,7 @@ static void hc32_clock_stale(uint32_t flag)
 	}
 }
 
+#if HC32_XTAL_ENABLED
 static void hc32_clock_xtal_init(void)
 {
 	stc_clock_xtal_init_t     stcXtalInit;
@@ -46,6 +53,7 @@ static void hc32_clock_xtal_init(void)
 	(void)CLK_XtalInit(&stcXtalInit);
 	hc32_clock_stale(CLK_STB_FLAG_XTAL);
 }
+#endif
 
 static void hc32_clock_xtal32_init(void)
 {
@@ -75,6 +83,7 @@ static void hc32_clock_lrc_init(void)
 	CLK_LrcCmd(ENABLE);
 }
 
+#if HC32_PLL_ENABLED
 static void hc32_clock_pll_init(void)
 {
 	stc_clock_pll_init_t      stcMPLLInit;
@@ -97,27 +106,28 @@ static void hc32_clock_pll_init(void)
 	(void)CLK_PLLInit(&stcMPLLInit);
 	hc32_clock_stale(CLK_STB_FLAG_PLL);
 }
+#endif
 
 static void hc32_clk_conf(void)
 {
-	if (IS_ENABLED(HC32_PLL_ENABLED)) {
-		hc32_clock_pll_init();
-	}
-	if (IS_ENABLED(HC32_XTAL_ENABLED)) {
-		hc32_clock_xtal_init();
-	}
-	if (IS_ENABLED(HC32_HRC_ENABLED)) {
+#if HC32_PLL_ENABLED
+	hc32_clock_pll_init();
+#endif
+#if HC32_XTAL_ENABLED
+	hc32_clock_xtal_init();
+#endif
+#if HC32_HRC_ENABLED
 		hc32_clock_hrc_init();
-	}
-	if (IS_ENABLED(HC32_MRC_ENABLED)) {
+#endif
+#if HC32_MRC_ENABLED
 		hc32_clock_mrc_init();
-	}
-	if (IS_ENABLED(HC32_LRC_ENABLED)) {
+#endif
+#if HC32_LRC_ENABLED
 		hc32_clock_lrc_init();
-	}
-	if (IS_ENABLED(HC32_XTAL32_ENABLED)) {
+#endif
+#if HC32_XTAL32_ENABLED
 		hc32_clock_xtal32_init();
-	}
+#endif
 }
 
 static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)

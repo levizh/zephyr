@@ -103,7 +103,7 @@ static u32_t dma_hc32_ch_is_en(CM_DMA_TypeDef *DMAx, uint32_t channel)
 	return u32ChEn;
 }
 
-static void dma_hc_sw_trigger(CM_DMA_TypeDef *DMAx, uint32_t channel)
+static void dma_hc32_sw_trigger(CM_DMA_TypeDef *DMAx, uint32_t channel)
 {
 	__IO uint32_t *SWREQ;
 	SWREQ = (__IO uint32_t *)((uint32_t)DMAx + 0x30U);
@@ -474,7 +474,7 @@ static int dma_hc32_start(struct device *dev, u32_t channel)
 	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
 		if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
 			key = irq_lock();
-			dma_hc_sw_trigger(DMAx, channel);
+			dma_hc32_sw_trigger(DMAx, channel);
 			data->channels[channel].m2m_trigcnt--;
 			data->channels[channel].m2m_err = 0;
 			irq_unlock(key);
@@ -599,6 +599,12 @@ static void dma_hc32_tc_irq_handler(struct device *dev, int channel)
 				if ((LL_OK != DMA_SetBlockSize(DMAx, channel, u32TransSize)) || \
 				    (LL_OK != DMA_SetTransCount(DMAx, channel, 1U))) {
 					data->channels[channel].m2m_err = -EIO;
+					/* report err and return */
+					if (data->channels[channel].callback) {
+						data->channels[channel].callback(data->channels[channel].user_data,
+										 channel, data->channels[channel].m2m_err);
+					}
+					return;
 				}
 
 				if (LL_OK != DMA_ChCmd(DMAx, channel, ENABLE)) {
@@ -612,7 +618,7 @@ static void dma_hc32_tc_irq_handler(struct device *dev, int channel)
 				}
 				if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
 					key = irq_lock();
-					dma_hc_sw_trigger(DMAx, channel);
+					dma_hc32_sw_trigger(DMAx, channel);
 					data->channels[channel].m2m_trigcnt--;
 					irq_unlock(key);
 				}

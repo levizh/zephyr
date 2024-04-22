@@ -65,7 +65,6 @@ struct dma_hc32_ddl_config {
 
 /* Check if the DMA init successfully for HC32F460 */
 #define DMA_CH_REG(reg_base, ch)        (*(__IO uint32_t *)((uint32_t)(&(reg_base)) + ((ch) * 0x40UL)))
-#define DMA_INIT_RETRY_CNT              (0x1000UL)
 
 static int dma_hc32_init_check(CM_DMA_TypeDef *DMAx, uint32_t channel,
 			       const stc_dma_init_t *pstcDmaInit)
@@ -102,36 +101,6 @@ static u32_t dma_hc32_ch_is_en(CM_DMA_TypeDef *DMAx, uint32_t channel)
 		u32ChEn = 0UL;
 	}
 	return u32ChEn;
-}
-
-static void dma_hc32_force_ch_cmd(CM_DMA_TypeDef *DMAx, uint32_t channel,
-				  en_functional_state_t enNewState)
-{
-	if (ENABLE == enNewState) {
-		DMAx->CHEN |= (1UL << channel) & DMA_CHEN_CHEN;
-	} else {
-		DMAx->CHEN &= (~(1UL << channel)) & DMA_CHEN_CHEN;
-	}
-}
-
-static void dma_hc32_ch_cmd(CM_DMA_TypeDef *DMAx, uint32_t channel,
-			    en_functional_state_t enNewState)
-{
-	int32_t i32Ret = LL_OK;
-	unsigned int key;
-
-	key = irq_lock();
-	if (ENABLE == enNewState) {
-		i32Ret = DMA_ChCmd(DMAx, channel, ENABLE);
-	} else {
-		if (dma_hc32_ch_is_en(DMAx, channel)) {
-			i32Ret = DMA_ChCmd(DMAx, channel, DISABLE);
-		}
-	}
-	if (LL_OK != i32Ret) {
-		dma_hc32_force_ch_cmd(DMAx, channel, enNewState);
-	}
-	irq_unlock(key);
 }
 
 static void dma_hc_sw_trigger(CM_DMA_TypeDef *DMAx, uint32_t channel)
@@ -199,7 +168,6 @@ static int dma_hc32_configure(struct device *dev, u32_t channel,
 	struct dma_hc32_ddl_config dma_ddl_cfg;
 	stc_dma_init_t stcDmaInit;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
-	u32_t u32InitRetryCnt = 0U;
 
 	if (channel >= cfg->channels) {
 		LOG_ERR("channel must be < %" PRIu32 " (%" PRIu32 ")",
@@ -356,7 +324,12 @@ static int dma_hc32_configure(struct device *dev, u32_t channel,
 		LOG_WRN("note: force trig source to EVT_SRC_AOS_STRG !");
 	}
 
-	dma_hc32_ch_cmd(DMAx, channel, DISABLE);
+	if (dma_hc32_ch_is_en(DMAx, channel)) {
+		if (LL_OK != DMA_ChCmd(DMAx, channel, DISABLE)) {
+			LOG_ERR("DMA ch disable failed");
+			return -EBUSY;
+		}
+	}
 
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
@@ -378,17 +351,11 @@ static int dma_hc32_configure(struct device *dev, u32_t channel,
 	stcDmaInit.u32SrcAddrInc = dma_ddl_cfg.u32SrcAddrInc;
 	stcDmaInit.u32DestAddrInc = dma_ddl_cfg.u32DestAddrInc;
 
-	for (u32InitRetryCnt = 0; u32InitRetryCnt < DMA_INIT_RETRY_CNT;
-	     u32InitRetryCnt++) {
-		(void)DMA_Init(DMAx, channel, &stcDmaInit);
-		if (0 == dma_hc32_init_check(DMAx, channel, &stcDmaInit)) {
-			break;
-		}
-	}
-	if (u32InitRetryCnt == DMA_INIT_RETRY_CNT) {
+	(void)DMA_Init(DMAx, channel, &stcDmaInit);
+	if (0 != dma_hc32_init_check(DMAx, channel, &stcDmaInit)) {
+		LOG_ERR("DMA ch init failed");
 		return -EBUSY;
 	}
-
 
 	/* only TC enable, BTC disable */
 	DMA_TransCompleteIntCmd(DMAx, DMA_INT_BTC_CH0 << channel, DISABLE);
@@ -444,28 +411,38 @@ static int dma_hc32_reload(struct device *dev, u32_t channel,
 		}
 	}
 
-	dma_hc32_ch_cmd(DMAx, channel, DISABLE);
+	if (dma_hc32_ch_is_en(DMAx, channel)) {
+		if (LL_OK != DMA_ChCmd(DMAx, channel, DISABLE)) {
+			LOG_ERR("DMA ch disable failed");
+			return -EBUSY;
+		}
+	}
 
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
 
 	if (LL_OK != DMA_SetSrcAddr(DMAx, channel, src)) {
+		LOG_ERR("DMA set src addr failed");
 		return -EBUSY;
 	}
 	if (LL_OK != DMA_SetDestAddr(DMAx, channel, dst)) {
+		LOG_ERR("DMA set dest addr failed");
 		return -EBUSY;
 	}
 
 	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
 		u32TransSize = u32TransSize & DMA_MCU_BLOCK_SIZE_MASK;
 		if (LL_OK != DMA_SetBlockSize(DMAx, channel, u32TransSize)) {
+			LOG_ERR("DMA set block size failed");
 			return -EBUSY;
 		}
 		if (LL_OK != DMA_SetTransCount(DMAx, channel, 1U)) {
+			LOG_ERR("DMA set trans count failed");
 			return -EBUSY;
 		}
 	} else {
 		if (LL_OK != DMA_SetTransCount(DMAx, channel, u32TransSize)) {
+			LOG_ERR("DMA set trans count failed");
 			return -EBUSY;
 		}
 	}
@@ -489,7 +466,10 @@ static int dma_hc32_start(struct device *dev, u32_t channel)
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
 
-	dma_hc32_ch_cmd(DMAx, channel, ENABLE);
+	if (LL_OK != DMA_ChCmd(DMAx, channel, ENABLE)) {
+		LOG_ERR("DMA ch enable failed");
+		return -EBUSY;
+	}
 	data->channels[channel].busy = true;
 	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
 		if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
@@ -516,7 +496,12 @@ static int dma_hc32_stop(struct device *dev, u32_t channel)
 			cfg->channels, channel);
 		return -EINVAL;
 	}
-	dma_hc32_ch_cmd(DMAx, channel, DISABLE);
+	if (dma_hc32_ch_is_en(DMAx, channel)) {
+		if (LL_OK != DMA_ChCmd(DMAx, channel, DISABLE)) {
+			LOG_ERR("DMA ch disable failed");
+			return -EBUSY;
+		}
+	}
 	data->channels[channel].busy = false;
 
 	return 0;
@@ -616,7 +601,15 @@ static void dma_hc32_tc_irq_handler(struct device *dev, int channel)
 					data->channels[channel].m2m_err = -EIO;
 				}
 
-				dma_hc32_ch_cmd(DMAx, channel, ENABLE);
+				if (LL_OK != DMA_ChCmd(DMAx, channel, ENABLE)) {
+					data->channels[channel].m2m_err = -EIO;
+					/* report err and return */
+					if (data->channels[channel].callback) {
+						data->channels[channel].callback(data->channels[channel].user_data,
+										 channel, data->channels[channel].m2m_err);
+					}
+					return;
+				}
 				if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
 					key = irq_lock();
 					dma_hc_sw_trigger(DMAx, channel);

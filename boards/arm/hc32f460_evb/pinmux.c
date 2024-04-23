@@ -21,11 +21,11 @@ static int hc32_pinmux_init(struct device *dev)
 	struct device *portc =
 		device_get_binding(CONFIG_PINMUX_HC32_PORTC_NAME);
 
-	struct device *porte =
-		device_get_binding(CONFIG_PINMUX_HC32_PORTE_NAME);
-
 	struct device *portd =
 		device_get_binding(CONFIG_PINMUX_HC32_PORTD_NAME);
+
+	struct device *porte =
+		device_get_binding(CONFIG_PINMUX_HC32_PORTE_NAME);
 
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(porta, 8, 43); /* SCK */
@@ -43,6 +43,14 @@ static int hc32_pinmux_init(struct device *dev)
 	/* uart2, used in async uart test */
 	pinmux_pin_set(porta, 2, 36); /* tx */
 	pinmux_pin_set(porta, 3, 37); /* rx */
+
+	/* qspi */
+	pinmux_pin_set(portc, 7, 7); /* cs */
+	pinmux_pin_set(portc, 6, 7); /* sck */
+	pinmux_pin_set(portd, 8, 7); /* IO0 */
+	pinmux_pin_set(portd, 9, 7); /* IO1 */
+	pinmux_pin_set(portd, 10, 7); /* IO2 */
+	pinmux_pin_set(portd, 11, 7); /* IO3 */
 
 	/* i2c1 */
 	pinmux_pin_set(portd, 1, 49); /* scl */

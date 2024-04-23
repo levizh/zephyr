@@ -1,0 +1,48 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+title: HC32 QSPI
+version: 0.1
+
+description: >
+    This binding gives a base representation of the HC32 QSPI controller
+
+properties:
+    compatible:
+      constraint: "xhsc,hc32-qspi"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    dma-tx-cfg:
+      type: int
+      category: optional
+      description: dma configuration
+      generation: define
+
+    dma-rx-cfg:
+      type: int
+      category: optional
+      description: dma configuration
+      generation: define

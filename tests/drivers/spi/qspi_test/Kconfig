@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "QSPI Test"
+
+source "Kconfig.zephyr"
+
+config QSPI_TEST_DRV_NAME
+	string "SPI device name to use for test"
+	default "QSPI"
+
+config QSPI_TEST_FREQ
+	int "The frequency in Hz to use when testing in slow mode"
+	default 50000000
+
+config QSPI_CS_CTRL_GPIO_DRV_NAME
+	string "The GPIO port which is used to control CS"
+	default "GPIOA"
+
+config QSPI_CS_CTRL_GPIO_PIN
+	int "The GPIO PIN which is used to act as a CS pin"
+	default 0

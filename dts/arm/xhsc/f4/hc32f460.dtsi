@@ -298,6 +298,14 @@
 			#size-cells = <0>;
 		};
 
+		qspi: qspi@9c000000 {
+			compatible = "xhsc,hc32-qspi";
+			reg = <0x9c000000 0x808>;
+			label = "QSPI";
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG1 HC32_FCG1_PERIPH_QSPI>;
+			status = "disabled";
+		};
+
 		i2c1: i2c1@4004e000 {
 			compatible = "xhsc,hc32-i2c";
 			#address-cells = <1>;

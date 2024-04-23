@@ -1,0 +1,33 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig QSPI_HC32
+	bool "HC32 MCU SPI controller driver"
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_QSPI
+	select PINMUX_HC32
+	help
+	  Enable SPI support on the HC32 family of processors.
+
+if QSPI_HC32
+
+config QSPI_HC32_DMA
+	bool "HC32 MCU SPI DMA Support"
+	depends on DMA
+	select HC32_LL_DMA
+	select DMA_HC32
+	help
+	  Use the DMA for SPI transfer
+	  that enable dma channels in their device tree node.
+
+config QSPI_HC32_DMA_TIMEOUT
+	int "Timeout for dma reg operation, unit millisecond"
+	depends on QSPI_HC32_DMA
+	default 20
+	help
+	  The time set for wait for dma reg operation done.
+
+endif # QSPI_HC32

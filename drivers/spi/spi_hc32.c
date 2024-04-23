@@ -34,19 +34,6 @@ LOG_MODULE_REGISTER(spi_hc32);
 #endif
 
 #ifdef CONFIG_SPI_HC32_DMA
-
-#ifdef DT_XHSC_HC32_DMA_40053000_LABEL
-#define DMA1_LABLE  DT_XHSC_HC32_DMA_40053000_LABEL
-#else
-#define DMA1_LABLE ""
-#endif
-
-#ifdef DT_XHSC_HC32_DMA_40053400_LABEL
-#define DMA2_LABLE  DT_XHSC_HC32_DMA_40053400_LABEL
-#else
-#define DMA2_LABLE  ""
-#endif
-
 #define SPI_HC32_DMA_ERROR_FLAG	    0x01
 #define SPI_HC32_DMA_RX_DONE_FLAG	0x02
 #define SPI_HC32_DMA_TX_DONE_FLAG	0x04
@@ -68,7 +55,6 @@ struct spi_hc32_config {
 #ifdef CONFIG_SPI_HC32_INTERRUPT
 	void (*irq_configure)();
 #endif
-	struct spi_cs_hc32 *cs_hc32;
 };
 
 struct spi_hc32_data {
@@ -473,10 +459,16 @@ static int spi_hc32_configure(struct device *dev,
 	}
 
 	/* soft cs pin */
+	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER)
+	    && (config->cs == NULL)) {
+		LOG_ERR("Please set soft cs configuration in spi master mode!");
+		return -ENOTSUP;
+	}
 	data->ctx.config = config;
 	spi_context_cs_configure(&data->ctx);
 
 	if (config->operation & SPI_LINES_MASK) {
+		LOG_ERR("Only support single line in spi!");
 		return -ENOTSUP;
 	}
 
@@ -527,7 +519,7 @@ static int spi_hc32_configure(struct device *dev,
 				     &bus_freq);
 
 	if (err < 0) {
-		LOG_ERR("Failed call clock_control_get_rate()");
+		LOG_ERR("Failed to call clock_control_get_rate()");
 		return -EIO;
 	}
 
@@ -773,29 +765,19 @@ static int spi_hc32_init(struct device *dev)
 	struct spi_hc32_data *data = dev->driver_data;
 #ifdef CONFIG_SPI_HC32_DMA
 	/* update dma tx dev and dma trig source */
-	switch ((uint32_t)(data->dma_tx.dev)) {
-	case DMA1:
-		data->dma_tx.dev = device_get_binding(DMA1_LABLE);
-		break;
-	case DMA2:
-		data->dma_tx.dev = device_get_binding(DMA2_LABLE);
-		break;
-	default:
+	data->dma_tx.dev = device_get_binding(dma_hc32_get_device_name((uint32_t)(
+									       data->dma_tx.dev)));
+	if (!data->dma_tx.dev) {
+		LOG_ERR("No tx dma dev found!");
 		return -EINVAL;
-		break;
 	}
 
 	/* update dma rx dev */
-	switch ((uint32_t)(data->dma_rx.dev)) {
-	case DMA1:
-		data->dma_rx.dev = device_get_binding(DMA1_LABLE);
-		break;
-	case DMA2:
-		data->dma_rx.dev = device_get_binding(DMA2_LABLE);
-		break;
-	default:
+	data->dma_rx.dev = device_get_binding(dma_hc32_get_device_name((uint32_t)(
+									       data->dma_rx.dev)));
+	if (!data->dma_rx.dev) {
+		LOG_ERR("No rx dma dev found!");
 		return -EINVAL;
-		break;
 	}
 #endif
 

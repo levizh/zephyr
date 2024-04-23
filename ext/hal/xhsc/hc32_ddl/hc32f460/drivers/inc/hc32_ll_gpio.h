@@ -378,6 +378,7 @@ void GPIO_DeInit(void);
 int32_t GPIO_StructInit(stc_gpio_init_t *pstcGpioInit);
 void GPIO_SetDebugPort(uint8_t u8DebugPort, en_functional_state_t enNewState);
 void GPIO_SetFunc(uint8_t u8Port, uint16_t u16Pin, uint16_t u16Func);
+int32_t GPIO_GetFunc(uint8_t u8Port, uint16_t u16Pin, uint16_t *p16func);
 void GPIO_SubFuncCmd(uint8_t u8Port, uint16_t u16Pin, en_functional_state_t enNewState);
 void GPIO_SetSubFunc(uint8_t u8Func);
 void GPIO_SetReadWaitCycle(uint16_t u16ReadWait);

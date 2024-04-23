@@ -206,4 +206,6 @@ source "drivers/spi/Kconfig.nrfx"
 
 source "drivers/spi/Kconfig.hc32"
 
+source "drivers/spi/Kconfig.qspi_hc32"
+
 endif # SPI

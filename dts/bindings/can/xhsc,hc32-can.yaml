@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 ---
 title: HC32 CAN
 version: 0.1
@@ -36,5 +41,11 @@ properties:
     type: array
     category: required
     description: Clock gate control information
+    generation: define
+
+  gpios:
+    type: compound
+    category: optional
+    description: Phy control pin
     generation: define
 ...

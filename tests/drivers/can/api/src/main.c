@@ -28,10 +28,6 @@
  * @}
  */
 
-#if defined(CONFIG_CAN_HC32)
-#define DT_CAN_1_NAME       DT_XHSC_HC32_CAN_40070400_LABEL
-#endif
-
 #define TEST_SEND_TIMEOUT    K_MSEC(100)
 #define TEST_RECEIVE_TIMEOUT K_MSEC(100)
 

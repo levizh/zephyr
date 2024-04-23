@@ -34,3 +34,4 @@ properties:
   - irq
   - priority
   - int_src
+...

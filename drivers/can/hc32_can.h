@@ -39,6 +39,13 @@ struct can_hc32_data {
 	stc_can_filter_config_t filter_table[CONFIG_CAN_MAX_FILTER];
 };
 
+struct can_phy_control {
+	const char *name;
+	u32_t		pin;
+	u32_t		flag;
+	int			state;
+};
+
 struct can_hc32_config {
 	CM_CAN_TypeDef *can;
 	uint32_t bus_speed;
@@ -46,6 +53,7 @@ struct can_hc32_config {
 	uint8_t  phase2;
 	uint8_t  sjw;
 	struct hc32_modules_clock_sys clk_sys;
+	struct can_phy_control phy_ctrl;
 	void (*irq_config)(CM_CAN_TypeDef *can);
 };
 

@@ -78,3 +78,7 @@
 	status = "ok";
 	clock-src = <HC32_CLK_SRC_XTAL32>;
 };
+
+&can1 {
+	gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+};

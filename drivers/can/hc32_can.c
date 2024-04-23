@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <can.h>
+#include <gpio.h>
 #include "hc32_can.h"
 
 #define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
@@ -495,6 +496,7 @@ static int can_hc32_init(struct device *dev)
 	struct can_hc32_data *data = CAN_DEV_DATA(dev);
 	stc_can_init_t *stc_can = &data->can_init;
 	struct device *clock;
+	struct device *gpio;
 	int ret;
 
 	k_mutex_init(&data->tx_mutex);
@@ -513,6 +515,13 @@ static int can_hc32_init(struct device *dev)
 	if (ret != 0) {
 		LOG_ERR("Could not initialize clock (%d)", ret);
 		return -EIO;
+	}
+	/* initialize phy ctrl pin */
+	if (config->phy_ctrl.state == 0) {
+		gpio = device_get_binding(config->phy_ctrl.name);
+		__ASSERT_NO_MSG(gpio);
+		gpio_pin_configure(gpio, config->phy_ctrl.pin, GPIO_DIR_OUT);
+		gpio_pin_write(gpio, config->phy_ctrl.pin, config->phy_ctrl.flag);
 	}
 	/* Initializes CAN. */
 	(void)CAN_StructInit(stc_can);
@@ -537,55 +546,67 @@ static const struct can_driver_api can_hc32_driver_api = {
 	.detach      = can_hc32_detach,
 };
 
-
-/* CAN base address */
-#define CAN_BASE_ADDR(addr)             ((CM_CAN_TypeDef *)0x##addr)
+#ifdef CONFIG_CAN_PHY_CTRL_PIN
+#define HC32_CAN_PHY_CTRL_PIN(idx)                                      \
+        {	                                                            \
+            .name   = CAN_PROP_SINGLE_BY_NAME(idx, GPIO_CONTROLLER),    \
+            .pin    = CAN_PROP_SINGLE_BY_NAME(idx, GPIO_PIN),           \
+            .flag   = CAN_PROP_SINGLE_BY_NAME(idx, GPIO_FLAGS),         \
+            .state  = 0,                                                \
+        }
+#else
+#define HC32_CAN_PHY_CTRL_PIN(idx)                                      \
+        {	                                                            \
+            .state  = -EPERM,                                           \
+        }
+#endif
 
 #define HC32_CAN_IRQ_HANDLER_DECL(idx)				                \
 	static void can_##idx##_hc32_irq_config(CM_CAN_TypeDef *can)
 
-#define HC32_CAN_IRQ_HANDLER(idx, addr)					            \
+#define HC32_CAN_IRQ_HANDLER(idx)					                \
     static void can_##idx##_hc32_irq_config(CM_CAN_TypeDef *can)    \
 	{									                            \
-		IRQ_CONNECT(CAN_IRQ_SINGLE_BY_NAME(addr, GLB),              \
-			        CAN_IRQ_ARRAY_BY_NAME(addr, GLB, PRIORITY),     \
+		IRQ_CONNECT(CAN_IRQ_SINGLE_BY_NAME(idx, GLB),               \
+			        CAN_IRQ_ARRAY_BY_NAME(idx, GLB, PRIORITY),      \
 			        can_hc32_irq_handler,                           \
                     DEVICE_GET(can_hc32_##idx), 0);                 \
-		hc32_intc_irq_signin(CAN_IRQ_SINGLE_BY_NAME(addr, GLB),     \
-		            CAN_IRQ_ARRAY_BY_NAME(addr, GLB, INT_SRC));     \
-		irq_enable(CAN_IRQ_SINGLE_BY_NAME(addr, GLB));              \
+		hc32_intc_irq_signin(CAN_IRQ_SINGLE_BY_NAME(idx, GLB),      \
+		            CAN_IRQ_ARRAY_BY_NAME(idx, GLB, INT_SRC));      \
+		irq_enable(CAN_IRQ_SINGLE_BY_NAME(idx, GLB));               \
 		CAN_IntCmd(can, CAN_INT_ALL, DISABLE);                      \
 		CAN_IntCmd(can, (CAN_INT_PTB_TX | CAN_INT_RX |              \
 				   CAN_INT_ERR_INT), ENABLE);                       \
 }
 
-#define CAN_DEVICE_INIT(idx, addr)						                    \
+#define CAN_DEVICE_INIT(idx)						                        \
 	HC32_CAN_IRQ_HANDLER_DECL(idx);					                        \
 	static struct can_hc32_data can##idx##_data;			                \
 	static const struct can_hc32_config can##idx##_config = {	            \
-		.can = CAN_BASE_ADDR(addr),						                    \
-		.bus_speed = CAN_PROP_SINGLE_BY_NAME(addr, BUS_SPEED),              \
-		.prop_phase1 = CAN_PROP_SINGLE_BY_NAME(addr, PROP_SEG_PHASE_SEG1),  \
-		.phase2 = CAN_PROP_SINGLE_BY_NAME(addr, PHASE_SEG2),                \
-		.sjw = CAN_PROP_SINGLE_BY_NAME(addr, SJW),                          \
+		.can = (CM_CAN_TypeDef *)CAN_PROP_SINGLE_BY_NAME(idx, BASE_ADDRESS),\
+		.bus_speed = CAN_PROP_SINGLE_BY_NAME(idx, BUS_SPEED),               \
+		.prop_phase1 = CAN_PROP_SINGLE_BY_NAME(idx, PROP_SEG_PHASE_SEG1),   \
+		.phase2 = CAN_PROP_SINGLE_BY_NAME(idx, PHASE_SEG2),                 \
+		.sjw = CAN_PROP_SINGLE_BY_NAME(idx, SJW),                           \
 		.clk_sys = {							                            \
-			.bus  = CAN_CLOCK_SINGLE_BY_NAME(addr, BUS),                    \
-			.fcg  = CAN_CLOCK_SINGLE_BY_NAME(addr, FCG),                    \
-			.bits = CAN_CLOCK_SINGLE_BY_NAME(addr, BITS),                   \
+			.bus  = CAN_CLOCK_SINGLE_BY_NAME(idx, BUS),                     \
+			.fcg  = CAN_CLOCK_SINGLE_BY_NAME(idx, FCG),                     \
+			.bits = CAN_CLOCK_SINGLE_BY_NAME(idx, BITS),                    \
 		},							                                        \
 		.irq_config = can_##idx##_hc32_irq_config,		                    \
+		.phy_ctrl   = HC32_CAN_PHY_CTRL_PIN(idx),                           \
 	};									                                    \
 	DEVICE_AND_API_INIT(can_hc32_##idx,						                \
-			      CAN_PROP_SINGLE_BY_NAME(addr, LABEL),				        \
+			      CAN_PROP_SINGLE_BY_NAME(idx, LABEL),				        \
 			      &can_hc32_init,						                    \
 			      &can##idx##_data,				                            \
 			      &can##idx##_config,				                        \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	        \
 			      &can_hc32_driver_api);                                    \
-	HC32_CAN_IRQ_HANDLER(idx, addr)
+	HC32_CAN_IRQ_HANDLER(idx)
 
 #if defined(CONFIG_NET_SOCKETS_CAN)
-#define CAN_NET_DEVICE_INIT(idx, addr)                                  \
+#define CAN_NET_DEVICE_INIT(idx)                                        \
     #include "socket_can_generic.h"                                     \
     static int socket_can_##idx##_init(struct device *dev)              \
     {                                                                   \
@@ -612,9 +633,9 @@ static const struct can_driver_api can_hc32_driver_api = {
             NET_L2_GET_CTX_TYPE(CANBUS_L2), CAN_MTU);
 #endif
 
-#ifdef DT_XHSC_HC32_CAN_40070400_LABEL
-CAN_DEVICE_INIT(0, 40070400)
+#ifdef DT_XHSC_HC32_CAN_0_LABEL
+CAN_DEVICE_INIT(0)
 #if defined(CONFIG_NET_SOCKETS_CAN)
-CAN_NET_DEVICE_INIT(0, 40070400)
+CAN_NET_DEVICE_INIT(0)
 #endif /* CONFIG_NET_SOCKETS_CAN */
-#endif /* DT_XHSC_HC32_CAN_40070400_LABEL */
+#endif /* DT_XHSC_HC32_CAN_0_LABEL */

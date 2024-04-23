@@ -21,3 +21,8 @@ config CAN_TIMEOUT_WAIT_CONFIG
 	int "Maximum timeout time(ms) for waiting to configure CAN"
 	depends on CAN_HC32
 	default 100
+
+config CAN_PHY_CTRL_PIN
+	bool "Enable Phy control pin"
+	depends on CAN_HC32
+	default y

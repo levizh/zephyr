@@ -48,7 +48,14 @@ static int hc32_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 1, 49); /* scl */
 	pinmux_pin_set(portd, 2, 48); /* sda */
 
+#if defined(DT_CAN_1_NAME)
+	/* can1 */
+	pinmux_pin_set(portb, 7, 50); /* tx */
+	pinmux_pin_set(portb, 6, 51); /* rx */
 #endif
+
+#endif
+
 	return 0;
 }
 

@@ -72,7 +72,7 @@
 				compatible = "xhsc,hc32-bus-fcg";
 				#clock-cells = <3>;
 				reg = < 0x40048000 DT_SIZE_K(1) >;
-				status = "okay";
+				status = "ok";
 			};
 		};
 
@@ -130,7 +130,7 @@
 			interrupt-controller;
 			#interrupt-cells = <3>;
 			label = "INTC";
-			status = "okay";
+			status = "ok";
 		};
 
 		extint: interrupt-controller@40051800{
@@ -160,7 +160,7 @@
 							  "extint4",  "extint5",  "extint6",  "extint7",
 							  "extint8",  "extint9",  "extint10", "extint11",
 							  "extint12", "extint13", "extint14", "extint15";
-			status = "okay";
+			status = "ok";
 		};
 
 		dma1: dma@40053000 {
@@ -371,13 +371,13 @@
 			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
-			label = "TMRA1";
+			label = "TMRA_1";
 
 			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <8>;
 				status = "disabled";
-				label = "TMRA1-COUNTER";
+				label = "TMRA_1_COUNTER";
 			};
 
 			pwm {
@@ -385,7 +385,7 @@
 				status = "disabled";
 				addr = <0x40015000>;
 				#pwm-cells = <2>;
-				label = "TMRA1_PWM";
+				label = "TMRA_1_PWM";
 			};
 		};
 
@@ -402,13 +402,13 @@
 			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
-			label = "TMRA2";
+			label = "TMRA_2";
 
 			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <8>;
 				status = "disabled";
-				label = "TMRA2-COUNTER";
+				label = "TMRA_2_COUNTER";
 			};
 
 			pwm{
@@ -416,7 +416,7 @@
 				addr = <0x40015400>;
 				status = "disabled";
 				#pwm-cells = <2>;
-				label = "TMRA2_PWM";
+				label = "TMRA_2_PWM";
 			};
 		};
 
@@ -433,13 +433,13 @@
 			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
-			label = "TMRA3";
+			label = "TMRA_3";
 
 			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <8>;
 				status = "disabled";
-				label = "TMRA3-COUNTER";
+				label = "TMRA_3_COUNTER";
 			};
 
 			pwm {
@@ -447,7 +447,7 @@
 				status = "disabled";
 				addr = <0x40015800>;
 				#pwm-cells = <2>;
-				label = "TMRA3_PWM";
+				label = "TMRA_3_PWM";
 			};
 		};
 
@@ -464,13 +464,13 @@
 			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
-			label = "TMRA4";
+			label = "TMRA_4";
 
 			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <8>;
 				status = "disabled";
-				label = "TMRA4-COUNTER";
+				label = "TMRA_4_COUNTER";
 			};
 
 			pwm {
@@ -478,7 +478,7 @@
 				status = "disabled";
 				addr = <0x40015c00>;
 				#pwm-cells = <2>;
-				label = "TMRA4_PWM";
+				label = "TMRA_4_PWM";
 			};
 		};
 
@@ -495,13 +495,13 @@
 			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
-			label = "TMRA5";
+			label = "TMRA_5";
 
 			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <8>;
 				status = "disabled";
-				label = "TMRA5-COUNTER";
+				label = "TMRA_5_COUNTER";
 			};
 
 			pwm {
@@ -509,7 +509,7 @@
 				status = "disabled";
 				addr = <0x40016000>;
 				#pwm-cells = <2>;
-				label = "TMRA5_PWM";
+				label = "TMRA_5_PWM";
 			};
 		};
 
@@ -526,13 +526,13 @@
 			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
-			label = "TMRA6";
+			label = "TMRA_6";
 
 			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <8>;
 				status = "disabled";
-				label = "TMRA6-COUNTER";
+				label = "TMRA_6_COUNTER";
 			};
 
 			pwm {
@@ -540,7 +540,7 @@
 				status = "disabled";
 				addr = <0x40016400>;
 				#pwm-cells = <2>;
-				label = "TMRA6_PWM";
+				label = "TMRA_6_PWM";
 			};
 		};
 
@@ -582,7 +582,7 @@
 			phase_seg2 = <2>;
 			sjw = <2>;
 			status = "disabled";
-			label = "CAN1";
+			label = "CAN_1";
 		};
 
 		rtc: rtc@4004c000 {

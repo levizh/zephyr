@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: HC32 Interrupt Controller
+title: HC32 External Interrupt Controller
 version: 0.1
 
 description: >

@@ -10,4 +10,8 @@
 
 #define DT_RTC_0_NAME                   DT_XHSC_HC32_RTC_0_LABEL
 
+#if defined(DT_XHSC_HC32_CAN_40070400_LABEL)
+#define DT_CAN_1_NAME                   DT_XHSC_HC32_CAN_40070400_LABEL
+#endif
+
 /* End of SoC Level DTS fixup file */

@@ -29,4 +29,11 @@ config SPI_HC32_DMA
 	  Use the DMA for SPI transfer
 	  that enable dma channels in their device tree node.
 
+config SPI_HC32_DMA_TIMEOUT
+	int "Timeout for dma reg operation, unit millisecond"
+	depends on SPI_HC32_DMA
+	default 20
+	help
+	  The time set for wait for dma reg operation done.
+
 endif # SPI_HC32

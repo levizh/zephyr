@@ -111,6 +111,7 @@ static int spi_hc32_dma_rx_load(const struct device *dev, const uint8_t *buf,
 					   &data->dma_rx.dma_blk_cfg;
 	struct dma_config *dma_cfg_rx = (struct dma_config *) &data->dma_rx.dma_cfg;
 	uint8_t word_size, dft;
+	uint32_t timeout;
 	int ret;
 
 	word_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
@@ -144,16 +145,28 @@ static int spi_hc32_dma_rx_load(const struct device *dev, const uint8_t *buf,
 	dma_cfg_rx->callback_arg = &data->dma_rx.dma_cfg_user_data;
 	dma_cfg_rx->source_data_size = dft;
 	dma_cfg_rx->dest_data_size = dft;
-
-	/* pass our client origin to the dma: data->dma_rx.channel */
-	ret = dma_config(data->dma_rx.dev, data->dma_rx.channel, dma_cfg_rx);
-
-	if (ret != 0) {
+	timeout = CONFIG_SPI_HC32_DMA_TIMEOUT / 2;
+	do {
+		ret = dma_config(data->dma_rx.dev, data->dma_rx.channel, dma_cfg_rx);
+		if (-EBUSY == ret) {
+			k_sleep(1u);
+			timeout--;
+		}
+	} while ((-EBUSY == ret) && (timeout > 0u));
+	if (ret) {
 		return ret;
 	}
 
-	/* gives the request ID to the dma mux */
-	return dma_start(data->dma_rx.dev, data->dma_rx.channel);
+	timeout = CONFIG_SPI_HC32_DMA_TIMEOUT / 2;
+	do {
+		ret = dma_start(data->dma_rx.dev, data->dma_rx.channel);
+		if (-EBUSY == ret) {
+			k_sleep(1u);
+			timeout--;
+		}
+	} while ((-EBUSY == ret) && (timeout > 0u));
+
+	return ret;
 }
 
 static int spi_hc32_dma_tx_load(const struct device *dev, const uint8_t *buf,
@@ -165,6 +178,7 @@ static int spi_hc32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 					   &data->dma_tx.dma_blk_cfg;
 	struct dma_config *dma_cfg_tx = (struct dma_config *) &data->dma_tx.dma_cfg;
 	uint8_t word_size, dft;
+	uint32_t timeout;
 	int ret;
 
 	word_size = SPI_WORD_SIZE_GET(data->ctx.config->operation);
@@ -201,15 +215,29 @@ static int spi_hc32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	dma_cfg_tx->source_data_size = dft;
 	dma_cfg_tx->dest_data_size = dft;
 
-	/* pass our client origin to the dma: data->dma_rx.channel */
-	ret = dma_config(data->dma_tx.dev, data->dma_tx.channel, dma_cfg_tx);
-
-	if (ret != 0) {
+	timeout = CONFIG_SPI_HC32_DMA_TIMEOUT / 2;
+	do {
+		ret = dma_config(data->dma_tx.dev, data->dma_tx.channel, dma_cfg_tx);
+		if (-EBUSY == ret) {
+			k_sleep(1u);
+			timeout--;
+		}
+	} while ((-EBUSY == ret) && (timeout > 0u));
+	if (ret) {
 		return ret;
 	}
 
-	/* gives the request ID to the dma mux */
-	return dma_start(data->dma_tx.dev, data->dma_tx.channel);
+	timeout = CONFIG_SPI_HC32_DMA_TIMEOUT / 2;
+	do {
+		ret = dma_start(data->dma_tx.dev, data->dma_tx.channel);
+		if (-EBUSY == ret) {
+			k_sleep(1u);
+			timeout--;
+		}
+	} while ((-EBUSY == ret) && (timeout > 0u));
+
+	return ret;
+
 }
 
 static int wait_dma_done(const struct device *dev)

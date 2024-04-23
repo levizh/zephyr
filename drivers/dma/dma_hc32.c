@@ -456,6 +456,7 @@ static int dma_hc32_start(struct device *dev, u32_t channel)
 	struct dma_hc32_data *data = dev->driver_data;
 	CM_DMA_TypeDef *DMAx = ((CM_DMA_TypeDef *)cfg->base);
 	unsigned int key;
+	bool pre_busy_status;
 
 	if (channel >= cfg->channels) {
 		LOG_ERR("start channel must be < %" PRIu32 " (%" PRIu32 ")",
@@ -466,11 +467,15 @@ static int dma_hc32_start(struct device *dev, u32_t channel)
 	/* Int status clear */
 	dma_hc32_clear_int_flag(DMAx, channel);
 
+	pre_busy_status = data->channels[channel].busy;
+	/* set busy status before ch enable */
+	data->channels[channel].busy = true;
 	if (LL_OK != DMA_ChCmd(DMAx, channel, ENABLE)) {
+		/* restore pre busy status */
+		data->channels[channel].busy = pre_busy_status;
 		LOG_ERR("DMA ch enable failed");
 		return -EBUSY;
 	}
-	data->channels[channel].busy = true;
 	if (data->channels[channel].direction == MEMORY_TO_MEMORY) {
 		if (EVT_SRC_AOS_STRG == data->channels[channel].aos_source) {
 			key = irq_lock();

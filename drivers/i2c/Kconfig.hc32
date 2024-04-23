@@ -27,4 +27,9 @@ config I2C_HC32_DMA
 	  Enable DMA support for the I2C Driver
 endchoice
 
+if I2C_HC32_DMA
+config I2C_DMA_TIMEOUT
+	int "dma configuration timeout"
+	default 50
+endif
 endif # I2C_HC32

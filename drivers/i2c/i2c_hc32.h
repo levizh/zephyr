@@ -21,9 +21,8 @@ struct i2c_hc32_config {
 	CM_I2C_TypeDef *i2c;
 
 	uint32_t bitrate;
-#ifdef CONFIG_I2C_HC32_BUS_RECOVERY
-	struct gpio_pin_config scl;
-	struct gpio_pin_config sda;
+#ifdef CONFIG_I2C_HC32_DMA
+	uint32_t dma_timeout;
 #endif
 	uint32_t time_out;
 };

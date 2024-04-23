@@ -272,7 +272,7 @@ static void hc32_dma_callback(void *user_data,
 
 static int hc32_i2c_dma_write(struct device *dev)
 {
-	uint32_t timeout = 0;
+	uint32_t timeout = 0, dma_timeout = 0;
 	const struct i2c_hc32_config *cfg = dev->config->config_info;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
@@ -287,10 +287,27 @@ static int hc32_i2c_dma_write(struct device *dev)
 
 	if (data->len > 1) {
 		i2c_tx_dma_block_conf->source_address = (uint32_t)(&data->dat[1]);
-		//i2c_tx_dma_block_conf->dest_address = (uint32_t)&i2c->DTR;
 		i2c_tx_dma_block_conf->block_size = data->len- 1;
-		dma_config(data->dma_dev[0], data->channel[0], i2c_dma_config);
-		dma_start(data->dma_dev[0], data->channel[0]);
+		while (0 != dma_config(data->dma_dev[0], data->channel[0], i2c_dma_config) && \
+				dma_timeout < cfg->dma_timeout) {
+			k_sleep(K_MSEC(1));
+			dma_timeout ++;
+		}
+
+		if (dma_timeout >= cfg->dma_timeout) {
+			return -EBUSY;
+		}
+
+		dma_timeout = 0;
+		while (0 != dma_start(data->dma_dev[0], data->channel[0]) && \
+				dma_timeout < cfg->dma_timeout) {
+			k_sleep(K_MSEC(1));
+			dma_timeout ++;
+		}
+
+		if (dma_timeout >= cfg->dma_timeout) {
+			return -EBUSY;
+		}
 	}
 
 	I2C_WriteData(i2c, *data->dat);
@@ -316,7 +333,7 @@ static int hc32_i2c_dma_write(struct device *dev)
 
 static int hc32_i2c_dma_read(struct device *dev)
 {
-	uint32_t timeout = 0;
+	uint32_t timeout = 0, dma_timeout = 0;
 	const struct i2c_hc32_config *cfg = dev->config->config_info;
 	CM_I2C_TypeDef *i2c = cfg->i2c;
 	struct i2c_hc32_data *data = dev->driver_data;
@@ -332,11 +349,28 @@ static int hc32_i2c_dma_read(struct device *dev)
 	if (data->len == 1) {
 		I2C_AckConfig(i2c, I2C_NACK);
 	} else if (data->len > 2) {
-		//i2c_rx_dma_block_conf->source_address = (uint32_t)&i2c->DRR;
 		i2c_rx_dma_block_conf->dest_address = (uint32_t)(&data->dat[0]);
 		i2c_rx_dma_block_conf->block_size = data->len- 2;
-		dma_config(data->dma_dev[1], data->channel[1], &i2c_dma_config[1]);
-		dma_start(data->dma_dev[1], data->channel[1]);
+		while (0 != dma_config(data->dma_dev[1], data->channel[1], &i2c_dma_config[1]) && \
+				dma_timeout < cfg->dma_timeout) {
+			k_sleep(K_MSEC(1));
+			dma_timeout ++;
+		}
+
+		if (dma_timeout >= cfg->dma_timeout) {
+			return -EBUSY;
+		}
+
+		dma_timeout = 0;
+		while (0 != dma_start(data->dma_dev[1], data->channel[1]) && \
+				dma_timeout < cfg->dma_timeout) {
+			k_sleep(K_MSEC(1));
+			dma_timeout ++;
+		}
+
+		if (dma_timeout >= cfg->dma_timeout) {
+			return -EBUSY;
+		}
 	}
 
 	if (data->len > 2) {
@@ -797,48 +831,11 @@ static int i2c_hc32_init(struct device *dev)
 	cfg->irq_config_func(dev);
 #endif
 #ifdef CONFIG_I2C_HC32_DMA
-	const char *tx_name;
-	const char *rx_name;
-
 	__ASSERT((data->uints[0] > HC32_DMA_SUPPORT_NUM) == 0, "uints too large");
 	__ASSERT((data->uints[1] > HC32_DMA_SUPPORT_NUM) == 0, "uints too large");
 
-	switch (data->uints[0])
-	{
-	case 1:
-		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(1));
-		break;
-	case 2:
-		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(2));
-		break;
-	case 3:
-		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(3));
-		break;
-	case 4:
-		tx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(4));
-		break;
-	default:
-		return -EINVAL;
-	}
-	switch (data->uints[1])
-	{
-	case 1:
-		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(1));
-		break;
-	case 2:
-		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(2));
-		break;
-	case 3:
-		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(3));
-		break;
-	case 4:
-		rx_name = TO_STRING(HC32_I2C_DMA_UINT_PRASE(4));
-		break;
-	default:
-		return -EINVAL;
-	}
-	data->dma_dev[0] = device_get_binding(tx_name);
-	data->dma_dev[1] = device_get_binding(rx_name);
+	data->dma_dev[0] = device_get_binding(dma_hc32_get_device_name(data->uints[0]));
+	data->dma_dev[1] = device_get_binding(dma_hc32_get_device_name(data->uints[1]));
 	((struct dma_hc32_config_user_data *)(data->dma_conf[0].callback_arg))->user_data = (void *)dev;
 	((struct dma_hc32_config_user_data *)(data->dma_conf[1].callback_arg))->user_data = (void *)dev;
 #endif
@@ -964,9 +961,11 @@ struct dma_config dma_config_##inst[2] = \
 		HC32_DT_GET_DMA_CH(DT_XHSC_HC32_I2C_##inst##_DMA_TX_CFG),	\
 		HC32_DT_GET_DMA_CH(DT_XHSC_HC32_I2C_##inst##_DMA_RX_CFG),	\
 	}
+#define HC32_I2C_DMA_TIMEOUT	.dma_timeout = CONFIG_I2C_DMA_TIMEOUT,
 #else
 #define HC32_I2C_DMA_INIT(inst)
 #define HC32_I2C_DMA_CONFIG(inst)
+#define HC32_I2C_DMA_TIMEOUT
 #endif /* CONFIG_I2C_HC32_DMA */
 
 #define HC32_I2C_INIT(index)						\
@@ -982,6 +981,7 @@ static struct i2c_hc32_config i2c_hc32_cfg_##index = {		\
 	.mod_clk = mudules_clk_##index,					\
 	HC32_I2C_IRQ_HANDLER_FUNCTION(index)				\
 	.bitrate = DT_XHSC_HC32_I2C_##index##_CLOCK_FREQUENCY,		\
+	HC32_I2C_DMA_TIMEOUT	\
 	HC32_I2C_FLAG_TIMEOUT			\
 };									\
 									\

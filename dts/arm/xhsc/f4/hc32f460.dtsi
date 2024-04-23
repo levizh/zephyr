@@ -63,9 +63,10 @@
 	};
 
 	soc {
-		clocks: clk_sys{
+		clocks: clk_sys@40048400{
 			clocks-controller;
 			#address-cells = <1>;
+			reg = < 0x40048400 DT_SIZE_K(1) >;
 			#size-cells = <1>;
 
 			bus_fcg: pwc_fcg@40048000 {

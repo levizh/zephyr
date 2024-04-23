@@ -67,12 +67,7 @@
 	dma-rx-cfg = < (HC32_DT_DMA_UNIT(DMA1) | HC32_DT_DMA_CH(2) | HC32_DT_DMA_SLOT(EVT_SRC_SPI1_SPRI)) >;
 };
 
-&adc1 {
-	ports = "porta", "porta";
-	pins-idx = <0>, <1>;
-	pins-num = <2>;
-	status = "ok";
-};
+
 
 &qspi {
 	status = "ok";

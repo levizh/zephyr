@@ -32,21 +32,9 @@ properties:
       description: required interrupts
       generation: define
 
-    ports:
-      type: string
-      description: adc input ports
-      generation: define
-      category: required
-
-    pins-idx:
+    dma-read:
       type: int
-      description: specific pins of adc-ports
+      category: optional
+      description: dma configuration
       generation: define
-      category: required
-
-    pins-num:
-      type: int
-      description: number of adc input pin
-      generation: define
-      category: required
 ...

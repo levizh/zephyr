@@ -1,0 +1,8 @@
+&adc1 {
+	status = "ok";
+	dma-read = <(HC32_DT_DMA_UNIT(DMA1) | HC32_DT_DMA_CH(3) | HC32_DT_DMA_SLOT(EVT_SRC_ADC1_EOCA))>;
+};
+&dma1 {
+	status = "ok";
+};
+

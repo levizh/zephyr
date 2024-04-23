@@ -7,7 +7,6 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <soc.h>
-#include <pinmux.h>
 #include <clock_control/hc32_clock_control.h>
 #include <interrupt_controller/intc_hc32.h>
 
@@ -23,19 +22,14 @@ LOG_MODULE_REGISTER(adc_hc32);
 
 #ifdef CONFIG_ADC_ASYNC
 struct adc_hc32_dma_cfg {
-	struct device *dev_dma;
+	uint8_t dma_unit;
 	uint32_t dma_channel;
-	struct dma_config dma_cfg;
-	uint16_t src_addr_increment;
-	uint16_t dst_addr_increment;
-	struct dma_block_config blk_cfg;
 	uint8_t *buffer;
 	size_t buffer_length;
-	size_t offset;
-	volatile size_t counter;
-	int32_t timeout;
-	bool enabled;
 	struct dma_hc32_config_user_data user_cfg;
+	struct device *dma_dev;
+	struct dma_config dma_cfg;
+	struct dma_block_config blk_cfg;
 };
 #endif /* CONFIG_ADC_ASYNC */
 
@@ -63,87 +57,93 @@ struct adc_hc32_data {
 #endif /* CONFIG_ADC_ASYNC */
 };
 
-struct adc_hc32_gpio_info
-{
-	uint8_t *port_name;
-	uint8_t pin_idx;
-};
-
-
-struct adc_hc32_pin_cfg
-{
-	const uint8_t pin_num;
-	const struct adc_hc32_gpio_info *gpio_info;
-};
-
 struct adc_hc32_config {
 	CM_ADC_TypeDef *base;
 #if defined(CONFIG_ADC_HC32_INTERRUPT)
 	void (*irq_cfg_func)(struct device *dev);
 #endif /* CONFIG_ADC_HC32_INTERRUPT */
-	const struct adc_hc32_pin_cfg pin_cfg;
 	struct hc32_modules_clock_sys clk_cfg;
 #if defined(CONFIG_ADC_ASYNC)
-	const struct adc_channel_cfg ch_cfg;
+	struct adc_channel_cfg ch_cfg;
 #endif /* CONFIG_ADC_ASYNC */
 	int8_t sequencer_type;
 };
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_hc32_async_init(struct device *dev)
+
+void adc_hc32_dma_read_cb(void *user_data, uint32_t channel, int err_code)
 {
-	int ret;
-	struct adc_hc32_data *data = dev->driver_data;
+	uint8_t ch_idx;
+	struct dma_hc32_config_user_data *cfg = user_data;
+	struct device *adc_dev = cfg->user_data;
+	struct adc_hc32_data *data = adc_dev->driver_data;
+	const struct adc_hc32_config *config = adc_dev->config->config_info;
+	CM_ADC_TypeDef *ADCx = config->base;
 
-	/* Configure dma read adc */
-	memset(&data->dma_read.blk_cfg, 0U, sizeof(data->dma_read.blk_cfg));
-
-	data->dma_read.blk_cfg.source_address = 0U;
-	data->dma_read.blk_cfg.source_addr_adj = data->dma_read.src_addr_increment;
-	data->dma_read.blk_cfg.dest_address = 0U;
-	data->dma_read.blk_cfg.dest_addr_adj = data->dma_read.dst_addr_increment;
-	data->dma_read.blk_cfg.block_size = 0U;
-	data->dma_read.blk_cfg.source_reload_en  = 0U;
-	data->dma_read.blk_cfg.dest_reload_en = 0U;
-
-	data->dma_read.dma_cfg.head_block = &data->dma_read.blk_cfg;
-	data->dma_read.user_cfg.user_data = (void *)dev;
-	// data->dma_read.dma_cfg.user_data = (void *)&data->dma_read.user_cfg;
-
-	ret = dma_config(data->dma_read.dev_dma, data->dma_read.dma_channel,
-			&data->dma_read.dma_cfg);
-	if (ret != 0) {
-		LOG_ERR("Failed to config dma: %d", ret);
+	dma_stop(data->dma_read.dma_dev, channel);
+	ADC_Stop(ADCx);
+	/* Disable all channels */
+	for (ch_idx = 0; ch_idx < data->channel_count; ch_idx++) {
+		ADC_ChCmd(ADCx, ADC_SEQ_A, (data->channel_table)[ch_idx], DISABLE);
 	}
 
-	return ret;
+	if (err_code < 0) {
+		adc_context_release(&data->ctx, err_code);
+		return;
+	}
+
+	adc_context_complete(&data->ctx, err_code);
+}
+
+static int adc_hc32_async_setup(struct device *dev)
+{
+	struct device *dma_dev;
+	struct adc_hc32_data *data = dev->driver_data;
+	struct adc_hc32_dma_cfg *config;
+
+	config = &data->dma_read;
+	dma_dev = device_get_binding(dma_hc32_get_device_name(config->dma_unit));
+	config->dma_dev = dma_dev;
+	if (config->dma_dev == NULL) {
+		LOG_ERR("dma device error!");
+		return -ENODEV;
+	}
+
+	config->user_cfg.user_data = (void *)dev;
+	config->dma_cfg.head_block = &config->blk_cfg;
+	config->dma_cfg.callback_arg = (void *)&config->user_cfg;
+	config->dma_cfg.dma_callback = adc_hc32_dma_read_cb;
+
+	return 0;
 }
 
 static int adc_hc32_dma_start(struct device *dev,
 							struct adc_sequence_options *options)
 {
 	int ret = 0;
-
 	const struct adc_hc32_config *config = dev->config->config_info;
 	CM_ADC_TypeDef *ADCx = config->base;
 	struct adc_hc32_data *data = dev->driver_data;
+	struct dma_block_config *blk_cfg = &data->dma_read.blk_cfg;
 
-	uint32_t dma_size, dma_addr_dst, dma_addr_src;
-	struct device *dev_dma = data->dma_read.dev_dma;
-	uint32_t dma_ch = data->dma_read.dma_channel;
+	blk_cfg->dest_address = (uint32_t)data->buffer;
+	blk_cfg->source_address = (uint32_t)(&ADCx->DR0) +
+								 (data->channel_table)[0U] * 2U;
+	blk_cfg->block_size = data->samples_count * sizeof(uint16_t);
+	blk_cfg->source_reload_en  = 0U;
+	blk_cfg->dest_reload_en = 0U;
+	blk_cfg->source_addr_adj = 0x02U; /* fixed address */
+	blk_cfg->dest_addr_adj = 0x00U; /* increment */
 
-	dma_addr_dst = (uint32_t)data->buffer;
-	dma_addr_src = (uint32_t)(&ADCx->DR0) + data->channel_table[0U] * 2U;
-	dma_size = data->samples_count * sizeof(uint16_t);
-
-	ret = dma_reload(dev_dma, dma_ch, dma_addr_src, dma_addr_dst, dma_size);
+	ret = dma_config(data->dma_read.dma_dev, data->dma_read.dma_channel,
+					 &data->dma_read.dma_cfg);
 	if (ret != 0) {
 		LOG_ERR("Failed to re-config dma: %d", ret);
 		return ret;
 	}
 
 	data->dma_error = 0;
-	ret = dma_start(dev_dma, dma_ch);
+	ret = dma_start(data->dma_read.dma_dev, data->dma_read.dma_channel);
 	if (ret != 0) {
 		LOG_ERR("Failed to start dma: %d", ret);
 		return ret;
@@ -173,7 +173,7 @@ static void adc_hc32_start_conversion(struct device *dev)
 
 	/* Enable channels */
 	for (idx = 0; idx < data->channel_count; idx++) {
-		ADC_ChCmd(ADCx, ADC_SEQ_A, data->channel_table[idx], ENABLE);
+		ADC_ChCmd(ADCx, ADC_SEQ_A, (data->channel_table)[idx], ENABLE);
 	}
 	ADC_Start(ADCx);
 }
@@ -258,7 +258,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 
 	for (idx = 0; idx < max_chs; idx++) {
 		if (((data->channels_map >> idx) & 0x1U) == 0x1U) {
-			data->channel_table[channel_cout] = idx;
+			(data->channel_table)[channel_cout] = idx;
 			channel_cout++;
 		}
 	}
@@ -291,11 +291,11 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		ADC_ConvDataAverageConfig(ADCx,
 				(sequence->oversampling - 1) << ADC_CR0_AVCNT_POS);
 		for (idx = 0; idx < data->channel_count; idx++) {
-			ADC_ConvDataAverageChCmd(ADCx, data->channel_table[idx], ENABLE);
+			ADC_ConvDataAverageChCmd(ADCx, (data->channel_table)[idx], ENABLE);
 		}
 	} else {
 		for (idx = 0; idx < data->channel_count; idx++) {
-			ADC_ConvDataAverageChCmd(ADCx, data->channel_table[idx], DISABLE);
+			ADC_ConvDataAverageChCmd(ADCx, (data->channel_table)[idx], DISABLE);
 		}
 	}
 
@@ -336,8 +336,8 @@ static int adc_hc32_read(struct device *dev,
 #ifdef CONFIG_ADC_ASYNC
 /* Implementation of the ADC driver API function: adc_read_sync. */
 static int adc_hc32_read_async(struct device *dev,
-			       const struct adc_sequence *sequence,
-			       struct k_poll_signal *async)
+ 					const struct adc_sequence *sequence,
+ 					struct k_poll_signal *async)
 {
 	struct adc_hc32_data *data = dev->driver_data;
 	int error;
@@ -354,48 +354,31 @@ static int adc_hc32_read_async(struct device *dev,
 static int adc_hc32_init(struct device *dev)
 {
 	int err;
-	uint8_t i, port_count;
-	struct device *dev_clock, *dev_pin;
 	struct adc_hc32_data *data = dev->driver_data;
 	const struct adc_hc32_config *config = dev->config->config_info;
-	const struct adc_hc32_pin_cfg *pin_config = &config->pin_cfg;
 
 	/* Init adc pointer address in data structure */
 	data->dev_adc = dev;
 	/* Enable adc clock */
-	dev_clock = device_get_binding(CLOCK_CONTROL);
-	err = clock_control_on(dev_clock, (clock_control_subsys_t)&config->clk_cfg);
+	data->dev_clock = device_get_binding(CLOCK_CONTROL);
+	err = clock_control_on(data->dev_clock,
+				(clock_control_subsys_t)&config->clk_cfg);
 	if (err < 0) {
 		return err;
 	}
-	/* Config adc pin */
-	port_count = pin_config->pin_num;
-	for (i = 0; i < port_count; i++) {
-		dev_pin = device_get_binding((pin_config->gpio_info + i)->port_name);
-		err = pinmux_pin_set(dev_pin,
-			(pin_config->gpio_info + i)->pin_idx, 0xFFU);
-		if(err < 0) {
-			return err;
-		}
-	}
 
-	/* Config dma if defined async dma */
-#ifdef CONFIG_ADC_ASYNC
-	if (data->dma_read.dev_dma == NULL) {
-		LOG_ERR("dma device not ready");
-		return -ENODEV;
-	}
-
-	err = adc_hc32_async_init(dev);
-	if (err < 0) {
-		LOG_ERR("Failed to config dma");
-		return -ENODEV;
-	}
-#endif /* CONFIG_ADC_ASYNC */
 	/* Register isr */
 #if defined(CONFIG_ADC_HC32_INTERRUPT)
 	config->irq_cfg_func(dev);
 #endif /* CONFIG_ADC_HC32_INTERRUPT */
+
+#ifdef CONFIG_ADC_ASYNC
+	if (adc_hc32_async_setup(dev) < 0) {
+		LOG_ERR("Failed to config dma");
+		return -ENODEV;
+	}
+#endif /* CONFIG_ADC_ASYNC */
+
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -413,7 +396,7 @@ static const struct adc_driver_api adc_hc32_driver_api = {
 
 void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 {
-	uint8_t channel_id_idx;
+	uint8_t ch_idx;
 	struct adc_hc32_data *data = dev->driver_data;
 	const struct adc_hc32_config *config = dev->config->config_info;
 	CM_ADC_TypeDef *ADCx = config->base;
@@ -426,9 +409,9 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 
 	if (ADC_GetStatus(ADCx, u8Flag) == SET) {
 		ADC_ClearStatus(ADCx, u8Flag);
-		for (channel_id_idx = 0; channel_id_idx < data->channel_count;) {
+		for (ch_idx = 0; ch_idx < data->channel_count;) {
 			*data->buffer++ =
-				ADC_GetValue(ADCx, data->channel_table[channel_id_idx++]);
+				ADC_GetValue(ADCx, (data->channel_table)[ch_idx++]);
 		}
 	}
 	/* Turn off repeat sample unless is set in callback by user */
@@ -438,6 +421,10 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 	if ((++data->sample_idx >= data->samples_count) &&
 		(data->is_do_repeat_sample == false)) {
 		ADC_Stop(ADCx);
+		/* Disable all channels */
+		for (ch_idx = 0; ch_idx < data->channel_count; ch_idx++) {
+			ADC_ChCmd(ADCx, ADC_SEQ_A, (data->channel_table)[ch_idx], DISABLE);
+		}
 		ADC_ClearStatus(ADCx, ADC_FLAG_ALL);
 		ADC_IntCmd(ADCx, ADC_INT_ALL, DISABLE);
 		data->is_finish_sample = true;
@@ -477,27 +464,52 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 
 #define ADC_HC32_ISR_CFG_FUNC(index)										\
 	.irq_cfg_func = adc_hc32_cfg_func_##index,
-
 #endif /* CONFIG_ADC_HC32_INTERRUPT */
 
-#define ADC_HC32_PIN_INIT(pins_idx, adc_idx)								\
-	{																		\
-		.port_name = DT_XHSC_HC32_ADC_##adc_idx##_PORTS_##pins_idx,			\
-		.pin_idx = DT_XHSC_HC32_ADC_##adc_idx##_PINS_IDX_##pins_idx,		\
+#ifdef CONFIG_ADC_ASYNC
+
+#ifdef DT_XHSC_HC32_ADC_0
+#ifdef DT_XHSC_HC32_ADC_0_DMA_READ
+#define DMA_READ_FLAG_0	1
+#else /* DT_XHSC_HC32_ADC_0_DMA_READ */
+#define DMA_READ_FLAG_0	0
+#endif /* DT_XHSC_HC32_ADC_0_DMA_READ */
+#endif /* DT_XHSC_HC32_ADC_0 */
+
+#ifdef DT_XHSC_HC32_ADC_1
+#ifdef DT_XHSC_HC32_ADC_1_DMA_READ
+#define DMA_READ_FLAG_1	1
+#else /* DT_XHSC_HC32_ADC_1_DMA_READ */
+#define DMA_READ_FLAG_1	0
+#endif /* DT_XHSC_HC32_ADC_1_DMA_READ */
+#endif /* DT_XHSC_HC32_ADC_1 */
+
+#define UART_HC32_DMA_CFG(dir, cfg_val)										\
+	.dma_read = {															\
+		.dma_unit = HC32_DT_GET_DMA_UNIT(cfg_val),							\
+		.dma_channel = (uint8_t)HC32_DT_GET_DMA_CH(cfg_val), 				\
+		.user_cfg = {														\
+			.slot = HC32_DT_GET_DMA_SLOT(cfg_val), 							\
+		},																	\
+		.dma_cfg = {														\
+			.channel_direction = PERIPHERAL_TO_MEMORY,						\
+			.source_burst_length = 1,  /* SINGLE transfer */				\
+			.source_data_size = 2, 											\
+			.dest_burst_length = 1,	/* SINGLE transfer */					\
+			.dest_data_size = 2,											\
+			.block_count = 1,												\
+		},																	\
 	},
 
-#define ADC_HC32_PIN_CFG(index, pins_num)									\
-	{																		\
-		UTIL_LISTIFY(pins_num, ADC_HC32_PIN_INIT, index)					\
-	}
-
-#define ADC_HC32_PINS_INFO_DECL(index)										\
-	static const struct adc_hc32_gpio_info adc_hc32_gpio_info_##index[] = 	\
-		ADC_HC32_PIN_CFG(index, DT_XHSC_HC32_ADC_##index##_PINS_NUM);
+#define UART_HC32_DMA_CFG_PRE(index)										\
+	COND_CODE_1(DMA_READ_FLAG_##index, 										\
+		(UART_HC32_DMA_CFG(rx, DT_XHSC_HC32_ADC_##index##_DMA_READ)), ())
+#else /* CONFIG_ADC_ASYNC */
+#define UART_HC32_DMA_CFG_PRE(index)
+#endif /* CONFIG_ADC_ASYNC */
 
 #define HC32_ADC_INIT(index)												\
 	DEVICE_DECLARE(adc_hc32_##index);										\
-	ADC_HC32_PINS_INFO_DECL(index)											\
 	ADC_HC32_IRQ_HANDLER_DECL(index)										\
 	static const struct adc_hc32_config adc_hc32_cfg_##index = {			\
 		.base = (CM_ADC_TypeDef *)DT_XHSC_HC32_ADC_##index##_BASE_ADDRESS,	\
@@ -506,16 +518,13 @@ void adc_hc32_seqa_seqb_isr(struct device *dev, uint8_t u8Flag)
 			.fcg = DT_XHSC_HC32_ADC_##index##_CLOCK_FCG,					\
 			.bits = DT_XHSC_HC32_ADC_##index##_CLOCK_BITS,					\
 		},																	\
-		.pin_cfg = {														\
-			.pin_num = DT_XHSC_HC32_ADC_##index##_PINS_NUM,					\
-			.gpio_info = adc_hc32_gpio_info_##index,						\
-		},																	\
 		ADC_HC32_ISR_CFG_FUNC(index)										\
 	};																		\
 	static struct adc_hc32_data adc_hc32_data_##index = {					\
 		ADC_CONTEXT_INIT_TIMER(adc_hc32_data_##index, ctx),					\
 		ADC_CONTEXT_INIT_LOCK(adc_hc32_data_##index, ctx),					\
 		ADC_CONTEXT_INIT_SYNC(adc_hc32_data_##index, ctx),					\
+		UART_HC32_DMA_CFG_PRE(index)										\
 	};																		\
 	DEVICE_AND_API_INIT(adc_hc32_##index, 									\
 		DT_XHSC_HC32_ADC_##index##_LABEL,									\

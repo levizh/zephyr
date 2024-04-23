@@ -62,6 +62,10 @@ static int hc32_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 6, 51); /* rx */
 #endif
 
+	/* adc1 */
+	pinmux_pin_set(porta, 0, 0xFF); /* adc1_in0 */
+	pinmux_pin_set(porta, 1, 0xFF); /* adc1_in1 */
+
 #endif
 
 	return 0;

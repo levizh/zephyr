@@ -103,7 +103,7 @@ static int rtc_hc32_get_value(const struct device *dev, uint32_t *ticks)
 
 	/* Convert calendar datetime to UNIX timestamp */
 	/* RTC start time:         1st, Jan, 2000 */
-	/* timeutil_timegm base:   1st, Jan, 1900 */
+	/* time_t start:           1st, Jan, 1970 */
 	now.tm_year = 100 + stcCurrentDate.u8Year;
 	/* tm_mon allowed values are 0-11 */
 	now.tm_mon = stcCurrentDate.u8Month - 1U;
@@ -115,7 +115,7 @@ static int rtc_hc32_get_value(const struct device *dev, uint32_t *ticks)
 
 	ts = timeutil_timegm(&now);
 
-	/* Return number of seconds base 1970(linux epoch) */
+	/* Return number of seconds since 2000-01-01 00:00:00 */
 	ts -= T_TIME_OFFSET;
 
 	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");

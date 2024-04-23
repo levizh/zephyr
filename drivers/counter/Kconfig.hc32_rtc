@@ -6,7 +6,6 @@
 
 menuconfig COUNTER_RTC_HC32
 	bool "HC32 Counter RTC driver"
-	default y
 	depends on SOC_FAMILY_HC32
 	select HC32_LL_RTC
 	select NEWLIB_LIBC

@@ -25,7 +25,6 @@ struct adc_hc32_dma_cfg {
 	uint8_t dma_unit;
 	uint32_t dma_channel;
 	uint8_t *buffer;
-	size_t buffer_length;
 	struct dma_hc32_config_user_data user_cfg;
 	struct device *dma_dev;
 	struct dma_config dma_cfg;

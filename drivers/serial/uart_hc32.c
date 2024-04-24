@@ -607,19 +607,20 @@ static int uart_hc32_async_rx_disable(struct device *dev)
 {
 	CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
 	struct uart_hc32_data *data = dev->driver_data;
-	struct uart_event event;
+	struct uart_event event, dis_evt;
 
 	/* stop timer */
 	k_timer_stop(&data->dma_rx.timer);
+	async_evt_rx_buf_release(data);
 
 	if (!data->dma_rx.enabled) {
 		event.type = UART_RX_DISABLED;
 		async_user_callback(data, &event);
 		return -EFAULT;
 	}
+	data->dma_rx.enabled = false;
 
 	/* Stop dma */
-	data->dma_rx.enabled = false;
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 	if (data->rx_next_buffer) {
 		event.type = UART_RX_BUF_RELEASED;
@@ -632,11 +633,13 @@ static int uart_hc32_async_rx_disable(struct device *dev)
 
 	/* When async rx is disabled, enable instance of uart to function normally */
 	USART_FuncCmd(USARTx, USART_INT_RX, ENABLE);
-
+	USART_ClearStatus(USARTx, USART_FLAG_FRAME_ERR | USART_FLAG_OVERRUN);
 	LOG_DBG("dma rx disabled");
 
-	event.type = UART_RX_DISABLED;
-	async_user_callback(data, &event);
+	/* Disable */
+	dis_evt.type = UART_RX_DISABLED;
+	async_user_callback(data, &dis_evt);
+
 
 	return 0;
 }
@@ -659,13 +662,13 @@ static void uart_hc32_dma_tx_cb(void *user_data, uint32_t channel, int status)
 	struct device *uart_dev = cfg->user_data;
 	struct uart_hc32_data *data = uart_dev->driver_data;
 
-	unsigned int key = irq_lock();
+	// unsigned int key = irq_lock();
 
 	/* Disable TX */
 	data->dma_tx.buffer_length = 0;
 	async_evt_tx_done(data);
 
-	irq_unlock(key);
+	// irq_unlock(key);
 }
 
 static void uart_hc32_dma_rx_cb(void *user_data, uint32_t channel, int status)
@@ -780,8 +783,12 @@ static int uart_hc32_async_rx_enable(struct device *dev, u8_t *buf, size_t len,
 	To create TC event request disabling tx before dma configuration and
 	enable tx after dma start
 	*/
-
 	USART_FuncCmd(USARTx, USART_RX, ENABLE);
+
+	if (true == USART_GetStatus(USARTx, USART_FLAG_OVERRUN)) {
+		USART_ClearStatus(USARTx, USART_FLAG_OVERRUN);
+	}
+	(void)USART_ReadData(USARTx);/* To clear RXNE */
 	data->dma_rx.enabled = true;
 
 	event.type = UART_RX_BUF_REQUEST;
@@ -826,13 +833,17 @@ int uart_hc32_async_tx(struct device *dev, const u8_t *buf, size_t len,
 	}
 
 	LOG_DBG("tx: l=%d", data->dma_tx.buffer_length);
-	USART_FuncCmd(USARTx, USART_INT_TX_EMPTY, DISABLE);
+
 	/*
 	TC flag = 1 after init and not generate TC event request.
 	To create TC event request disabling tx before dma configuration and
 	enable tx after dma start
 	*/
-	USART_FuncCmd(USARTx, USART_TX, DISABLE);
+	/* Disable TX when TC flag raised */
+	while (RESET == USART_GetStatus(USARTx, USART_FLAG_TX_CPLT)) {
+		;
+	}
+	USART_FuncCmd(USARTx, USART_TX | USART_INT_TX_EMPTY, DISABLE);
 
 	/* Configure dma tx */
 	data->dma_tx.user_cfg.user_data = (void *)dev;
@@ -852,7 +863,7 @@ int uart_hc32_async_tx(struct device *dev, const u8_t *buf, size_t len,
 	*/
 	USART_FuncCmd(USARTx, USART_TX, ENABLE);
 
-	// /* Start TX timer */
+	/* Start TX timer */
 
 	return 0;
 }
@@ -1069,8 +1080,6 @@ static int uart_hc32_registers_configure(const struct device *dev)
  */
 static int uart_hc32_init(struct device *dev)
 {
-	// struct uart_hc32_data *data = DEV_USART_DATA(dev);
-	// CM_USART_TypeDef *USARTx = DEV_USART_BASE(dev);
 	struct device* clock_dev;
 	const struct uart_hc32_config *hc32_config = dev->config->config_info;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

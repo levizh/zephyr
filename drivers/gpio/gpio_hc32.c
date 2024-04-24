@@ -72,9 +72,9 @@ static int gpio_hc32_config(struct device *dev, int access_op,
 	} else {
 		/* Input */
 		stc_gpio_init.u16PinDir = PIN_DIR_IN;
-		if ((flags & GPIO_PUD_MASK) == 1) {
+		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 			stc_gpio_init.u16PullUp = PIN_PU_ON;
-		} else if ((flags & GPIO_PUD_MASK) == 2) {
+		} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
 			return -ENOTSUP;
 		}
 	}

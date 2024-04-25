@@ -444,6 +444,7 @@ static inline void async_user_callback(struct uart_hc32_data *data,
 
 int uart_hc32_async_tx_abort(struct device *dev)
 {
+	struct dma_hc32_status status;
 	struct uart_event event;
 	struct uart_hc32_data *data = dev->driver_data;
 	size_t tx_buffer_length = data->dma_tx.buffer_length;
@@ -454,13 +455,18 @@ int uart_hc32_async_tx_abort(struct device *dev)
 
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 
-	data->dma_tx.buffer_length = 0;
-	data->dma_tx.counter = 0;
+	if (0 != dma_hc32_get_status(data->dma_tx.dma_dev,
+				data->dma_tx.dma_channel, &status)) {
+		LOG_ERR("failed to get dma rx info");
+	}
 
 	event.type = UART_TX_ABORTED;
 	event.data.tx.buf = data->dma_tx.buffer;
-	event.data.tx.len = data->dma_tx.counter;
+	event.data.tx.len = data->dma_tx.buffer_length - status.pending_length;
 	async_user_callback(data, &event);
+
+	data->dma_tx.buffer_length = 0;
+	data->dma_tx.counter = 0;
 
 	return 0;
 }
@@ -472,15 +478,18 @@ static inline void async_evt_rx_rdy(struct uart_hc32_data *data)
 		.type = UART_RX_RDY,
 		.data.rx.buf = data->dma_rx.buffer,
 		.data.rx.offset = data->dma_rx.offset,
-		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset
+		.data.rx.len = data->dma_rx.offset
 	};
-
-	async_user_callback(data, &event);
 
 	if (0 != dma_hc32_get_status(data->dma_rx.dma_dev,
 				data->dma_rx.dma_channel, &status)) {
 		LOG_ERR("failed to get dma rx info");
 	}
+	event.data.rx.len = data->dma_rx.buffer_length - status.pending_length -
+						 event.data.rx.len;
+	async_user_callback(data, &event);
+
+
 	data->dma_rx.counter = data->dma_rx.buffer_length - status.pending_length;
 	data->dma_rx.offset = data->dma_rx.buffer_length - status.pending_length;
 }

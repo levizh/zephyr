@@ -568,7 +568,7 @@ static int qspi_flash_XIP_dual_read(struct device *dev,
 
 	qspi_cfg.dummy = &qspi_dum;
 	qspi_dum.dummy_cycles = 4u;
-	qspi_dum.content = 0x20u;
+	qspi_dum.content = 0x02u;
 	qspi_dum.XIP_Enable = 1u;
 
 	ret = spi_transceive(dev, spi_conf, NULL, &rx);
@@ -644,7 +644,8 @@ void testing_qspi(void)
 	    || qspi_flash_program(qspi_dev, (struct spi_config *)&qspi_cfg)
 	    || qspi_flash_write_status(qspi_dev, (struct spi_config *)&qspi_cfg)
 	    || spi_resource_lock_test(qspi_dev, (struct spi_config *)&qspi_cfg)
-	    || qspi_flash_XIP_quad_read(qspi_dev, (struct spi_config *)&qspi_cfg)) {
+	    || qspi_flash_XIP_quad_read(qspi_dev, (struct spi_config *)&qspi_cfg)
+	    || qspi_flash_XIP_dual_read(qspi_dev, (struct spi_config *)&qspi_cfg)) {
 		goto end;
 	}
 

@@ -23,8 +23,13 @@ static int xhsc_hc32f4_init(void)
 	LL_PERIPH_WE(LL_PERIPH_ALL);
 
 	/* Enable Flash cache for both instruction and data */
+#if defined (HC32F460)
 	EFM_CacheCmd(ENABLE);
-
+#elif defined (HC32F4A0)
+	EFM_PrefetchCmd(ENABLE);
+	EFM_DCacheCmd(ENABLE);
+	EFM_ICacheCmd(ENABLE);
+#endif
 	return 0;
 }
 

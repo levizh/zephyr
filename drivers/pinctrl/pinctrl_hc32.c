@@ -120,6 +120,12 @@ static int hc32_pin_configure(const uint32_t pin_mux)
 	default:
 		break;
 	}
+#if defined(HC32F4A0)
+	stc_gpio_init.u16PinInputType = (HC32_CINSEL(pin_mux) == HC32_CINSEL_SCHMITT) ?
+					PIN_IN_TYPE_SMT : PIN_IN_TYPE_CMOS;
+#endif
+
+	stc_gpio_init.u16Invert = (HC32_INVERT_ENABLE == HC32_INVERT(pin_mux))? PIN_INVT_ON: PIN_INVT_OFF;
 
 end:
 	return GPIO_Init(port_num, pin_num, &stc_gpio_init);

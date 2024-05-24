@@ -30,6 +30,8 @@ child-binding:
           - output-enable
           - output-high
           - output-low
+          - input-schmitt-enable
+          - input-schmitt-disable
 
     properties:
       pinmux:

@@ -11,7 +11,11 @@
 
 #include "soc.h"
 #include <zephyr/drivers/clock_control.h>
+#if defined (HC32F460)
 #include <zephyr/dt-bindings/clock/hc32f4_clock.h>
+#elif defined (HC32F4A0)
+#include <zephyr/dt-bindings/clock/hc32f4a0_clock.h>
+#endif
 
 #define HC32_HCLK_DIV_FN(v)		CLK_HCLK_DIV##v
 #define HC32_HCLK_DIV(v)		HC32_HCLK_DIV_FN(v)

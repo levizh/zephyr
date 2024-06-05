@@ -30,6 +30,7 @@ static int xhsc_hc32f4_init(void)
 	EFM_DCacheCmd(ENABLE);
 	EFM_ICacheCmd(ENABLE);
 #endif
+
 	return 0;
 }
 

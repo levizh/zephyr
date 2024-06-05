@@ -130,6 +130,7 @@ static void hc32_clk_conf(void)
 #endif
 }
 
+#if defined (HC32F460)
 static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 {
 	uint8_t old_run_mode;
@@ -159,6 +160,22 @@ static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 		}
 	} 
 }
+#elif defined (HC32F4A0)
+static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
+{
+	uint8_t old_run_mode;
+	uint8_t new_run_mode;
+
+	new_run_mode = (new_freq >= 8000000) ? 1 : 0;
+	old_run_mode = (old_freq >= 8000000) ? 1 : 0;
+
+	if (new_run_mode > old_run_mode) {
+		PWC_LowSpeedToHighSpeed();
+	} else if (new_run_mode < old_run_mode) {
+		PWC_HighSpeedToLowSpeed();
+	}
+}
+#endif
 
 static int hc32_clock_control_init(const struct device *dev)
 {
@@ -178,9 +195,9 @@ static int hc32_clock_control_init(const struct device *dev)
 									HC32_PCLK(4, HC32_PCLK4_PRESCALER)));
 
 	/* sram init include read/write wait cycle setting */
+	SRAM_SetWaitCycle(SRAM_SRAM_ALL, SRAM_WAIT_CYCLE1, SRAM_WAIT_CYCLE1);
 	SRAM_SetWaitCycle(SRAM_SRAMH, SRAM_WAIT_CYCLE0, SRAM_WAIT_CYCLE0);
-	SRAM_SetWaitCycle((SRAM_SRAM12 | SRAM_SRAM3 | SRAM_SRAMR), SRAM_WAIT_CYCLE1, SRAM_WAIT_CYCLE1);
-
+	
 	/* flash read wait cycle setting */
 	(void)EFM_SetWaitCycle(EFM_WAIT_CYCLE);
 	/* 3 cycles for 126MHz ~ 200MHz */

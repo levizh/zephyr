@@ -8,21 +8,21 @@
 #include "hc32f4a0_evb-pinctrl.dtsi"
 
 / {
-	model = "xhsc, EV_F4A0_LQ176_Rev1.0 board";
+	model = "xhsc, EV_F4A0_LQFP176_Rev2.0 board";
 	compatible = "xhsc,hc32f4a0_evb";
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		/*zephyr,console = &usart4;
-		zephyr,shell-uart = &usart4;*/
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 	};
 
 	leds {
 		compatible = "gpio-leds";
-		green_led: led_0 {
+		blue_led: led_0 {
 			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
-			label = "User LED";
+			label = "User LD0";
 		};
 	};
 
@@ -30,12 +30,12 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Wkup_key";
-			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	aliases {
-		led0 = &green_led;
+		led0 = &blue_led;
 		sw0 = &user_button;
 	};
 };
@@ -73,4 +73,61 @@
 
 &gpioi {
 	status = "okay";
+};
+
+&clk_xtal {
+	status = "okay";
+};
+
+&clk_xtal32 {
+	status = "okay";
+};
+
+&clk_hrc {
+	status = "okay";
+};
+
+&clk_mrc {
+	status = "okay";
+};
+
+&clk_lrc {
+	status = "okay";
+};
+
+&clk_pll {
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart4_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	dmas = <&dma1 0 INT_SRC_I2C3_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+			<&dma1 1 INT_SRC_I2C3_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+	dma-names = "tx_dma","rx_dma";
+	scl-gpios = <&gpioe 15 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpiob 5 GPIO_OPEN_DRAIN>;
+	clock-frequency = < 100000 >;
+	/* delete dma property once use interrupt transfer.
+	** dma-names must be named "tx_dma","rx_dma" while used dma transfer for i2c.
+	** example :
+	** dma-names = "tx_dma","rx_dma";
+	*/
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
 };

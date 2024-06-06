@@ -2,5 +2,5 @@ manifest:
   projects:
     - name: xhsc
       url: https://github.com/levizh/zephyr_hc32_hal.git
-      revision: d05e35e0060cf30a61444748bc2a94b62beb84a7
+      revision: 2ccc685b81804ef19c49aa47d7df7c38e5f1058c
       path: modules/hal/xhsc

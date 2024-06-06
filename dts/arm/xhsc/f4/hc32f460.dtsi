@@ -7,7 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
 #include <dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/clock/hc32f4_clock.h>
+#include <zephyr/dt-bindings/clock/hc32f460_clock.h>
 #include <zephyr/dt-bindings/timer/hc32-timer.h>
 #include <zephyr/dt-bindings/interrupt-controller/hc32f460-intc.h>
 #include <zephyr/dt-bindings/dma/hc32_dma.h>

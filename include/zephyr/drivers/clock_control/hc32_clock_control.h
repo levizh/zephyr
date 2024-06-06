@@ -12,7 +12,7 @@
 #include "soc.h"
 #include <zephyr/drivers/clock_control.h>
 #if defined (HC32F460)
-#include <zephyr/dt-bindings/clock/hc32f4_clock.h>
+#include <zephyr/dt-bindings/clock/hc32f460_clock.h>
 #elif defined (HC32F4A0)
 #include <zephyr/dt-bindings/clock/hc32f4a0_clock.h>
 #endif

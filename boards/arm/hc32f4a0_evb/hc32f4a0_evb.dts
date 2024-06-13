@@ -113,15 +113,15 @@
 	cs-gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
 };
 
-&i2c3 {
+&i2c1 {
 	status = "okay";
-	pinctrl-0 = <&i2c3_default>;
+	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
-	dmas = <&dma1 0 INT_SRC_I2C3_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
-			<&dma1 1 INT_SRC_I2C3_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+	dmas = <&dma1 0 INT_SRC_I2C1_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+			<&dma1 1 INT_SRC_I2C1_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
 	dma-names = "tx_dma","rx_dma";
-	scl-gpios = <&gpioe 15 GPIO_OPEN_DRAIN>;
-	sda-gpios = <&gpiob 5 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpiod 3 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpiof 10 GPIO_OPEN_DRAIN>;
 	clock-frequency = < 100000 >;
 	/* delete dma property once use interrupt transfer.
 	** dma-names must be named "tx_dma","rx_dma" while used dma transfer for i2c.
@@ -130,4 +130,16 @@
 	*/
 	/delete-property/ dmas;
 	/delete-property/ dma-names;
+};
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = < 100000 >;
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_default>;
+	pinctrl-names = "default";
 };

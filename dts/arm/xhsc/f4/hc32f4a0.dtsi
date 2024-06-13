@@ -366,53 +366,76 @@
 			};
 		};
 
-		i2c1: i2c1@4004e000 {
-			compatible = "xhsc,hc32-i2c";
+		i2c_sys: i2c_system@4004e000
+		{
 			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x4004e000 DT_SIZE_K(1)>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
-								HC32_FCG1_PERIPH_I2C1>;
-			interrupt-parent = <&intc>;
-			interrupts = < HC32_I2C1_EE_IRQ_NUM HC32_I2C1_EE_IRQ_PRIO INT_SRC_I2C1_EEI>,
-						 < HC32_I2C1_TE_IRQ_NUM HC32_I2C1_TE_IRQ_PRIO INT_SRC_I2C1_TEI>,
-						 < HC32_I2C1_TX_IRQ_NUM HC32_I2C1_TX_IRQ_PRIO INT_SRC_I2C1_TXI>,
-						 < HC32_I2C1_RX_IRQ_NUM HC32_I2C1_RX_IRQ_PRIO INT_SRC_I2C1_RXI>;
-			interrupt-names = "eei", "tei", "txi", "rxi";
-			status = "disabled";
-		};
+			#size-cells = <1>;
+			reg = < 0x4004e000 DT_SIZE_K(6) >;
+			i2c1: i2c1@4004e000 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004e000 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C1>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C1_EE_IRQ_NUM HC32_I2C1_EE_IRQ_PRIO INT_SRC_I2C1_EEI>,
+							 < HC32_I2C1_TE_IRQ_NUM HC32_I2C1_TE_IRQ_PRIO INT_SRC_I2C1_TEI>,
+							 < HC32_I2C1_TX_IRQ_NUM HC32_I2C1_TX_IRQ_PRIO INT_SRC_I2C1_TXI>,
+							 < HC32_I2C1_RX_IRQ_NUM HC32_I2C1_RX_IRQ_PRIO INT_SRC_I2C1_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
+	
+			i2c2: i2c2@4004e400 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004e400 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C2>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C2_EE_IRQ_NUM HC32_I2C2_EE_IRQ_PRIO INT_SRC_I2C2_EEI>,
+							 < HC32_I2C2_TE_IRQ_NUM HC32_I2C2_TE_IRQ_PRIO INT_SRC_I2C2_TEI>,
+							 < HC32_I2C2_TX_IRQ_NUM HC32_I2C2_TX_IRQ_PRIO INT_SRC_I2C2_TXI>,
+							 < HC32_I2C2_RX_IRQ_NUM HC32_I2C2_RX_IRQ_PRIO INT_SRC_I2C2_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
+	
+			i2c3: i2c3@4004e800 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004e800 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C3>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C3_EE_IRQ_NUM HC32_I2C3_EE_IRQ_PRIO INT_SRC_I2C3_EEI>,
+							 < HC32_I2C3_TE_IRQ_NUM HC32_I2C3_TE_IRQ_PRIO INT_SRC_I2C3_TEI>,
+							 < HC32_I2C3_TX_IRQ_NUM HC32_I2C3_TX_IRQ_PRIO INT_SRC_I2C3_TXI>,
+							 < HC32_I2C3_RX_IRQ_NUM HC32_I2C3_RX_IRQ_PRIO INT_SRC_I2C3_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
 
-		i2c2: i2c2@4004e400 {
-			compatible = "xhsc,hc32-i2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x4004e400 DT_SIZE_K(1)>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
-								HC32_FCG1_PERIPH_I2C2>;
-			interrupt-parent = <&intc>;
-			interrupts = < HC32_I2C2_EE_IRQ_NUM HC32_I2C2_EE_IRQ_PRIO INT_SRC_I2C2_EEI>,
-						 < HC32_I2C2_TE_IRQ_NUM HC32_I2C2_TE_IRQ_PRIO INT_SRC_I2C2_TEI>,
-						 < HC32_I2C2_TX_IRQ_NUM HC32_I2C2_TX_IRQ_PRIO INT_SRC_I2C2_TXI>,
-						 < HC32_I2C2_RX_IRQ_NUM HC32_I2C2_RX_IRQ_PRIO INT_SRC_I2C2_RXI>;
-			interrupt-names = "eei", "tei", "txi", "rxi";
-			status = "disabled";
+			i2c4: i2c4@4004ec00 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004ec00 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C4>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C4_EE_IRQ_NUM HC32_I2C4_EE_IRQ_PRIO INT_SRC_I2C4_EEI>,
+							 < HC32_I2C4_TE_IRQ_NUM HC32_I2C4_TE_IRQ_PRIO INT_SRC_I2C4_TEI>,
+							 < HC32_I2C4_TX_IRQ_NUM HC32_I2C4_TX_IRQ_PRIO INT_SRC_I2C4_TXI>,
+							 < HC32_I2C4_RX_IRQ_NUM HC32_I2C4_RX_IRQ_PRIO INT_SRC_I2C4_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
 		};
-
-		i2c3: i2c3@4004e800 {
-			compatible = "xhsc,hc32-i2c";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x4004e800 DT_SIZE_K(1)>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
-								HC32_FCG1_PERIPH_I2C3>;
-			interrupt-parent = <&intc>;
-			interrupts = < HC32_I2C3_EE_IRQ_NUM HC32_I2C3_EE_IRQ_PRIO INT_SRC_I2C3_EEI>,
-						 < HC32_I2C3_TE_IRQ_NUM HC32_I2C3_TE_IRQ_PRIO INT_SRC_I2C3_TEI>,
-						 < HC32_I2C3_TX_IRQ_NUM HC32_I2C3_TX_IRQ_PRIO INT_SRC_I2C3_TXI>,
-						 < HC32_I2C3_RX_IRQ_NUM HC32_I2C3_RX_IRQ_PRIO INT_SRC_I2C3_RXI>;
-			interrupt-names = "eei", "tei", "txi", "rxi";
-			status = "disabled";
-		};
+		
 
 		adc1: adc@40040000 {
 			compatible = "xhsc,hc32-adc";

@@ -30,10 +30,10 @@
 
 	i2c1_default: i2c1_default {
 		i2c1_scl {
-			pinmux = <HC32_PINMUX('D', 1, FUNC, 49)>;
+			pinmux = <HC32_PINMUX('D', 3, FUNC, 49)>;
 		};
 		i2c1_sda {
-			pinmux = <HC32_PINMUX('D', 2, FUNC, 48)>;
+			pinmux = <HC32_PINMUX('F', 10, FUNC, 48)>;
 		};
 	};
 
@@ -48,10 +48,19 @@
 
 	i2c3_default: i2c3_default {
 		i2c3_scl {
-			pinmux = <HC32_PINMUX('E', 15, FUNC, 49)>;
+			pinmux = <HC32_PINMUX('I', 5, FUNC, 53)>;
 		};
 		i2c3_sda {
-			pinmux = <HC32_PINMUX('B', 5, FUNC, 48)>;
+			pinmux = <HC32_PINMUX('I', 6, FUNC, 52)>;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		i2c4_scl {
+			pinmux = <HC32_PINMUX('G', 12, FUNC, 53)>;
+		};
+		i2c4_sda {
+			pinmux = <HC32_PINMUX('G', 13, FUNC, 52)>;
 		};
 	};
 

@@ -34,4 +34,16 @@ config I2C_HC32_BUS_RECOVERY
 	help
 	  Enable HC32 driver bus recovery support via GPIO bitbanging.
 
+if I2C_HC32_INTERRUPT
+
+config I2C_HC32_INTERRUPT_SHARE
+	bool "I2C share interrupt enable"
+	default y if SOC_HC32F4A0
+	default n if SOC_HC32F460
+	help
+	  If set n, please reference user manual to 
+	  change I2C interrupts number in devicetree
+
+endif
+
 endif # I2C_HC32

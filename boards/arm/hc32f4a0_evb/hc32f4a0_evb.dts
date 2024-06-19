@@ -8,7 +8,7 @@
 #include "hc32f4a0_evb-pinctrl.dtsi"
 
 / {
-	model = "xhsc, EV_F4A0_LQFP176_Rev2.0 board";
+	model = "xhsc, EV_F4A0_LQ176_Rev1.0 board";
 	compatible = "xhsc,hc32f4a0_evb";
 
 	chosen {
@@ -22,7 +22,7 @@
 		compatible = "gpio-leds";
 		blue_led: led_0 {
 			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
-			label = "User LD0";
+			label = "User LED";
 		};
 	};
 
@@ -30,7 +30,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "Wkup_key";
-			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
 		};
 	};
 

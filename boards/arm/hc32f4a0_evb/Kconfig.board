@@ -1,8 +1,8 @@
-# Kconfig - HC32F460_EVB board configuration
+# Kconfig - HC32F4A0_EVB board configuration
 # Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 #
 
 config BOARD_HC32F4A0_EVB
-	bool "EV_F4A0_LQ176_REV2.0 Development Board"
+	bool "EV_F4A0_LQ176_REV1.0 Development Board"
 	depends on SOC_HC32F4A0

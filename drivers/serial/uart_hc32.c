@@ -1143,6 +1143,7 @@ static int uart_hc32_registers_configure(const struct device *dev)
 	USART_FuncCmd(config->usart, USART_FUNC_ALL, DISABLE);
 
 	(void)USART_UART_StructInit(&stcUartInit);
+    stcUartInit.u32ClockDiv = USART_CLK_DIV16;
 	stcUartInit.u32OverSampleBit = USART_OVER_SAMPLE_8BIT;
 	stcUartInit.u32Baudrate = uart_cfg->baudrate;
 	stcUartInit.u32StopBit = uart_hc32_cfg2ll_stopbits(uart_cfg->stop_bits);

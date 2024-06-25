@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -1,8 +1,5 @@
 /*
- * Copyright (c) 2016 Open-RnD Sp. z o.o.
- * Copyright (c) 2016 BayLibre, SAS
- * Copyright (c) 2017-2022 Linaro Limited.
- * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

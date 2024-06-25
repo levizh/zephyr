@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2020 Seagate Technology LLC
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HC32F4_CLOCK_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HC32F4_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HC32F460_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HC32F460_CLOCK_H_
 
 #include "hc32f4_common_clock.h"
 
@@ -70,4 +70,4 @@
 #define HC32_CLK_CONF_USB				(4)
 #define HC32_CLK_CONF_I2S				(5)
 #define HC32_CLK_CONF_MAX				HC32_CLK_CONF_I2S
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HC32F4_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HC32F460_CLOCK_H_ */

@@ -1218,7 +1218,9 @@ static int uart_hc32_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
-	config->irq_config_func(dev);
+	if ((uart_irq_config_func_t)NULL != config->irq_config_func) {
+		config->irq_config_func(dev);
+	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	/* config DMA  */
@@ -1258,13 +1260,6 @@ static int uart_hc32_init(const struct device *dev)
 #define HC32_UART_DMA_CFG_DECL(index)
 #endif /* CONFIG_UART_ASYNC_API */
 
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN)
-#define HC32_UART_IRQ_HANDLER_FUNC(index)				\
-	.irq_config_func = usart_hc32_config_func_##index,
-#else
-#define HC32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
 #ifdef CONFIG_UART_ASYNC_API
 /* If defined async, let dma deal with transmission */
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)						\
@@ -1272,11 +1267,17 @@ static int uart_hc32_init(const struct device *dev)
 		COND_CODE_1(														\
 			DT_INST_DMAS_HAS_NAME(index, dir),								\
 			(UART_DMA_CHANNEL_INIT(index, dir, DIR, src, dest)),			\
-			(NULL))															\
+			())																\
 	},
 #else
 #define UART_DMA_CHANNEL(index, dir, DIR, src, dest)
 #endif /* CONFIG_UART_ASYNC_API */
+
+#define DT_USART_HAS_INTR(node_id)											\
+		IS_ENABLED(DT_CAT4(node_id, _P_, interrupts, _EXISTS))
+
+#define DT_IS_INTR_EXIST(index)												\
+		DT_USART_HAS_INTR(DT_INST(index, xhsc_hc32_uart))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define USART_IRQ_ISR_CONFIG(isr_name_prefix, isr_idx, index)				\
@@ -1297,7 +1298,7 @@ static int uart_hc32_init(const struct device *dev)
 	static void usart_hc32_rx_full_isr_##index(const struct device *dev);	\
 	static void usart_hc32_tx_empty_isr_##index(const struct device *dev);	\
 	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);\
-	static void	usart_hc32_rx_timeout_isr_##index(const struct device *dev)
+	static void	usart_hc32_rx_timeout_isr_##index(const struct device *dev);
 
 #define HC32_UART_IRQ_HANDLER_DEF(index)									\
 	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
@@ -1360,49 +1361,72 @@ static int uart_hc32_init(const struct device *dev)
 		USART_IRQ_ISR_CONFIG(usart_hc32_rx_timeout_isr, 4, index)			\
 	}
 
+#define HC32_UART_IRQ_HANDLER_FUNC(index)									\
+	.irq_config_func = usart_hc32_config_func_##index,
+
+#define HC32_UART_IRQ_HANDLER_NULL(index)									\
+	.irq_config_func = (uart_irq_config_func_t)NULL,
+
+#define HC32_UART_IRQ_HANDLER_PRE_FUNC(index)								\
+	COND_CODE_1(															\
+			DT_IS_INTR_EXIST(index),									\
+			(HC32_UART_IRQ_HANDLER_FUNC(index)),							\
+			(HC32_UART_IRQ_HANDLER_NULL(index)))
+
+#define HC32_UART_IRQ_HANDLER_PRE_DECL(index)								\
+	COND_CODE_1(															\
+			DT_IS_INTR_EXIST(index),									\
+			(HC32_UART_IRQ_HANDLER_DECL(index)),							\
+			())
+#define HC32_UART_IRQ_HANDLER_PRE_DEF(index)								\
+	COND_CODE_1(															\
+			DT_IS_INTR_EXIST(index),									\
+			(HC32_UART_IRQ_HANDLER_DEF(index)),								\
+			())
 #else /* CONFIG_UART_INTERRUPT_DRIVEN */
-#define HC32_UART_IRQ_HANDLER_DECL(index)
-#define HC32_UART_IRQ_HANDLER_DEF(index)
+#define HC32_UART_IRQ_HANDLER_PRE_DECL(index)
+#define HC32_UART_IRQ_HANDLER_PRE_DEF(index)
+#define HC32_UART_IRQ_HANDLER_PRE_FUNC(index)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define HC32_UART_CLOCK_DECL(index)									\
-static const struct hc32_modules_clock_sys uart_fcg_config_##index[]\
-		= HC32_MODULES_CLOCKS(DT_DRV_INST(index)) 					\
+#define HC32_UART_CLOCK_DECL(index)										\
+static const struct hc32_modules_clock_sys uart_fcg_config_##index[]	\
+		= HC32_MODULES_CLOCKS(DT_DRV_INST(index));
 
-#define HC32_UART_INIT(index)										\
-	HC32_UART_CLOCK_DECL(index);									\
-	HC32_UART_IRQ_HANDLER_DECL(index);								\
-	PINCTRL_DT_INST_DEFINE(index);									\
-	static struct uart_config uart_cfg_##index = {					\
-		.baudrate  = DT_INST_PROP_OR(index, current_speed,			\
-						HC32_UART_DEFAULT_BAUDRATE),				\
-		.parity	= DT_INST_ENUM_IDX_OR(index, parity,				\
-						HC32_UART_DEFAULT_PARITY),					\
-		.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,			\
-						HC32_UART_DEFAULT_STOP_BITS),				\
-		.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,			\
-						HC32_UART_DEFAULT_DATA_BITS),				\
-		.flow_ctrl = DT_INST_PROP(index, hw_flow_control)			\
-						? UART_CFG_FLOW_CTRL_RTS_CTS				\
-						: UART_CFG_FLOW_CTRL_NONE,					\
-	};																\
-	static const struct uart_hc32_config uart_hc32_cfg_##index = {	\
-		.usart = (CM_USART_TypeDef *)DT_INST_REG_ADDR(index),		\
-		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
-		.clk_cfg = uart_fcg_config_##index,							\
-		HC32_UART_IRQ_HANDLER_FUNC(index)							\
-	};																\
-	static struct uart_hc32_data uart_hc32_data_##index = {			\
-		.uart_cfg = &uart_cfg_##index,								\
-		UART_DMA_CHANNEL(index, rx, RX, SOURCE, DEST)				\
-		UART_DMA_CHANNEL(index, tx, TX, SOURCE, DEST)				\
-	};																\
-	DEVICE_DT_INST_DEFINE(index,									\
-				&uart_hc32_init,									\
-				NULL,												\
-				&uart_hc32_data_##index, &uart_hc32_cfg_##index,	\
-				PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,			\
-				&uart_hc32_driver_api);								\
-	HC32_UART_IRQ_HANDLER_DEF(index)
+#define HC32_UART_INIT(index)											\
+	HC32_UART_CLOCK_DECL(index)											\
+	HC32_UART_IRQ_HANDLER_PRE_DECL(index)								\
+	PINCTRL_DT_INST_DEFINE(index);										\
+	static struct uart_config uart_cfg_##index = {						\
+		.baudrate  = DT_INST_PROP_OR(index, current_speed,				\
+						HC32_UART_DEFAULT_BAUDRATE),					\
+		.parity	= DT_INST_ENUM_IDX_OR(index, parity,					\
+						HC32_UART_DEFAULT_PARITY),						\
+		.stop_bits = DT_INST_ENUM_IDX_OR(index, stop_bits,				\
+						HC32_UART_DEFAULT_STOP_BITS),					\
+		.data_bits = DT_INST_ENUM_IDX_OR(index, data_bits,				\
+						HC32_UART_DEFAULT_DATA_BITS),					\
+		.flow_ctrl = DT_INST_PROP(index, hw_flow_control)				\
+						? UART_CFG_FLOW_CTRL_RTS_CTS					\
+						: UART_CFG_FLOW_CTRL_NONE,						\
+	};																	\
+	static const struct uart_hc32_config uart_hc32_cfg_##index = {		\
+		.usart = (CM_USART_TypeDef *)DT_INST_REG_ADDR(index),			\
+		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),				\
+		.clk_cfg = uart_fcg_config_##index,								\
+		HC32_UART_IRQ_HANDLER_PRE_FUNC(index)							\
+	};																	\
+	static struct uart_hc32_data uart_hc32_data_##index = {				\
+		.uart_cfg = &uart_cfg_##index,									\
+		UART_DMA_CHANNEL(index, rx, RX, SOURCE, DEST)					\
+		UART_DMA_CHANNEL(index, tx, TX, SOURCE, DEST)					\
+	};																	\
+	DEVICE_DT_INST_DEFINE(index,										\
+				&uart_hc32_init,										\
+				NULL,													\
+				&uart_hc32_data_##index, &uart_hc32_cfg_##index,		\
+				PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,				\
+				&uart_hc32_driver_api);									\
+	HC32_UART_IRQ_HANDLER_PRE_DEF(index)
 
 DT_INST_FOREACH_STATUS_OKAY(HC32_UART_INIT)

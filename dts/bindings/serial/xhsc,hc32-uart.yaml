@@ -13,10 +13,10 @@ properties:
     required: true
 
   interrupts:
-    required: true
+    required: false
 
   interrupt-names:
-    required: true
+    required: false
 
   pinctrl-0:
     required: true

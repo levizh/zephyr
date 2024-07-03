@@ -357,11 +357,11 @@ static int hc32_i2c_msg_transaction(const struct device *dev)
 }
 
 #if defined CONFIG_I2C_HC32_INTERRUPT_SHARE
-#define I2C_HC32_IRQ_SHARE1_NUM				INT141_IRQn
-#define I2C_HC32_IRQ_SHARE2_NUM				INT142_IRQn
 #define HC32_I2C_SHARE_ISR_DEV(node_id)		DEVICE_DT_GET(node_id)
 #define HC32_I2C_SHARE_ISR_NUM(node_id)		DT_IRQ_BY_IDX(node_id, 0, irq)
 #if defined (HC32F4A0)
+#define I2C_HC32_IRQ_SHARE1_NUM				INT141_IRQn
+#define I2C_HC32_IRQ_SHARE2_NUM				INT142_IRQn
 void hc32_i2c_share_isr(void)
 {
 	const uint32_t VSSEL141 = CM_INTC->VSSEL141;
@@ -376,210 +376,231 @@ void hc32_i2c_share_isr(void)
 	const struct device *dev_i2c[] = {	\
 		DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_NODELABEL(i2c_sys), HC32_I2C_SHARE_ISR_DEV, (,))	\
 	};
+	uint32_t isr;
+
+	__ASM volatile ("MRS %0, ipsr" : "=r" (isr) );
+	isr -= 16;
 
 	for (i = 0; i < node_num; i++) {
 		cfg = dev_i2c[i]->config;
 		mod_clk = cfg->mod_clk;
 		void *arg = (void *)dev_i2c[i];
 	
+		switch (mod_clk->bits)
+		{
+		case HC32_FCG1_PERIPH_I2C1:
+			if (isr != I2C_HC32_IRQ_SHARE1_NUM) {
+				break;
+			}
+			/* I2C Ch.1 Rx end */
+			if (1UL == bCM_I2C1->CR2_b.RFULLIE) {
+				if ((1UL == bCM_I2C1->SR_b.RFULLF) && (0UL != (VSSEL141 & BIT_MASK_16))) {
+					hc32_i2c_rxi_isr(arg);
+				}
+			}
+			/* I2C Ch.1 Tx buffer empty */
+			if (1UL == bCM_I2C1->CR2_b.TEMPTYIE) {
+				if ((1UL == bCM_I2C1->SR_b.TEMPTYF) && (0UL != (VSSEL141 & BIT_MASK_17))) {
+					hc32_i2c_txi_isr(arg);
+				}
+			}
+			/* I2C Ch.1 Tx end */
+			if (1UL == bCM_I2C1->CR2_b.TENDIE) {
+				if ((1UL == bCM_I2C1->SR_b.TENDF) && (0UL != (VSSEL141 & BIT_MASK_18))) {
+					hc32_i2c_tei_isr(arg);
+				}
+			}
+			/* I2C Ch.1 Error */
+			u32Tmp1 = CM_I2C1->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
+										I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
+										I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
+										I2C_CR2_STARTIE);
+			u32Tmp2 = CM_I2C1->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
+										I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
+										I2C_SR_SLADDR0F | I2C_SR_STARTF);
+			if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL141 & BIT_MASK_19))) {
+				hc32_i2c_eei_isr(arg);
+			}
+			break;
 
-	switch (mod_clk->bits)
-	{
-	case HC32_FCG1_PERIPH_I2C1:
-		/* I2C Ch.1 Rx end */
-		if (1UL == bCM_I2C1->CR2_b.RFULLIE) {
-			if ((1UL == bCM_I2C1->SR_b.RFULLF) && (0UL != (VSSEL141 & BIT_MASK_16))) {
-				hc32_i2c_rxi_isr(arg);
+		case HC32_FCG1_PERIPH_I2C2:
+			if (isr != I2C_HC32_IRQ_SHARE1_NUM) {
+				break;
 			}
-		}
-		/* I2C Ch.1 Tx buffer empty */
-		if (1UL == bCM_I2C1->CR2_b.TEMPTYIE) {
-			if ((1UL == bCM_I2C1->SR_b.TEMPTYF) && (0UL != (VSSEL141 & BIT_MASK_17))) {
-				hc32_i2c_txi_isr(arg);
+			/* I2C Ch.2 Rx end */
+			if (1UL == bCM_I2C2->CR2_b.RFULLIE) {
+				if ((1UL == bCM_I2C2->SR_b.RFULLF) && (0UL != (VSSEL141 & BIT_MASK_20))) {
+					hc32_i2c_rxi_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.1 Tx end */
-		if (1UL == bCM_I2C1->CR2_b.TENDIE) {
-			if ((1UL == bCM_I2C1->SR_b.TENDF) && (0UL != (VSSEL141 & BIT_MASK_18))) {
-				hc32_i2c_tei_isr(arg);
+			/* I2C Ch.2 Tx buffer empty */
+			if (1UL == bCM_I2C2->CR2_b.TEMPTYIE) {
+				if ((1UL == bCM_I2C2->SR_b.TEMPTYF) && (0UL != (VSSEL141 & BIT_MASK_21))) {
+					hc32_i2c_txi_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.1 Error */
-		u32Tmp1 = CM_I2C1->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
-									I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
-									I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
-									I2C_CR2_STARTIE);
-		u32Tmp2 = CM_I2C1->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
-									I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
-									I2C_SR_SLADDR0F | I2C_SR_STARTF);
-		if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL141 & BIT_MASK_19))) {
-			hc32_i2c_eei_isr(arg);
-		}
-		break;
+			/* I2C Ch.2 Tx end */
+			if (1UL == bCM_I2C2->CR2_b.TENDIE) {
+				if ((1UL == bCM_I2C2->SR_b.TENDF) && (0UL != (VSSEL141 & BIT_MASK_22))) {
+					hc32_i2c_tei_isr(arg);
+				}
+			}
+			/* I2C Ch.2 Error */
+			u32Tmp1 = CM_I2C2->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
+										I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
+										I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
+										I2C_CR2_STARTIE);
+			u32Tmp2 = CM_I2C2->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
+										I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
+										I2C_SR_SLADDR0F | I2C_SR_STARTF);
+			if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL141 & BIT_MASK_23))) {
+				hc32_i2c_eei_isr(arg);
+			}
+			break;
+		
+		case HC32_FCG1_PERIPH_I2C3:
+			if (isr != I2C_HC32_IRQ_SHARE1_NUM) {
+				break;
+			}
+			/* I2C Ch.3 Rx end */
+			if (1UL == bCM_I2C3->CR2_b.RFULLIE) {
+				if ((1UL == bCM_I2C3->SR_b.RFULLF) && (0UL != (VSSEL141 & BIT_MASK_24))) {
+					hc32_i2c_rxi_isr(arg);
+				}
+			}
+			/* I2C Ch.3 Tx buffer empty */
+			if (1UL == bCM_I2C3->CR2_b.TEMPTYIE) {
+				if ((1UL == bCM_I2C3->SR_b.TEMPTYF) && (0UL != (VSSEL141 & BIT_MASK_25))) {
+					hc32_i2c_txi_isr(arg);
+				}
+			}
+			/* I2C Ch.3 Tx end */
+			if (1UL == bCM_I2C3->CR2_b.TENDIE) {
+				if ((1UL == bCM_I2C3->SR_b.TENDF) && (0UL != (VSSEL141 & BIT_MASK_26))) {
+					hc32_i2c_tei_isr(arg);
+				}
+			}
+			/* I2C Ch.3 Error */
+			u32Tmp1 = CM_I2C3->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
+										I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
+										I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
+										I2C_CR2_STARTIE);
+			u32Tmp2 = CM_I2C3->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
+										I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
+										I2C_SR_SLADDR0F | I2C_SR_STARTF);
+			if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL141 & BIT_MASK_27))) {
+				hc32_i2c_eei_isr(arg);
+			}
+			break;
 
-	case HC32_FCG1_PERIPH_I2C2:
-		/* I2C Ch.2 Rx end */
-		if (1UL == bCM_I2C2->CR2_b.RFULLIE) {
-			if ((1UL == bCM_I2C2->SR_b.RFULLF) && (0UL != (VSSEL141 & BIT_MASK_20))) {
-				hc32_i2c_rxi_isr(arg);
+		case HC32_FCG1_PERIPH_I2C4:
+			if (isr != I2C_HC32_IRQ_SHARE2_NUM) {
+				break;
 			}
-		}
-		/* I2C Ch.2 Tx buffer empty */
-		if (1UL == bCM_I2C2->CR2_b.TEMPTYIE) {
-			if ((1UL == bCM_I2C2->SR_b.TEMPTYF) && (0UL != (VSSEL141 & BIT_MASK_21))) {
-				hc32_i2c_txi_isr(arg);
+			/* I2C Ch.4 Rx end */
+			if (1UL == bCM_I2C4->CR2_b.RFULLIE) {
+				if ((1UL == bCM_I2C4->SR_b.RFULLF) && (0UL != (VSSEL142 & BIT_MASK_00))) {
+					hc32_i2c_rxi_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.2 Tx end */
-		if (1UL == bCM_I2C2->CR2_b.TENDIE) {
-			if ((1UL == bCM_I2C2->SR_b.TENDF) && (0UL != (VSSEL141 & BIT_MASK_22))) {
-				hc32_i2c_tei_isr(arg);
+			/* I2C Ch.4 Tx buffer empty */
+			if (1UL == bCM_I2C4->CR2_b.TEMPTYIE) {
+				if ((1UL == bCM_I2C4->SR_b.TEMPTYF) && (0UL != (VSSEL142 & BIT_MASK_01))) {
+					hc32_i2c_txi_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.2 Error */
-		u32Tmp1 = CM_I2C2->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
-									I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
-									I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
-									I2C_CR2_STARTIE);
-		u32Tmp2 = CM_I2C2->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
-									I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
-									I2C_SR_SLADDR0F | I2C_SR_STARTF);
-		if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL141 & BIT_MASK_23))) {
-			hc32_i2c_eei_isr(arg);
-		}
-		break;
-	
-	case HC32_FCG1_PERIPH_I2C3:
-		/* I2C Ch.3 Rx end */
-		if (1UL == bCM_I2C3->CR2_b.RFULLIE) {
-			if ((1UL == bCM_I2C3->SR_b.RFULLF) && (0UL != (VSSEL141 & BIT_MASK_24))) {
-				hc32_i2c_rxi_isr(arg);
+			/* I2C Ch.4 Tx end */
+			if (1UL == bCM_I2C4->CR2_b.TENDIE) {
+				if ((1UL == bCM_I2C4->SR_b.TENDF) && (0UL != (VSSEL142 & BIT_MASK_02))) {
+					hc32_i2c_tei_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.3 Tx buffer empty */
-		if (1UL == bCM_I2C3->CR2_b.TEMPTYIE) {
-			if ((1UL == bCM_I2C3->SR_b.TEMPTYF) && (0UL != (VSSEL141 & BIT_MASK_25))) {
-				hc32_i2c_txi_isr(arg);
+			/* I2C Ch.4 Error */
+			u32Tmp1 = CM_I2C4->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
+										I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
+										I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
+										I2C_CR2_STARTIE);
+			u32Tmp2 = CM_I2C4->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
+										I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
+										I2C_SR_SLADDR0F | I2C_SR_STARTF);
+			if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL142 & BIT_MASK_03))) {
+				hc32_i2c_eei_isr(arg);
 			}
-		}
-		/* I2C Ch.3 Tx end */
-		if (1UL == bCM_I2C3->CR2_b.TENDIE) {
-			if ((1UL == bCM_I2C3->SR_b.TENDF) && (0UL != (VSSEL141 & BIT_MASK_26))) {
-				hc32_i2c_tei_isr(arg);
-			}
-		}
-		/* I2C Ch.3 Error */
-		u32Tmp1 = CM_I2C3->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
-									I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
-									I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
-									I2C_CR2_STARTIE);
-		u32Tmp2 = CM_I2C3->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
-									I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
-									I2C_SR_SLADDR0F | I2C_SR_STARTF);
-		if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL141 & BIT_MASK_27))) {
-			hc32_i2c_eei_isr(arg);
-		}
-		break;
+			break;
 
-	case HC32_FCG1_PERIPH_I2C4:
-		/* I2C Ch.4 Rx end */
-		if (1UL == bCM_I2C4->CR2_b.RFULLIE) {
-			if ((1UL == bCM_I2C4->SR_b.RFULLF) && (0UL != (VSSEL142 & BIT_MASK_00))) {
-				hc32_i2c_rxi_isr(arg);
+		case HC32_FCG1_PERIPH_I2C5:
+			if (isr != I2C_HC32_IRQ_SHARE2_NUM) {
+				break;
 			}
-		}
-		/* I2C Ch.4 Tx buffer empty */
-		if (1UL == bCM_I2C4->CR2_b.TEMPTYIE) {
-			if ((1UL == bCM_I2C4->SR_b.TEMPTYF) && (0UL != (VSSEL142 & BIT_MASK_01))) {
-				hc32_i2c_txi_isr(arg);
+			/* I2C Ch.5 Rx end */
+			if (1UL == bCM_I2C5->CR2_b.RFULLIE) {
+				if ((1UL == bCM_I2C5->SR_b.RFULLF) && (0UL != (VSSEL142 & BIT_MASK_04))) {
+					hc32_i2c_rxi_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.4 Tx end */
-		if (1UL == bCM_I2C4->CR2_b.TENDIE) {
-			if ((1UL == bCM_I2C4->SR_b.TENDF) && (0UL != (VSSEL142 & BIT_MASK_02))) {
-				hc32_i2c_tei_isr(arg);
+			/* I2C Ch.5 Tx buffer empty */
+			if (1UL == bCM_I2C5->CR2_b.TEMPTYIE) {
+				if ((1UL == bCM_I2C5->SR_b.TEMPTYF) && (0UL != (VSSEL142 & BIT_MASK_05))) {
+					hc32_i2c_txi_isr(arg);
+				}
 			}
-		}
-		/* I2C Ch.4 Error */
-		u32Tmp1 = CM_I2C4->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
-									I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
-									I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
-									I2C_CR2_STARTIE);
-		u32Tmp2 = CM_I2C4->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
-									I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
-									I2C_SR_SLADDR0F | I2C_SR_STARTF);
-		if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL142 & BIT_MASK_03))) {
-			hc32_i2c_eei_isr(arg);
-		}
-		break;
+			/* I2C Ch.5 Tx end */
+			if (1UL == bCM_I2C5->CR2_b.TENDIE) {
+				if ((1UL == bCM_I2C5->SR_b.TENDF) && (0UL != (VSSEL142 & BIT_MASK_06))) {
+					hc32_i2c_tei_isr(arg);
+				}
+			}
+			/* I2C Ch.5 Error */
+			u32Tmp1 = CM_I2C5->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
+										I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
+										I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
+										I2C_CR2_STARTIE);
+			u32Tmp2 = CM_I2C5->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
+										I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
+										I2C_SR_SLADDR0F | I2C_SR_STARTF);
+			if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL142 & BIT_MASK_07))) {
+				hc32_i2c_eei_isr(arg);
+			}
+			break;
+		
+		case HC32_FCG1_PERIPH_I2C6:
+			if (isr != I2C_HC32_IRQ_SHARE2_NUM) {
+				break;
+			}
+			/* I2C Ch.6 Rx end */
+			if (1UL == bCM_I2C6->CR2_b.RFULLIE) {
+				if ((1UL == bCM_I2C6->SR_b.RFULLF) && (0UL != (VSSEL142 & BIT_MASK_08))) {
+					hc32_i2c_rxi_isr(arg);
+				}
+			}
+			/* I2C Ch.6 Tx buffer empty */
+			if (1UL == bCM_I2C6->CR2_b.TEMPTYIE) {
+				if ((1UL == bCM_I2C6->SR_b.TEMPTYF) && (0UL != (VSSEL142 & BIT_MASK_09))) {
+					hc32_i2c_txi_isr(arg);
+				}
+			}
+			/* I2C Ch.6 Tx end */
+			if (1UL == bCM_I2C6->CR2_b.TENDIE) {
+				if ((1UL == bCM_I2C6->SR_b.TENDF) && (0UL != (VSSEL142 & BIT_MASK_10))) {
+					hc32_i2c_tei_isr(arg);
+				}
+			}
+			/* I2C Ch.6 Error */
+			u32Tmp1 = CM_I2C6->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
+										I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
+										I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
+										I2C_CR2_STARTIE);
+			u32Tmp2 = CM_I2C6->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
+										I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
+										I2C_SR_SLADDR0F | I2C_SR_STARTF);
+			if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL142 & BIT_MASK_11))) {
+				hc32_i2c_eei_isr(arg);
+			}
+			break;
 
-	case HC32_FCG1_PERIPH_I2C5:
-		/* I2C Ch.5 Rx end */
-		if (1UL == bCM_I2C5->CR2_b.RFULLIE) {
-			if ((1UL == bCM_I2C5->SR_b.RFULLF) && (0UL != (VSSEL142 & BIT_MASK_04))) {
-				hc32_i2c_rxi_isr(arg);
-			}
+		default:
+			break;
 		}
-		/* I2C Ch.5 Tx buffer empty */
-		if (1UL == bCM_I2C5->CR2_b.TEMPTYIE) {
-			if ((1UL == bCM_I2C5->SR_b.TEMPTYF) && (0UL != (VSSEL142 & BIT_MASK_05))) {
-				hc32_i2c_txi_isr(arg);
-			}
-		}
-		/* I2C Ch.5 Tx end */
-		if (1UL == bCM_I2C5->CR2_b.TENDIE) {
-			if ((1UL == bCM_I2C5->SR_b.TENDF) && (0UL != (VSSEL142 & BIT_MASK_06))) {
-				hc32_i2c_tei_isr(arg);
-			}
-		}
-		/* I2C Ch.5 Error */
-		u32Tmp1 = CM_I2C5->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
-									I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
-									I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
-									I2C_CR2_STARTIE);
-		u32Tmp2 = CM_I2C5->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
-									I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
-									I2C_SR_SLADDR0F | I2C_SR_STARTF);
-		if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL142 & BIT_MASK_07))) {
-			hc32_i2c_eei_isr(arg);
-		}
-		break;
-	
-	case HC32_FCG1_PERIPH_I2C6:
-		/* I2C Ch.6 Rx end */
-		if (1UL == bCM_I2C6->CR2_b.RFULLIE) {
-			if ((1UL == bCM_I2C6->SR_b.RFULLF) && (0UL != (VSSEL142 & BIT_MASK_08))) {
-				hc32_i2c_rxi_isr(arg);
-			}
-		}
-		/* I2C Ch.6 Tx buffer empty */
-		if (1UL == bCM_I2C6->CR2_b.TEMPTYIE) {
-			if ((1UL == bCM_I2C6->SR_b.TEMPTYF) && (0UL != (VSSEL142 & BIT_MASK_09))) {
-				hc32_i2c_txi_isr(arg);
-			}
-		}
-		/* I2C Ch.6 Tx end */
-		if (1UL == bCM_I2C6->CR2_b.TENDIE) {
-			if ((1UL == bCM_I2C6->SR_b.TENDF) && (0UL != (VSSEL142 & BIT_MASK_10))) {
-				hc32_i2c_tei_isr(arg);
-			}
-		}
-		/* I2C Ch.6 Error */
-		u32Tmp1 = CM_I2C6->CR2 & (I2C_CR2_TMOUTIE | I2C_CR2_NACKIE |	\
-									I2C_CR2_ARLOIE | I2C_CR2_STOPIE | \
-									I2C_CR2_SLADDR1IE | I2C_CR2_SLADDR0IE | \
-									I2C_CR2_STARTIE);
-		u32Tmp2 = CM_I2C6->SR & (I2C_SR_TMOUTF | I2C_SR_NACKF |	\
-									I2C_SR_ARLOF | I2C_SR_STOPF | I2C_SR_SLADDR1F |	\
-									I2C_SR_SLADDR0F | I2C_SR_STARTF);
-		if ((0UL != (u32Tmp1 & u32Tmp2)) && (0UL != (VSSEL142 & BIT_MASK_11))) {
-			hc32_i2c_eei_isr(arg);
-		}
-		break;
-
-	default:
-		break;
-	}
 	}
 }
 static int hc32_i2c_sys_init(const struct device *dev)

@@ -106,11 +106,11 @@
 	pinctrl-names = "default";
 };
 
-&spi1 {
+&spi6 {
 	status = "okay";
-	pinctrl-0 = <&spi1_default>;
+	pinctrl-0 = <&spi6_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpioe 6 GPIO_ACTIVE_LOW>;
 };
 
 &i2c1 {

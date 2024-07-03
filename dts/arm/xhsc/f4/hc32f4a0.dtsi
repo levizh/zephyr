@@ -322,6 +322,78 @@
 			#size-cells = <0>;
 		};
 
+		spi2: spi@4001c400 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI2_ERR_IRQ_NUM HC32_SPI2_ERR_IRQ_PRIO INT_SRC_SPI2_SPEI>,
+						 <HC32_SPI2_RBF_IRQ_NUM HC32_SPI2_RBF_IRQ_PRIO INT_SRC_SPI2_SPRI>,
+						 <HC32_SPI2_TBE_IRQ_NUM HC32_SPI2_TBE_IRQ_PRIO INT_SRC_SPI2_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi3: spi@4001c800 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI3_ERR_IRQ_NUM HC32_SPI3_ERR_IRQ_PRIO INT_SRC_SPI3_SPEI>,
+						 <HC32_SPI3_RBF_IRQ_NUM HC32_SPI3_RBF_IRQ_PRIO INT_SRC_SPI3_SPRI>,
+						 <HC32_SPI3_TBE_IRQ_NUM HC32_SPI3_TBE_IRQ_PRIO INT_SRC_SPI3_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi4: spi@40020000 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI4_ERR_IRQ_NUM HC32_SPI4_ERR_IRQ_PRIO INT_SRC_SPI4_SPEI>,
+						 <HC32_SPI4_RBF_IRQ_NUM HC32_SPI4_RBF_IRQ_PRIO INT_SRC_SPI4_SPRI>,
+						 <HC32_SPI4_TBE_IRQ_NUM HC32_SPI4_TBE_IRQ_PRIO INT_SRC_SPI4_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi5: spi@40020400 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI5>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI5_ERR_IRQ_NUM HC32_SPI3_ERR_IRQ_PRIO INT_SRC_SPI5_SPEI>,
+						 <HC32_SPI5_RBF_IRQ_NUM HC32_SPI3_RBF_IRQ_PRIO INT_SRC_SPI5_SPRI>,
+						 <HC32_SPI5_TBE_IRQ_NUM HC32_SPI3_TBE_IRQ_PRIO INT_SRC_SPI5_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi6: spi@40020800 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI6>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI6_ERR_IRQ_NUM HC32_SPI4_ERR_IRQ_PRIO INT_SRC_SPI6_SPEI>,
+						 <HC32_SPI6_RBF_IRQ_NUM HC32_SPI4_RBF_IRQ_PRIO INT_SRC_SPI6_SPRI>,
+						 <HC32_SPI6_TBE_IRQ_NUM HC32_SPI4_TBE_IRQ_PRIO INT_SRC_SPI6_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+
+
 		rtc: rtc@4004c000 {
 			compatible = "xhsc,hc32-rtc";
 			reg = <0x4004c000 0x400>;

@@ -438,6 +438,358 @@
 			};
 		};
 
+		timera2: timer@4003a400 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003a400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA2_OVF_IRQ_NUM HC32_TMRA2_OVF_IRQ_PRIO INT_SRC_TMRA_2_OVF>,
+						 <HC32_TMRA2_UDF_IRQ_NUM HC32_TMRA2_UDF_IRQ_PRIO INT_SRC_TMRA_2_UDF>,
+						 <HC32_TMRA2_CMP_IRQ_NUM HC32_TMRA2_CMP_IRQ_PRIO INT_SRC_TMRA_2_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera3: timer@4003a800 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003a800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA3_OVF_IRQ_NUM HC32_TMRA3_OVF_IRQ_PRIO INT_SRC_TMRA_3_OVF>,
+						 <HC32_TMRA3_UDF_IRQ_NUM HC32_TMRA3_UDF_IRQ_PRIO INT_SRC_TMRA_3_UDF>,
+						 <HC32_TMRA3_CMP_IRQ_NUM HC32_TMRA3_CMP_IRQ_PRIO INT_SRC_TMRA_3_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera4: timer@4003ac00 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003ac00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA4_OVF_IRQ_NUM HC32_TMRA4_OVF_IRQ_PRIO INT_SRC_TMRA_4_OVF>,
+						 <HC32_TMRA4_UDF_IRQ_NUM HC32_TMRA4_UDF_IRQ_PRIO INT_SRC_TMRA_4_UDF>,
+						 <HC32_TMRA4_CMP_IRQ_NUM HC32_TMRA4_CMP_IRQ_PRIO INT_SRC_TMRA_4_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera5: timer@40026000 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_5>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA5_OVF_IRQ_NUM HC32_TMRA5_OVF_IRQ_PRIO INT_SRC_TMRA_5_OVF>,
+						 <HC32_TMRA5_UDF_IRQ_NUM HC32_TMRA5_UDF_IRQ_PRIO INT_SRC_TMRA_5_UDF>,
+						 <HC32_TMRA5_CMP_IRQ_NUM HC32_TMRA5_CMP_IRQ_PRIO INT_SRC_TMRA_5_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera6: timer@40026400 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_6>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA6_OVF_IRQ_NUM HC32_TMRA6_OVF_IRQ_PRIO INT_SRC_TMRA_6_OVF>,
+						 <HC32_TMRA6_UDF_IRQ_NUM HC32_TMRA6_UDF_IRQ_PRIO INT_SRC_TMRA_6_UDF>,
+						 <HC32_TMRA6_CMP_IRQ_NUM HC32_TMRA6_CMP_IRQ_PRIO INT_SRC_TMRA_6_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera7: timer@40026800 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_7>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA7_OVF_IRQ_NUM HC32_TMRA7_OVF_IRQ_PRIO INT_SRC_TMRA_7_OVF>,
+						 <HC32_TMRA7_UDF_IRQ_NUM HC32_TMRA7_UDF_IRQ_PRIO INT_SRC_TMRA_7_UDF>,
+						 <HC32_TMRA7_CMP_IRQ_NUM HC32_TMRA7_CMP_IRQ_PRIO INT_SRC_TMRA_7_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera8: timer@40026c00 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026c00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_8>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA8_OVF_IRQ_NUM HC32_TMRA8_OVF_IRQ_PRIO INT_SRC_TMRA_8_OVF>,
+						 <HC32_TMRA8_UDF_IRQ_NUM HC32_TMRA8_UDF_IRQ_PRIO INT_SRC_TMRA_8_UDF>,
+						 <HC32_TMRA8_CMP_IRQ_NUM HC32_TMRA8_CMP_IRQ_PRIO INT_SRC_TMRA_8_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera9: timer@40027000 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_9>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA9_OVF_IRQ_NUM HC32_TMRA9_OVF_IRQ_PRIO INT_SRC_TMRA_9_OVF>,
+						 <HC32_TMRA9_UDF_IRQ_NUM HC32_TMRA9_UDF_IRQ_PRIO INT_SRC_TMRA_9_UDF>,
+						 <HC32_TMRA9_CMP_IRQ_NUM HC32_TMRA9_CMP_IRQ_PRIO INT_SRC_TMRA_9_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera10: timer@40027400 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_10>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA10_OVF_IRQ_NUM HC32_TMRA10_OVF_IRQ_PRIO INT_SRC_TMRA_10_OVF>,
+						 <HC32_TMRA10_UDF_IRQ_NUM HC32_TMRA10_UDF_IRQ_PRIO INT_SRC_TMRA_10_UDF>,
+						 <HC32_TMRA10_CMP_IRQ_NUM HC32_TMRA10_CMP_IRQ_PRIO INT_SRC_TMRA_10_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera11: timer@40027800 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_11>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA11_OVF_IRQ_NUM HC32_TMRA11_OVF_IRQ_PRIO INT_SRC_TMRA_11_OVF>,
+						 <HC32_TMRA11_UDF_IRQ_NUM HC32_TMRA11_UDF_IRQ_PRIO INT_SRC_TMRA_11_UDF>,
+						 <HC32_TMRA11_CMP_IRQ_NUM HC32_TMRA11_CMP_IRQ_PRIO INT_SRC_TMRA_11_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera12: timer@40027c00 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027c00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_12>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA12_OVF_IRQ_NUM HC32_TMRA12_OVF_IRQ_PRIO INT_SRC_TMRA_12_OVF>,
+						 <HC32_TMRA12_UDF_IRQ_NUM HC32_TMRA12_UDF_IRQ_PRIO INT_SRC_TMRA_12_UDF>,
+						 <HC32_TMRA12_CMP_IRQ_NUM HC32_TMRA12_CMP_IRQ_PRIO INT_SRC_TMRA_12_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+            counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <8>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
 		i2c_sys: i2c_system@4004e000
 		{
 			#address-cells = <1>;

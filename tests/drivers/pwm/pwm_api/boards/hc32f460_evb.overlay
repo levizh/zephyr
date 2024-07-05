@@ -7,7 +7,7 @@
 &pinctrl {
 	pwm_default: pwm_default {
 		group1 {
-			pinmux = <HC32_PINMUX('D', 12, FUNC, 4)>; /* PWM1 */
+			pinmux = <HC32_PINMUX('D', 12, FUNC, 4, 0)>; /* PWM1 */
 		};
 	};
 };

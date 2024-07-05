@@ -16,5 +16,6 @@ config SOC_HC32F460
 
 config SOC_HC32F4A0
 	bool "HC32F4A0"
+	select PLATFORM_SPECIFIC_INIT
 
 endchoice

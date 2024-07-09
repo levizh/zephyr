@@ -403,11 +403,12 @@ static void pwm_hc32_isr(const struct device *dev)
 	const struct pwm_hc32_config *cfg = dev->config;
 	struct pwm_hc32_data *data = dev->data;
 	struct pwm_hc32_capture_data *cpt = &data->capture;
-	uint32_t u32IntType = TMRA_INT_CMP_CH1;
 	int status = 0u;
 
 #ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+	uint32_t u32IntType = TMRA_INT_CMP_CH1;
 	static uint32_t capture_data[6u], i = 0;
+
 	if (cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_START) {
 		i = 0u;
 		cpt->state = CAPTURE_STATE_IDLE;

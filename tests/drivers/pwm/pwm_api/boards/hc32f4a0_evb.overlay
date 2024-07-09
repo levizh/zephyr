@@ -1,0 +1,33 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <HC32_PINMUX('B', 6, FUNC, 6, 0)>; /* PWM1 */
+		};
+	};
+};
+
+&timera10 {
+	clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+	count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+	count-direction = <HC32_TMR_CNT_DIR_UP>;
+	status = "okay";
+
+	pwm_hc32: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm_default>;
+		pinctrl-names = "default";
+	};
+};
+
+
+/{
+	aliases {
+	pwm-0 = &pwm_hc32;
+	};
+};

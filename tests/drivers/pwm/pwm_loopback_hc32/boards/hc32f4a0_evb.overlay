@@ -8,7 +8,7 @@
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
 		pwms = <&pwm1 1 0 0>,
-			<&pwm2 7 0 0>;
+			<&pwm2 1 0 0>;
 	};
 };
 
@@ -16,13 +16,13 @@
 &pinctrl {
 	pwm_timera4: pwm_timera4 {
 		group1 {
-			pinmux = <HC32_PINMUX('D', 12, FUNC, 4)>; /* PWM1 */
+			pinmux = <HC32_PINMUX('D', 12, FUNC, 4, 0)>; /* PWM1 out*/
 		};
 	};
 
-	pwm_timera2: pwm_timera2 {
+	pwm_timera5: pwm_timera5 {
 		group1 {
-			pinmux = <HC32_PINMUX('c', 2, FUNC, 4)>; /* PWM7 */
+			pinmux = <HC32_PINMUX('C', 10, FUNC, 5, 0)>; /* PWM2 in*/
 		};
 	};
 };
@@ -30,7 +30,7 @@
 &timera4 {
 	clock-division = <HC32_TMR_CNT_CLK_DIV1>;
 	count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
-	count-direction = <HC32_TMR_CNT_DIR_UP>;
+	count-direction = <HC32_TMR_CNT_DIR_DOWN>;
 	status = "okay";
 
 	pwm1: pwm {
@@ -40,15 +40,15 @@
 	};
 };
 
-&timera2 {
+&timera5 {
 	clock-division = <HC32_TMR_CNT_CLK_DIV1>;
-	count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+	count-mode = <HC32_TMR_CNT_MD_TRIANGLE>;
 	count-direction = <HC32_TMR_CNT_DIR_DOWN>;
 	status = "okay";
 
 	pwm2: pwm {
 		status = "okay";
-		pinctrl-0 = <&pwm_timera2>;
+		pinctrl-0 = <&pwm_timera5>;
 		pinctrl-names = "default";
 	};
 };

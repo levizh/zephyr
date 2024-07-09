@@ -48,6 +48,9 @@ struct pwm_hc32_capture_data {
 	bool capture_period;
 	bool continuous;
 	uint8_t channel;
+#ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+	uint8_t bcstrl_value;
+#endif
 	enum capture_state state;
 };
 
@@ -106,7 +109,7 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 		return 0;
 	}
 
-#if defined(HC32F460)
+#if defined(HC32F460) || defined(HC32F4A0)
 	if (cfg->prescaler != 0) {
 		LOG_ERR("Cannot set PWM start level for clock-division isn't 1U");
 		return -ENOTSUP;
@@ -222,11 +225,25 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
+#ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+static uint32_t hc32_get_period(uint32_t *capt, uint32_t data_len)
+{
+	uint32_t diff = 0u;
+	/* break off both ends */
+	for (uint32_t i = 2u; i < data_len - 1u; i++) {
+		diff += capt[i] >= capt[i - 1] ? capt[i] - capt[i - 1] : CAPTURE_PERIOD -
+			capt[i - 1] +
+			capt[i];
+	}
+	return diff / (data_len - 3u);
+}
+
+#else
 static uint32_t hc32_get_period(const struct pwm_hc32_config *cfg,
 				uint32_t first_capture, uint32_t second_capture, uint32_t over_num,
 				uint32_t under_num)
 {
-	uint32_t period;
+	uint32_t period = 0;
 	switch (cfg->countermode) {
 	case HC32_TMR_CNT_MD_SAWTOOTH:
 		if (cfg->direction) {
@@ -248,6 +265,7 @@ static uint32_t hc32_get_period(const struct pwm_hc32_config *cfg,
 
 	return period;
 }
+#endif /* CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH */
 
 static int pwm_hc32_configure_capture(const struct device *dev,
 				      uint32_t channel, pwm_flags_t flags,
@@ -279,13 +297,8 @@ static int pwm_hc32_configure_capture(const struct device *dev,
 	cpt->continuous = (flags & PWM_CAPTURE_MODE_CONTINUOUS) ? true : false;
 	cpt->channel = channel;
 
-	if (flags & PWM_POLARITY_MASK) {
-		TMRA_HWCaptureCondCmd(cfg->timera, channel - 1, TMRA_CAPT_COND_PWM_FALLING,
-				      ENABLE);
-	} else {
-		TMRA_HWCaptureCondCmd(cfg->timera, channel - 1, TMRA_CAPT_COND_PWM_RISING,
-				      ENABLE);
-	}
+	TMRA_HWCaptureCondCmd(cfg->timera, channel - 1, TMRA_CAPT_COND_PWM_RISING,
+			      ENABLE);
 	TMRA_SetPeriodValue(cfg->timera, CAPTURE_PERIOD);
 	TMRA_SetFunc(cfg->timera, channel - 1, TMRA_FUNC_CAPT);
 	return 0;
@@ -316,15 +329,16 @@ static int pwm_hc32_enable_capture(const struct device *dev,
 	}
 
 	if (!cpt->capture_period) {
-		LOG_ERR("Not set period capture flag");
+		LOG_ERR("Only support period capture");
 		return -EINVAL;
 	}
-
-	for (uint8_t i = 1; i < channel; i++) {
-		u32IntType <<= 1;
-	}
-	TMRA_IntCmd(cfg->timera, u32IntType, ENABLE);
-
+#ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+	/* keep original BCSTRL and set to SAWTOOTH, dir up */
+	cpt->bcstrl_value = cfg->timera->BCSTRL;
+	TMRA_SetCountValue(cfg->timera, 0U);
+	TMRA_SetCountDir(cfg->timera, TMRA_DIR_UP);
+	TMRA_SetCountMode(cfg->timera, TMRA_MD_SAWTOOTH);
+#else
 	if (!cfg->direction) {
 		/* count direction is up */
 		TMRA_SetCountValue(cfg->timera, 0U);
@@ -333,7 +347,6 @@ static int pwm_hc32_enable_capture(const struct device *dev,
 			TMRA_SetCountValue(cfg->timera, CAPTURE_PERIOD);
 		}
 	}
-	TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
 
 	if (HC32_TMR_CNT_MD_TRIANGLE == cfg->countermode) {
 		TMRA_IntCmd(cfg->timera, TMRA_INT_UDF | TMRA_INT_OVF, ENABLE);
@@ -344,9 +357,14 @@ static int pwm_hc32_enable_capture(const struct device *dev,
 			TMRA_IntCmd(cfg->timera, TMRA_INT_OVF, ENABLE);
 		}
 	}
+#endif
 	data->capture.state = CAPTURE_STATE_WAIT_FOR_PERIOD_START;
 	data->capture.overflows = 0U;
 	data->capture.underflows = 0U;
+
+	u32IntType <<= (channel - 1);
+	TMRA_IntCmd(cfg->timera, u32IntType, ENABLE);
+	TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
 	TMRA_Start(cfg->timera);
 	return 0;
 }
@@ -355,6 +373,10 @@ static int pwm_hc32_disable_capture(const struct device *dev,
 				    uint32_t channel)
 {
 	const struct pwm_hc32_config *cfg = dev->config;
+#ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+	struct pwm_hc32_data *data = dev->data;
+	struct pwm_hc32_capture_data *cpt = &data->capture;
+#endif
 	uint32_t u32IntType = TMRA_INT_CMP_CH1;
 
 	if (channel < 1u || channel > TIMER_MAX_CH) {
@@ -362,16 +384,17 @@ static int pwm_hc32_disable_capture(const struct device *dev,
 		return -EINVAL;
 	}
 
-	TMRA_HWCaptureCondCmd(cfg->timera, channel - 1,
-			      TMRA_CAPT_COND_PWM_RISING | TMRA_CAPT_COND_PWM_FALLING, DISABLE);
+	u32IntType <<= (channel - 1);
 
-	for (uint8_t i = 1; i < channel; i++) {
-		u32IntType <<= 1;
-	}
-	TMRA_IntCmd(cfg->timera, u32IntType, DISABLE);
-	TMRA_IntCmd(cfg->timera, TMRA_INT_OVF | TMRA_INT_UDF, DISABLE);
-	TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
+	TMRA_IntCmd(cfg->timera, u32IntType | TMRA_INT_OVF | TMRA_INT_UDF, DISABLE);
+#ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+	cfg->timera->BCSTRL = cpt->bcstrl_value;
+#endif
 	TMRA_Stop(cfg->timera);
+	TMRA_HWCaptureCondCmd(cfg->timera, channel - 1U,
+			      TMRA_CAPT_COND_PWM_RISING | TMRA_CAPT_COND_PWM_FALLING, DISABLE);
+	TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
+
 	return 0;
 }
 
@@ -380,9 +403,34 @@ static void pwm_hc32_isr(const struct device *dev)
 	const struct pwm_hc32_config *cfg = dev->config;
 	struct pwm_hc32_data *data = dev->data;
 	struct pwm_hc32_capture_data *cpt = &data->capture;
-	static uint32_t period_overnum, period_undernum, first_capture, last_capture;
-	int status = 0;
+	uint32_t u32IntType = TMRA_INT_CMP_CH1;
+	int status = 0u;
 
+#ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
+	static uint32_t capture_data[6u], i = 0;
+	if (cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_START) {
+		i = 0u;
+		cpt->state = CAPTURE_STATE_IDLE;
+	}
+	CLR_REG16_BIT(cfg->timera->STFLR, 1 << (cpt->channel - 1));
+	capture_data[i++] = TMRA_GetCompareValue(cfg->timera, cpt->channel - 1);
+
+	if (i == 6u) {
+		u32IntType <<= (cpt->channel - 1);
+		TMRA_IntCmd(cfg->timera, u32IntType, DISABLE);
+		i = 0u;
+		cpt->period = hc32_get_period(capture_data, 6u);
+		cpt->callback(dev, cpt->channel, cpt->period, 0u, status, cpt->user_data);
+		if (!cpt->continuous) {
+			pwm_hc32_disable_capture(dev, cpt->channel);
+		} else {
+			TMRA_IntCmd(cfg->timera, u32IntType, ENABLE);
+			TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
+		}
+	}
+
+#else
+	static uint32_t period_overnum, period_undernum, first_capture, last_capture;
 	if (SET == TMRA_GetStatus(cfg->timera, TMRA_FLAG_OVF)) {
 		cpt->overflows++;
 		TMRA_ClearStatus(cfg->timera, TMRA_FLAG_OVF);
@@ -430,13 +478,14 @@ static void pwm_hc32_isr(const struct device *dev)
 			pwm_hc32_disable_capture(dev, cpt->channel);
 			cpt->state = CAPTURE_STATE_IDLE;
 		} else {
-			cpt->overflows = 0U;
-			cpt->underflows = 0U;
 			cpt->state = CAPTURE_STATE_WAIT_FOR_PERIOD_START;
 		}
-
 		cpt->callback(dev, cpt->channel, cpt->period, 0u, status, cpt->user_data);
+		cpt->overflows = 0U;
+		cpt->underflows = 0U;
+		TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
 	}
+#endif
 }
 #endif /* CONFIG_PWM_CAPTURE */
 

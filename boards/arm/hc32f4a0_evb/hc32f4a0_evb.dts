@@ -143,3 +143,14 @@
 	pinctrl-0 = <&i2c4_default>;
 	pinctrl-names = "default";
 };
+
+&timera9 {
+
+	qdec {
+		pinctrl-0 = <&tmra9_qdec_default>;
+		pinctrl-names = "default";
+		hw-count-conditions = <(TMR_UP_COND_A_H_B_R | TMR_UP_COND_B_H_A_F | 
+								TMR_DOWN_COND_A_H_B_F | TMR_DOWN_COND_B_H_A_R)>;
+		counts-per-revolution = <2000>;
+	};
+};

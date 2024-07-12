@@ -74,12 +74,12 @@
 		pinmux = <HC32_PINMUX('A', 3, ANALOG, 0, 0)>; /* ADC12_IN3 */
 	};
 
-	tmra5_qdec_default: tmra5_qdec_default {
+	tmra9_qdec_default: tmra9_qdec_default {
 		postionA {
-			pinmux = <HC32_PINMUX('A', 2, FUNC, 5, 0)>;
+			pinmux = <HC32_PINMUX('G', 4, FUNC, 4, 0)>;
 		};
 		postionB {
-			pinmux = <HC32_PINMUX('A', 3, FUNC, 5, 0)>;
+			pinmux = <HC32_PINMUX('G', 5, FUNC, 4, 0)>;
 		};
 	};
 };

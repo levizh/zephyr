@@ -140,32 +140,38 @@ static int qdec_hc32_attr_get(const struct device *dev, enum sensor_channel ch,
 	return 0;
 }
 
-static uint32_t qdec_calculate(const struct device *dev, uint16_t last)
+static uint32_t qdec_calculate(const struct device *dev)
 {
 	const struct qdec_hc32_dev_cfg *cfg = \
 		(const struct qdec_hc32_dev_cfg *)dev->config;
 	CM_TMRA_TypeDef *tmr = cfg->timer;
-	uint32_t current, cycle_cnt = 0;
+	uint32_t last, current, cycle_cnt = 0;
 	uint32_t tick = sys_clock_cycle_get_32();
 
-
+	last = TMRA_GetCountValue(tmr);
+	TMRA_ClearStatus(tmr, (TMRA_FLAG_OVF | TMRA_FLAG_UDF));
+	
+	k_sleep(Z_TIMEOUT_TICKS(1));
 	do {
-		k_sleep(Z_TIMEOUT_TICKS(1));
+		
 		current = TMRA_GetCountValue(tmr);
 		if (TMRA_DIR_UP == TMRA_GetCountDir(tmr)) {
 			if (last < current) {
 				cycle_cnt += current - last;
-			} else {
+			} else if (SET == TMRA_GetStatus(tmr, (TMRA_FLAG_OVF | TMRA_FLAG_UDF))) {
+				TMRA_ClearStatus(tmr, (TMRA_FLAG_OVF | TMRA_FLAG_UDF));
 				cycle_cnt += TMRA_GetPeriodValue(tmr) + current - last;
 			}
 		} else {
 			if (last > current) {
 				cycle_cnt += last - current;
-			} else {
+			} else if (SET == TMRA_GetStatus(tmr, (TMRA_FLAG_OVF | TMRA_FLAG_UDF))) {
+				TMRA_ClearStatus(tmr, (TMRA_FLAG_OVF | TMRA_FLAG_UDF));
 				cycle_cnt += TMRA_GetPeriodValue(tmr) + last - current;
 			}
 		}
 		last = current;
+		k_sleep(Z_TIMEOUT_TICKS(1));
 	} while ((sys_clock_cycle_get_32() - tick) < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	
 	
@@ -178,28 +184,28 @@ static int qdec_hc32_fetch(const struct device *dev, enum sensor_channel chan)
 	const struct qdec_hc32_dev_cfg *cfg = \
 		(const struct qdec_hc32_dev_cfg *)dev->config;
 	CM_TMRA_TypeDef *tmr = cfg->timer;
-	uint32_t last_cycle_cnt, cycle_cnt;
+	uint32_t cycle_cnt;
 
 	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_RPM) &&
 		(chan != SENSOR_CHAN_ROTATION)) {
 		return -ENOTSUP;
 	}
 
-	last_cycle_cnt = TMRA_GetCountValue(tmr);
+	cycle_cnt = TMRA_GetCountValue(tmr);
 
 	switch (chan)
 	{
 	case SENSOR_CHAN_RPM:
-		cycle_cnt = qdec_calculate(dev, last_cycle_cnt);
+		cycle_cnt = qdec_calculate(dev);
 		data->revolution = (cycle_cnt * 60) / \
 		(cfg->counts_per_revolution);
 		break;
 	
 	case SENSOR_CHAN_ROTATION:
 		if (TMRA_DIR_DOWN == TMRA_GetCountDir(tmr)) {
-			last_cycle_cnt = TMRA_GetPeriodValue(tmr) - last_cycle_cnt;
+			cycle_cnt = TMRA_GetPeriodValue(tmr) - cycle_cnt;
 		}
-		cycle_cnt = last_cycle_cnt % cfg->counts_per_revolution;
+		cycle_cnt = cycle_cnt % cfg->counts_per_revolution;
 		data->position = cycle_cnt * 360 / cfg->counts_per_revolution;
 		break;
 	
@@ -207,13 +213,12 @@ static int qdec_hc32_fetch(const struct device *dev, enum sensor_channel chan)
 		/* get rpm will blocks 1s until the calculate done.
 		** the angular rotation is one second form now.
 		*/
-		cycle_cnt = qdec_calculate(dev, last_cycle_cnt);
-		data->revolution = (cycle_cnt * 60) / \
-		(cfg->counts_per_revolution);
+		cycle_cnt = qdec_calculate(dev);
+		data->revolution = (cycle_cnt * 60) / (cfg->counts_per_revolution);
 		if (TMRA_DIR_DOWN == TMRA_GetCountDir(tmr)) {
-			last_cycle_cnt = TMRA_GetPeriodValue(tmr) - last_cycle_cnt;
+			cycle_cnt = TMRA_GetPeriodValue(tmr) - cycle_cnt;
 		}
-		cycle_cnt = last_cycle_cnt % cfg->counts_per_revolution;
+		cycle_cnt = cycle_cnt % cfg->counts_per_revolution;
 		data->position = cycle_cnt * 360 / cfg->counts_per_revolution;
 		break;
 	

@@ -595,6 +595,12 @@
 				max-ch = <6>;
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer62: timer@40018400 {
@@ -621,6 +627,12 @@
 				max-ch = <6>;
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer63: timer@40018800 {
@@ -646,6 +658,12 @@
 				compatible = "xhsc,hc32-timer6-counter";
 				max-ch = <6>;
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 

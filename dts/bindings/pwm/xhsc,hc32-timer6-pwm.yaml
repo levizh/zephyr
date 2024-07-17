@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: HC32 TIMERA PWM
+description: HC32 TIMER6 PWM
 
-compatible: "xhsc,hc32-timera-pwm"
+compatible: "xhsc,hc32-timer6-pwm"
 
 include: ["xhsc,hc32-timer-pwm.yaml"]

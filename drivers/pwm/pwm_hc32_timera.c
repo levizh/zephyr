@@ -34,9 +34,9 @@ LOG_MODULE_REGISTER(pwm_hc32_timera, CONFIG_PWM_LOG_LEVEL);
  * @brief Capture state when in 4-channel support mode
  */
 enum capture_state {
-	CAPTURE_STATE_IDLE = 0,
-	CAPTURE_STATE_WAIT_FOR_PERIOD_START = 1,
-	CAPTURE_STATE_WAIT_FOR_PERIOD_END = 2,
+	CAPTURE_STATE_IDLE = 0U,
+	CAPTURE_STATE_WAIT_FOR_PERIOD_START = 1U,
+	CAPTURE_STATE_WAIT_FOR_PERIOD_END = 2U,
 };
 
 struct pwm_hc32_capture_data {
@@ -80,9 +80,9 @@ struct pwm_hc32_config {
 
 /* Maximum number of timer channels */
 #if defined(HC32F460)
-#define TIMER_MAX_CH 8u
+#define TIMER_MAX_CH 8U
 #elif defined(HC32F4A0)
-#define TIMER_MAX_CH 4u
+#define TIMER_MAX_CH 4U
 #endif
 
 static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
@@ -93,24 +93,25 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 	static stc_tmra_pwm_init_t stcPwmInit;
 	int ret;
 
-	if (channel < 1u || channel > TIMER_MAX_CH) {
+	if (channel < 1U || channel > TIMER_MAX_CH) {
 		LOG_ERR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
 
 	/* (16-bit), Thus period_cycles cannot be greater than UINT16_MAX + 1. */
-	if (period_cycles > UINT16_MAX + 1) {
+	if (period_cycles > UINT16_MAX + 1U) {
 		return -ENOTSUP;
 	}
 
-	if (period_cycles == 0u) {
+	if (period_cycles == 0U) {
 		LOG_WRN("Set period_cycles = 0");
-		TMRA_PWM_OutputCmd(cfg->timera, channel, DISABLE);
+		TMRA_Stop(cfg->timera);
+		TMRA_PWM_OutputCmd(cfg->timera, channel - 1, DISABLE);
 		return 0;
 	}
 
 #if defined(HC32F460) || defined(HC32F4A0)
-	if (cfg->prescaler != 0) {
+	if (cfg->prescaler != 0U) {
 		LOG_ERR("Cannot set PWM start level for clock-division isn't 1U");
 		return -ENOTSUP;
 	}
@@ -148,7 +149,7 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 			pulse_cycles = period_cycles - pulse_cycles;
 		}
 		/* 0% or 100% do not to update pulse */
-		if ((pulse_cycles != 0) && (pulse_cycles != period_cycles)) {
+		if ((pulse_cycles != 0U) && (pulse_cycles != period_cycles)) {
 			stcPwmInit.u32CompareValue = pulse_cycles;
 		}
 
@@ -165,10 +166,10 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 				}
 			}
 		} else {
-			TMRA_SetCountValue(cfg->timera, 0u);
+			TMRA_SetCountValue(cfg->timera, 0U);
 		}
 		TMRA_ClearStatus(cfg->timera, TMRA_FLAG_UDF | TMRA_FLAG_OVF);
-		TMRA_SetPeriodValue(cfg->timera, (period_cycles - 1));
+		TMRA_SetPeriodValue(cfg->timera, (period_cycles - 1U));
 	} else {
 		/* TMRA_MD_TRIANGLE */
 		if ((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL) {
@@ -193,8 +194,8 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 			}
 		}
 		/* 0% or 100% do not to update pulse */
-		if ((pulse_cycles != 0) && (pulse_cycles != period_cycles)) {
-			stcPwmInit.u32CompareValue = (period_cycles - pulse_cycles) / 2;
+		if ((pulse_cycles != 0U) && (pulse_cycles != period_cycles)) {
+			stcPwmInit.u32CompareValue = (period_cycles - pulse_cycles) / 2U;
 		}
 		/* check if timera has start */
 		if (cfg->timera->BCSTRL & TMRA_BCSTRL_START) {
@@ -207,18 +208,18 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 			TMRA_ClearStatus(cfg->timera, TMRA_FLAG_UDF);
 
 		} else {
-			TMRA_SetCountValue(cfg->timera, 0u);
+			TMRA_SetCountValue(cfg->timera, 1U);
 		}
-		TMRA_SetPeriodValue(cfg->timera, period_cycles / 2);
+		TMRA_SetPeriodValue(cfg->timera, period_cycles / 2U);
 	}
 
-	ret = TMRA_PWM_Init(cfg->timera, channel - 1, &stcPwmInit);
+	ret = TMRA_PWM_Init(cfg->timera, channel - 1U, &stcPwmInit);
 	if (ret) {
-		LOG_ERR("Could not initialize timer channel for pwm");
+		LOG_ERR("Could not initialize timera channel for pwm");
 		return -EIO;
 	}
-	TMRA_SetFunc(cfg->timera, channel - 1, TMRA_FUNC_CMP);
-	TMRA_PWM_OutputCmd(cfg->timera, channel - 1, ENABLE);
+	TMRA_SetFunc(cfg->timera, channel - 1U, TMRA_FUNC_CMP);
+	TMRA_PWM_OutputCmd(cfg->timera, channel - 1U, ENABLE);
 	TMRA_Start(cfg->timera);
 
 	return 0;
@@ -228,14 +229,21 @@ static int pwm_hc32_set_cycles(const struct device *dev, uint32_t channel,
 #ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
 static uint32_t hc32_get_period(uint32_t *capt, uint32_t data_len)
 {
-	uint32_t diff = 0u;
-	/* break off both ends */
-	for (uint32_t i = 2u; i < data_len - 1u; i++) {
-		diff += capt[i] >= capt[i - 1] ? capt[i] - capt[i - 1] : CAPTURE_PERIOD -
-			capt[i - 1] +
-			capt[i];
+	uint32_t diff = 0U;
+	uint32_t min = 0xFFFFFFFFU;
+	uint32_t max = 0U;
+	if (data_len > 3U) {
+		/* break off both min and max */
+		for (uint32_t i = 1U; i < data_len; i++) {
+			capt[i - 1U] = capt[i] >= capt[i - 1U] ? capt[i] - capt[i - 1] : (CAPTURE_PERIOD
+				       -capt[i - 1U] +capt[i]);
+			diff += capt[i - 1U];
+			max = (max < capt[i - 1U]) ? capt[i - 1U] : max;
+			min = (min > capt[i - 1U]) ? capt[i - 1U] : min;
+		}
+		diff = (diff - min - max) / (data_len - 3U);
 	}
-	return diff / (data_len - 3u);
+	return diff;
 }
 
 #else
@@ -243,19 +251,19 @@ static uint32_t hc32_get_period(const struct pwm_hc32_config *cfg,
 				uint32_t first_capture, uint32_t second_capture, uint32_t over_num,
 				uint32_t under_num)
 {
-	uint32_t period = 0;
+	uint32_t period = 0U;
 	switch (cfg->countermode) {
 	case HC32_TMR_CNT_MD_SAWTOOTH:
 		if (cfg->direction) {
 			/* direction =1, down */
-			period = under_num * (CAPTURE_PERIOD + 1) + first_capture - second_capture;
+			period = under_num * (CAPTURE_PERIOD + 1U) + first_capture - second_capture;
 		} else {
-			period = over_num * (CAPTURE_PERIOD + 1) + second_capture - first_capture;
+			period = over_num * (CAPTURE_PERIOD + 1U) + second_capture - first_capture;
 		}
 		break;
 
 	case HC32_TMR_CNT_MD_TRIANGLE:
-		if ((over_num == 0) && (under_num == 0)) {
+		if ((over_num == 0U) && (under_num == 0U)) {
 			return (first_capture + second_capture - CAPTURE_PERIOD);
 		}
 		period = first_capture + second_capture +
@@ -276,7 +284,7 @@ static int pwm_hc32_configure_capture(const struct device *dev,
 	struct pwm_hc32_data *data = dev->data;
 	struct pwm_hc32_capture_data *cpt = &data->capture;
 
-	if (channel < 1u || channel > TIMER_MAX_CH) {
+	if (channel < 1U || channel > TIMER_MAX_CH) {
 		LOG_ERR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
@@ -312,7 +320,7 @@ static int pwm_hc32_enable_capture(const struct device *dev,
 	struct pwm_hc32_capture_data *cpt = &data->capture;
 	uint32_t u32IntType = TMRA_INT_CMP_CH1;
 
-	if (channel < 1u || channel > TIMER_MAX_CH) {
+	if (channel < 1U || channel > TIMER_MAX_CH) {
 		LOG_ERR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
@@ -384,7 +392,7 @@ static int pwm_hc32_disable_capture(const struct device *dev,
 		return -EINVAL;
 	}
 
-	u32IntType <<= (channel - 1);
+	u32IntType <<= (channel - 1U);
 
 	TMRA_IntCmd(cfg->timera, u32IntType | TMRA_INT_OVF | TMRA_INT_UDF, DISABLE);
 #ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
@@ -407,21 +415,21 @@ static void pwm_hc32_isr(const struct device *dev)
 
 #ifdef CONFIG_HC32_TIMERA_CAPTURE_FREQ_HIGH
 	uint32_t u32IntType = TMRA_INT_CMP_CH1;
-	static uint32_t capture_data[6u], i = 0;
+	static uint32_t capture_data[6U], i = 0U;
 
 	if (cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_START) {
-		i = 0u;
+		i = 0U;
 		cpt->state = CAPTURE_STATE_IDLE;
 	}
 	CLR_REG16_BIT(cfg->timera->STFLR, 1 << (cpt->channel - 1));
 	capture_data[i++] = TMRA_GetCompareValue(cfg->timera, cpt->channel - 1);
 
-	if (i == 6u) {
+	if (i == 6U) {
 		u32IntType <<= (cpt->channel - 1);
 		TMRA_IntCmd(cfg->timera, u32IntType, DISABLE);
-		i = 0u;
-		cpt->period = hc32_get_period(capture_data, 6u);
-		cpt->callback(dev, cpt->channel, cpt->period, 0u, status, cpt->user_data);
+		i = 0U;
+		cpt->period = hc32_get_period(capture_data, 6U);
+		cpt->callback(dev, cpt->channel, cpt->period, 0U, status, cpt->user_data);
 		if (!cpt->continuous) {
 			pwm_hc32_disable_capture(dev, cpt->channel);
 		} else {
@@ -458,17 +466,17 @@ static void pwm_hc32_isr(const struct device *dev)
 		} else if (cpt->state == CAPTURE_STATE_WAIT_FOR_PERIOD_END) {
 			period_overnum = cpt->overflows - period_overnum;
 			period_undernum = cpt->underflows - period_undernum;
-			last_capture = TMRA_GetCompareValue(cfg->timera, cpt->channel - 1);
+			last_capture = TMRA_GetCompareValue(cfg->timera, cpt->channel - 1U);
 			cpt->state = CAPTURE_STATE_IDLE;
 			if (HC32_TMR_CNT_MD_TRIANGLE == cfg->countermode) {
-				if ((cfg->timera->BCSTRL & TMRA_BCSTRL_DIR) == 0u) {
+				if ((cfg->timera->BCSTRL & TMRA_BCSTRL_DIR) == 0U) {
 					/* underflows after last capture, so laster capture vaule need update */
 					last_capture = CAPTURE_PERIOD - last_capture;
 				}
 			}
 		}
 		/* clear flag */
-		CLR_REG16_BIT(cfg->timera->STFLR, 1 << (cpt->channel - 1));
+		CLR_REG16_BIT(cfg->timera->STFLR, 1U << (cpt->channel - 1U));
 	}
 
 	if (CAPTURE_STATE_IDLE == cpt->state) {
@@ -481,7 +489,7 @@ static void pwm_hc32_isr(const struct device *dev)
 		} else {
 			cpt->state = CAPTURE_STATE_WAIT_FOR_PERIOD_START;
 		}
-		cpt->callback(dev, cpt->channel, cpt->period, 0u, status, cpt->user_data);
+		cpt->callback(dev, cpt->channel, cpt->period, 0U, status, cpt->user_data);
 		cpt->overflows = 0U;
 		cpt->underflows = 0U;
 		TMRA_ClearStatus(cfg->timera, TMRA_FLAG_ALL);
@@ -498,7 +506,7 @@ static int pwm_hc32_get_cycles_per_sec(const struct device *dev,
 	uint32_t bus_clk = data->tim_clk;
 
 	for (uint8_t i = 0U; i < cfg->prescaler; i++) {
-		bus_clk >>= 1;
+		bus_clk >>= 1U;
 	}
 	*cycles = (uint64_t)bus_clk;
 
@@ -544,9 +552,10 @@ static int pwm_hc32_init(const struct device *dev)
 	stcTmraInit.sw_count.u8ClockDiv  = cfg->prescaler;
 	stcTmraInit.sw_count.u8CountMode = (cfg->countermode) ? TMRA_MD_TRIANGLE :
 					   TMRA_MD_SAWTOOTH;;
-#if (TMRA_MD == TMRA_MD_SAWTOOTH)
-	stcTmraInit.sw_count.u8CountDir  = cfg->direction ? TMRA_DIR_DOWN : TMRA_DIR_UP;
-#endif
+	if (!(cfg->countermode)) {
+		/* Only SAWTOOTH mode can set dir */
+		stcTmraInit.sw_count.u8CountDir  = cfg->direction ? TMRA_DIR_DOWN : TMRA_DIR_UP;
+	}
 	stcTmraInit.u32PeriodValue = 0xFFFFU;
 
 	ret = TMRA_Init(cfg->timera, &stcTmraInit);
@@ -564,7 +573,6 @@ static int pwm_hc32_init(const struct device *dev)
 #ifdef CONFIG_PWM_CAPTURE
 	cfg->irq_config_func(dev);
 #endif /* CONFIG_PWM_CAPTURE */
-	*((uint32_t *)0xe0042020) |= 0x08000000;
 	return 0;
 }
 

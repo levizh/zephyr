@@ -1140,10 +1140,10 @@ static int uart_hc32_registers_configure(const struct device *dev)
 	struct uart_config *uart_cfg = data->uart_cfg;
 	stc_usart_uart_init_t stcUartInit;
 
-	USART_FuncCmd(config->usart, USART_FUNC_ALL, DISABLE);
+	USART_FuncCmd(config->usart, HC32_UART_FUNC, DISABLE);
 
 	(void)USART_UART_StructInit(&stcUartInit);
-    stcUartInit.u32ClockDiv = USART_CLK_DIV16;
+	stcUartInit.u32ClockDiv = USART_CLK_DIV16;
 	stcUartInit.u32OverSampleBit = USART_OVER_SAMPLE_8BIT;
 	stcUartInit.u32Baudrate = uart_cfg->baudrate;
 	stcUartInit.u32StopBit = uart_hc32_cfg2ll_stopbits(uart_cfg->stop_bits);
@@ -1369,18 +1369,18 @@ static int uart_hc32_init(const struct device *dev)
 
 #define HC32_UART_IRQ_HANDLER_PRE_FUNC(index)								\
 	COND_CODE_1(															\
-			DT_IS_INTR_EXIST(index),									\
+			DT_IS_INTR_EXIST(index),										\
 			(HC32_UART_IRQ_HANDLER_FUNC(index)),							\
 			(HC32_UART_IRQ_HANDLER_NULL(index)))
 
 #define HC32_UART_IRQ_HANDLER_PRE_DECL(index)								\
 	COND_CODE_1(															\
-			DT_IS_INTR_EXIST(index),									\
+			DT_IS_INTR_EXIST(index),										\
 			(HC32_UART_IRQ_HANDLER_DECL(index)),							\
 			())
 #define HC32_UART_IRQ_HANDLER_PRE_DEF(index)								\
 	COND_CODE_1(															\
-			DT_IS_INTR_EXIST(index),									\
+			DT_IS_INTR_EXIST(index),										\
 			(HC32_UART_IRQ_HANDLER_DEF(index)),								\
 			())
 #else /* CONFIG_UART_INTERRUPT_DRIVEN */

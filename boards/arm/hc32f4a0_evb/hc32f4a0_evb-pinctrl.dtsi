@@ -15,8 +15,8 @@
 
 	usart2_default: usart2_default {
 		group1 {
-			pinmux = <HC32_PINMUX('A', 9, FUNC, 20, 0)>,
-				<HC32_PINMUX('A', 10, FUNC, 20, 0)>;
+			pinmux = <HC32_PINMUX('D', 6, FUNC, 20, 0)>,
+				<HC32_PINMUX('D', 6, FUNC, 20, 0)>;
 		};
 	};
 

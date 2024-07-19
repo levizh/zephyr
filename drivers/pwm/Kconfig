@@ -103,4 +103,6 @@ source "drivers/pwm/Kconfig.nxp_s32_emios"
 
 source "drivers/pwm/Kconfig.hc32_timera"
 
+source "drivers/pwm/Kconfig.hc32_timer6"
+
 endif # PWM

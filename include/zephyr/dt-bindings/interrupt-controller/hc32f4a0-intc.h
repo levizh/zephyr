@@ -481,7 +481,7 @@
 #define HC32_TMR63_OVF_IRQ_NUM          INT028_IRQn
 #define HC32_TMR63_OVF_IRQ_PRIO         DDL_IRQ_PRIO_DEFAULT
 
-#define HC32_TMR63_UDF_IRQ_NUM          INT028_IRQn
+#define HC32_TMR63_UDF_IRQ_NUM          INT029_IRQn
 #define HC32_TMR63_UDF_IRQ_PRIO         DDL_IRQ_PRIO_DEFAULT
 
 /* Timer64 interrupt */

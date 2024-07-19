@@ -39,4 +39,17 @@
 #define HC32_TMR_CNT_DIR_UP             (0x0000U)
 #define HC32_TMR_CNT_DIR_DOWN           (0x0001U)
 
+/* Timer6 capture channel define */
+#define CHANNEL_CAPTURE_TMR6_PWMA       (0x01U)
+#define CHANNEL_CAPTURE_TMR6_PWMB       (0x02U)
+#define CHANNEL_CAPTURE_TMR6_TRIGA      (0x03U)
+#define CHANNEL_CAPTURE_TMR6_TRIGB      (0x04U)
+#define CHANNEL_CAPTURE_TMR6_TRIGC      (0x05U)
+#define CHANNEL_CAPTURE_TMR6_TRIGD      (0x06U)
+#if defined(HC32F460)
+#define CHANNEL_CAPTURE_TMR6_MAX_CH     (0x05U)
+#elif defined(HC32F4A0)
+#define CHANNEL_CAPTURE_TMR6_MAX_CH     (0x07U)
+#endif
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_TIMER_HC32_TIMER_H_ */

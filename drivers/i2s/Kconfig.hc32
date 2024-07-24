@@ -1,0 +1,23 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_HC32
+	bool "HC32 MCU I2S controller driver"
+	select HC32_LL_I2S
+	select DMA
+	select DMA_HC32
+	help
+	  Enable I2S support on the HC32 family of processors.
+	  (Tested on the STM32F4 series)
+
+if I2S_HC32
+
+config I2S_HC32_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_HC32_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # I2S_HC32

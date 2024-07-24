@@ -14,3 +14,9 @@ zephyr_linker_sources(
   SORT_KEY ${CONFIG_HC32_FLASH_CONFIG_OFFSET}
   flash_config.ld
   )
+
+zephyr_linker_sources(
+	RAM_SECTIONS
+	SORT_KEY _noinit_user
+	user_noinit.ld
+  )

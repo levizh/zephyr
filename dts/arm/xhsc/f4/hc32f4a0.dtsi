@@ -1166,7 +1166,16 @@
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
-	};
+
+		i2s1: i2s@4001e000 {
+			compatible = "xhsc,hc32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4001E000 0x400>;
+			tx-fifo-level = <2>;
+			rx-fifo-level = <2>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG1 HC32_FCG1_PERIPH_I2S1>;
+		};
 };
 
 &nvic {

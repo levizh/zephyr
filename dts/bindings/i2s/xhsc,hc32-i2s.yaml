@@ -1,0 +1,76 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 I2S controller
+
+compatible: "xhsc,hc32-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  dmas:
+    type: phandle-array
+    required: true
+
+  dma-names:
+    type: string-array
+    required: true
+    description: |
+      Names for the provided states. The number of names needs to match the
+      number of states.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  tx-fifo-level:
+    type: int
+    default: 2
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    description: tx fifo level, total 4.
+                 when useful space gather than level, the SR.TXBA is set 1
+
+  rx-fifo-level:
+    type: int
+    default: 2
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    description: rx fifo level, total 4.
+                 when useful space less than level, the SR.RXBA is set 1
+
+  src-clk:
+    type: int
+    required: true
+    default: 0
+    enum:
+      - 0 
+      - 1
+    description: i2s source clock. 0-pll, 1-exclk
+
+  i2s-pll-clk:
+    type: int
+    enum:
+      - 0 #PCLK1
+      - 8 #PLLHQ
+      - 9 #PLLHR
+      - 10 #PLLAP
+      - 11 #PLLAQ
+      - 12 #PLLAR 
+
+
+  mck-enabled:
+    type: boolean

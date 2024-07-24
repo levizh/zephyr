@@ -283,8 +283,7 @@
 			interrupts = <HC32_UART1_RXERR_IRQ_NUM   HC32_UART1_RXERR_IRQ_PRIO   INT_SRC_USART1_EI>,
 						 <HC32_UART1_RX_IRQ_NUM      HC32_UART1_RX_IRQ_PRIO      INT_SRC_USART1_RI>,
 						 <HC32_UART1_TX_IRQ_NUM      HC32_UART1_TX_IRQ_PRIO      INT_SRC_USART1_TI>,
-						 <HC32_UART1_TX_CPLT_IRQ_NUM HC32_UART1_TX_CPLT_IRQ_PRIO INT_SRC_USART1_TCI>,
-						 <HC32_UART1_RXTO_IRQ_NUM    HC32_UART1_RXTO_IRQ_PRIO    INT_SRC_USART1_RTO>;
+						 <HC32_UART1_TX_CPLT_IRQ_NUM HC32_UART1_TX_CPLT_IRQ_PRIO INT_SRC_USART1_TCI>;
 			interrupt-names = "ei", "ri", "ti", "tci", "rto";
 			status = "disabled";
 		};
@@ -297,12 +296,34 @@
 			interrupts = <HC32_UART2_RXERR_IRQ_NUM   HC32_UART2_RXERR_IRQ_PRIO   INT_SRC_USART2_EI>,
 						 <HC32_UART2_RX_IRQ_NUM      HC32_UART2_RX_IRQ_PRIO      INT_SRC_USART2_RI>,
 						 <HC32_UART2_TX_IRQ_NUM      HC32_UART2_TX_IRQ_PRIO      INT_SRC_USART2_TI>,
-						 <HC32_UART2_TX_CPLT_IRQ_NUM HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>,
-						 <HC32_UART2_RXTO_IRQ_NUM    HC32_UART2_RXTO_IRQ_PRIO    INT_SRC_USART2_RTO>;
-			interrupt-names = "ei", "ri", "ti", "tci", "rto";
+						 <HC32_UART2_TX_CPLT_IRQ_NUM HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
 			status = "disabled";
 		};
-
+		usart3: serial@4001d400 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART3_RXERR_IRQ_NUM   HC32_UART3_RXERR_IRQ_PRIO   INT_SRC_USART3_EI>,
+						 <HC32_UART3_RX_IRQ_NUM      HC32_UART3_RX_IRQ_PRIO      INT_SRC_USART3_RI>,
+						 <HC32_UART3_TX_IRQ_NUM      HC32_UART3_TX_IRQ_PRIO      INT_SRC_USART3_TI>,
+						 <HC32_UART3_TX_CPLT_IRQ_NUM HC32_UART3_TX_CPLT_IRQ_PRIO INT_SRC_USART3_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+		usart4: serial@4001d800 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART4_RXERR_IRQ_NUM   HC32_UART4_RXERR_IRQ_PRIO   INT_SRC_USART4_EI>,
+						 <HC32_UART4_RX_IRQ_NUM      HC32_UART4_RX_IRQ_PRIO      INT_SRC_USART4_RI>,
+						 <HC32_UART4_TX_IRQ_NUM      HC32_UART4_TX_IRQ_PRIO      INT_SRC_USART4_TI>,
+						 <HC32_UART4_TX_CPLT_IRQ_NUM HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
 		wdt: watchdog@40049000 {
 			compatible = "xhsc,hc32-watchdog";
 			reg = <0x40049000 0x400>;
@@ -1056,7 +1077,7 @@
 				interrupt-names = "eei", "tei", "txi", "rxi";
 				status = "disabled";
 			};
-	
+
 			i2c2: i2c2@4004e400 {
 				compatible = "xhsc,hc32-i2c";
 				#address-cells = <1>;
@@ -1072,7 +1093,7 @@
 				interrupt-names = "eei", "tei", "txi", "rxi";
 				status = "disabled";
 			};
-	
+
 			i2c3: i2c3@4004e800 {
 				compatible = "xhsc,hc32-i2c";
 				#address-cells = <1>;
@@ -1105,7 +1126,7 @@
 				status = "disabled";
 			};
 		};
-		
+
 
 		adc1: adc@40040000 {
 			compatible = "xhsc,hc32-adc";

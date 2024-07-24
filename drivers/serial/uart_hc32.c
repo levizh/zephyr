@@ -670,6 +670,17 @@ static inline void async_timer_start(struct k_work_delayable *work,
 	}
 }
 
+static inline void async_timer_restart(struct k_work_delayable *work,
+					 int32_t timeout, void *fn)
+{
+	if (timeout != 0) {
+		(void)k_work_cancel_delayable(work);
+		k_work_init_delayable(work, fn);
+		LOG_DBG("async timer re-started for %d us", timeout);
+		k_work_reschedule(work, K_USEC(timeout));
+	}
+}
+
 static void uart_hc32_dma_rx_flush(const struct device *dev)
 {
 	struct dma_status stat;
@@ -828,6 +839,66 @@ static void uart_hc32_dma_replace_buffer(const struct device *dev)
 	async_evt_rx_buf_request(data);
 }
 
+static int uart_hc32_async_tx_abort(const struct device *dev)
+{
+	struct uart_hc32_data *data = dev->data;
+	size_t tx_buffer_length = data->dma_tx.buffer_length;
+	struct dma_status stat;
+
+	if (tx_buffer_length == 0) {
+		return -EFAULT;
+	}
+
+	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
+	if (!dma_get_status(data->dma_tx.dma_dev,
+				data->dma_tx.dma_channel, &stat)) {
+		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
+	}
+
+	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
+	async_evt_tx_abort(data);
+
+	return 0;
+}
+
+static void uart_hc32_async_rx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct hc32_dma_cfg *rx_stream = CONTAINER_OF(dwork,
+			struct hc32_dma_cfg, timeout_work);
+	struct uart_hc32_data *data = CONTAINER_OF(rx_stream,
+			struct uart_hc32_data, dma_rx);
+	const struct device *dev = data->uart_dev;
+
+	LOG_DBG("rx timeout");
+
+	if (data->dma_rx.counter == data->dma_rx.buffer_length) {
+		uart_hc32_async_rx_disable(dev);
+	} else {
+		uart_hc32_dma_rx_flush(dev);
+		async_timer_restart(&data->dma_rx.timeout_work, data->dma_rx.timeout,
+			uart_hc32_async_rx_timeout);
+	}
+}
+
+static void uart_hc32_async_tx_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct hc32_dma_cfg *tx_stream = CONTAINER_OF(dwork,
+			struct hc32_dma_cfg, timeout_work);
+	struct uart_hc32_data *data = CONTAINER_OF(tx_stream,
+			struct uart_hc32_data, dma_tx);
+	const struct device *dev = data->uart_dev;
+
+	uart_hc32_async_tx_abort(dev);
+
+	LOG_DBG("tx: async timeout");
+
+	async_timer_restart(&data->dma_tx.timeout_work, data->dma_tx.timeout,
+			uart_hc32_async_tx_timeout);
+}
+
 void uart_hc32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 				   uint32_t channel, int status)
 {
@@ -840,8 +911,6 @@ void uart_hc32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		return;
 	}
 
-	(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
-
 	/* true since this functions occurs when buffer if full */
 	data->dma_rx.counter = data->dma_rx.buffer_length;
 
@@ -850,8 +919,10 @@ void uart_hc32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 	if (data->rx_next_buffer != NULL) {
 		async_evt_rx_buf_release(data);
 		uart_hc32_dma_replace_buffer(uart_dev);
+		async_timer_restart(&data->dma_rx.timeout_work,
+			data->dma_tx.timeout, uart_hc32_async_rx_timeout);
 	} else {
-		k_work_reschedule(&data->dma_rx.timeout_work, K_TICKS(1));
+		(void)k_work_cancel_delayable(&data->dma_rx.timeout_work);
 	}
 }
 
@@ -966,64 +1037,11 @@ static int uart_hc32_async_rx_enable(const struct device *dev,
 	/* Request next buffer */
 	async_evt_rx_buf_request(data);
 
+	async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
+
 	LOG_DBG("async rx enabled");
 
 	return ret;
-}
-
-static int uart_hc32_async_tx_abort(const struct device *dev)
-{
-	struct uart_hc32_data *data = dev->data;
-	size_t tx_buffer_length = data->dma_tx.buffer_length;
-	struct dma_status stat;
-
-	if (tx_buffer_length == 0) {
-		return -EFAULT;
-	}
-
-	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
-	if (!dma_get_status(data->dma_tx.dma_dev,
-				data->dma_tx.dma_channel, &stat)) {
-		data->dma_tx.counter = tx_buffer_length - stat.pending_length;
-	}
-
-	dma_suspend(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-	dma_stop(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
-	async_evt_tx_abort(data);
-
-	return 0;
-}
-
-static void uart_hc32_async_rx_timeout(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct hc32_dma_cfg *rx_stream = CONTAINER_OF(dwork,
-			struct hc32_dma_cfg, timeout_work);
-	struct uart_hc32_data *data = CONTAINER_OF(rx_stream,
-			struct uart_hc32_data, dma_rx);
-	const struct device *dev = data->uart_dev;
-
-	LOG_DBG("rx timeout");
-
-	if (data->dma_rx.counter == data->dma_rx.buffer_length) {
-		uart_hc32_async_rx_disable(dev);
-	} else {
-		uart_hc32_dma_rx_flush(dev);
-	}
-}
-
-static void uart_hc32_async_tx_timeout(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct hc32_dma_cfg *tx_stream = CONTAINER_OF(dwork,
-			struct hc32_dma_cfg, timeout_work);
-	struct uart_hc32_data *data = CONTAINER_OF(tx_stream,
-			struct uart_hc32_data, dma_tx);
-	const struct device *dev = data->uart_dev;
-
-	uart_hc32_async_tx_abort(dev);
-
-	LOG_DBG("tx: async timeout");
 }
 
 static int uart_hc32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
@@ -1060,11 +1078,6 @@ static int uart_hc32_async_init(const struct device *dev)
 	uart_hc32_dma_rx_disable(dev);
 	uart_hc32_dma_tx_disable(dev);
 
-	k_work_init_delayable(&data->dma_rx.timeout_work,
-	uart_hc32_async_rx_timeout);
-	k_work_init_delayable(&data->dma_tx.timeout_work,
-	uart_hc32_async_tx_timeout);
-
 	/* Configure dma rx config */
 	memset(&data->dma_rx.blk_cfg, 0U, sizeof(data->dma_rx.blk_cfg));
 
@@ -1084,6 +1097,9 @@ static int uart_hc32_async_init(const struct device *dev)
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
+	k_work_init_delayable(&data->dma_rx.timeout_work,
+							uart_hc32_async_rx_timeout);
+
 	/* Configure dma tx config */
 	memset(&data->dma_tx.blk_cfg, 0U, sizeof(data->dma_tx.blk_cfg));
 
@@ -1094,6 +1110,8 @@ static int uart_hc32_async_init(const struct device *dev)
 
 	data->dma_tx.user_cfg.user_data = (void *)dev;
 	data->dma_tx.dma_cfg.user_data = (void *)&data->dma_tx.user_cfg;
+	k_work_init_delayable(&data->dma_tx.timeout_work,
+							uart_hc32_async_tx_timeout);
 
 	return 0;
 }
@@ -1297,8 +1315,7 @@ static int uart_hc32_init(const struct device *dev)
 	static void	usart_hc32_rx_error_isr_##index(const struct device *dev);	\
 	static void usart_hc32_rx_full_isr_##index(const struct device *dev);	\
 	static void usart_hc32_tx_empty_isr_##index(const struct device *dev);	\
-	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);\
-	static void	usart_hc32_rx_timeout_isr_##index(const struct device *dev);
+	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);
 
 #define HC32_UART_IRQ_HANDLER_DEF(index)									\
 	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
@@ -1342,23 +1359,12 @@ static int uart_hc32_init(const struct device *dev)
 		}																	\
 	}																		\
 																			\
-	static void usart_hc32_rx_timeout_isr_##index(const struct device *dev)	\
-		{																	\
-			struct uart_hc32_data *const data = dev->data;					\
-																			\
-			if (data->cb[UART_INT_IDX_RTO].user_cb) {						\
-				data->cb[UART_INT_IDX_RTO].user_cb(dev, 					\
-					data->cb[UART_INT_IDX_RTO].user_data);					\
-			}																\
-		}																	\
-																			\
 	static void usart_hc32_config_func_##index(const struct device *dev)	\
 	{																		\
 		USART_IRQ_ISR_CONFIG(usart_hc32_rx_error_isr, 0, index)				\
 		USART_IRQ_ISR_CONFIG(usart_hc32_rx_full_isr, 1, index)				\
 		USART_IRQ_ISR_CONFIG(usart_hc32_tx_empty_isr, 2, index)				\
 		USART_IRQ_ISR_CONFIG(usart_hc32_tx_complete_isr, 3, index)			\
-		USART_IRQ_ISR_CONFIG(usart_hc32_rx_timeout_isr, 4, index)			\
 	}
 
 #define HC32_UART_IRQ_HANDLER_FUNC(index)									\

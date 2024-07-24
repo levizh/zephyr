@@ -284,7 +284,7 @@
 						 <HC32_UART1_RX_IRQ_NUM      HC32_UART1_RX_IRQ_PRIO      INT_SRC_USART1_RI>,
 						 <HC32_UART1_TX_IRQ_NUM      HC32_UART1_TX_IRQ_PRIO      INT_SRC_USART1_TI>,
 						 <HC32_UART1_TX_CPLT_IRQ_NUM HC32_UART1_TX_CPLT_IRQ_PRIO INT_SRC_USART1_TCI>;
-			interrupt-names = "ei", "ri", "ti", "tci", "rto";
+			interrupt-names = "ei", "ri", "ti", "tci";
 			status = "disabled";
 		};
 
@@ -1144,12 +1144,25 @@
 		adc2: adc@40040400 {
 			compatible = "xhsc,hc32-adc";
 			reg = <0x40040400 0x400>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
-			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>;
 			interrupt-parent = <&intc>;
 			interrupt-names = "eoca", "eocb";
 			interrupts = <HC32_ADC2_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCA>,
 						 <HC32_ADC2_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCB>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc3: adc@40040800 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC3>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC3>;
+			interrupt-parent = <&intc>;
+			interrupt-names = "eoca", "eocb";
+			interrupts = <HC32_ADC3_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC3_EOCA>,
+						 <HC32_ADC3_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC3_EOCB>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};

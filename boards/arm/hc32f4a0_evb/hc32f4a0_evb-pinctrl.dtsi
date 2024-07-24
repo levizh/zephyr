@@ -79,13 +79,19 @@
 	};
 
 	adc1_ch0_default: adc1_ch0_default {
-			pinmux = <HC32_PINMUX('A', 0, ANALOG, 0, 0)>; /* ADC12_IN0 */
+			pinmux = <HC32_PINMUX('A', 0, ANALOG, 0, 0)>; /* ADC123_IN0 */
 	};
+
 	adc1_ch1_default: adc1_ch1_default {
-		pinmux = <HC32_PINMUX('A', 1, ANALOG, 0, 0)>; /* ADC12_IN1 */
+		pinmux = <HC32_PINMUX('A', 1, ANALOG, 0, 0)>; /* ADC123_IN1 */
 	};
+
 	adc1_ch3_default: adc1_ch3_default {
-		pinmux = <HC32_PINMUX('A', 3, ANALOG, 0, 0)>; /* ADC12_IN3 */
+		pinmux = <HC32_PINMUX('A', 3, ANALOG, 0, 0)>; /* ADC123_IN3 */
+	};
+
+	adc1_ch8_default: adc1_ch8_default {
+		pinmux = <HC32_PINMUX('B', 0, ANALOG, 0, 0)>; /* ADC12_IN8 */
 	};
 
 	tmra9_qdec_default: tmra9_qdec_default {

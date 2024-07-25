@@ -1,15 +1,16 @@
 / {
 	zephyr,user {
 		io-channels =
-		//<&adc1 0>,
-		<&adc1 1>,
-		//<&adc1 2>,
-		<&adc1 3>,
-		//<&adc1 4>,
-		//<&adc1 5>,
-		//<&adc1 6>,
-		//<&adc1 7>,
-		<&adc1 8>;
+		<&adc1 0>
+		,<&adc1 1>
+		//,<&adc1 2>
+		//,<&adc1 3>
+		//,<&adc1 4>
+		//,<&adc1 5>
+		//,<&adc1 6>
+		//,<&adc1 7>
+		//<&adc1 8>
+		;
 	};
 };
 
@@ -74,8 +75,9 @@
 	};
 };
 
-&dma1 {
+test_dma: &dma1 {
 	status = "okay";
+	dma-buf-addr-alignment = <2>;
 };
 
 &adc1 {
@@ -89,24 +91,26 @@
 
 	status = "okay";
 	sample-time =
-		//<64>, 	/* sample time for ch0 */
-		<80>, 	/* sample time for ch1 */
-		//<64>, 	/* sample time for ch2 */
-		<100>, 	/* sample time for ch3 */
-		//<64>, 	/* sample time for ch4 */
-		//<64>, 	/* sample time for ch5 */
-		//<64>, 	/* sample time for ch6 */
-		//<64>, 	/* sample time for ch7 */
-		<120>; 	/* sample time for ch8 */
+		<70> 	/* sample time for ch0 */
+		,<80> 	/* sample time for ch1 */
+		//,<90> 	/* sample time for ch2 */
+		//,<100> 	/* sample time for ch3 */
+		//,<110> 	/* sample time for ch4 */
+		//,<64> 	/* sample time for ch5 */
+		//,<64> 	/* sample time for ch6 */
+		//,<64> 	/* sample time for ch7 */
+		//,<120> 	/* sample time for ch8 */
+		;
 	pinctrl-0 =
-		//<&adc1_ch0_default>,
-		<&adc1_ch1_default>,
-		//<&adc1_ch2_default>,
-		<&adc1_ch3_default>,
-		//<&adc1_ch4_default>,
-		//<&adc1_ch5_default>,
-		//<&adc1_ch7_default>,
-		<&adc1_ch8_default>;
+		<&adc1_ch0_default>
+		,<&adc1_ch1_default>
+		//,<&adc1_ch2_default>
+		//,<&adc1_ch3_default>
+		//,<&adc1_ch4_default>
+		//,<&adc1_ch5_default>
+		//,<&adc1_ch7_default>
+		//<&adc1_ch8_default>
+		;
 	pinctrl-names = "default";
 
 	dmas =  <&dma1 2 EVT_SRC_ADC1_EOCA (HC32_DMA_PERIPH_TO_MEMORY | \

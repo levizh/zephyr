@@ -40,8 +40,8 @@ const struct adc_dt_spec channels[] = {
 };
 #define CHANNEL_TABLE_SIZE (ARRAY_SIZE(channels))
 #else
-#define CHANNEL_TABLE_SIZE	(17U)
-#endif
+#define CHANNEL_TABLE_SIZE	(ADC_MAX_CHANNEL)
+#endif /* DT_NODE_HAS_PROP */
 
 #ifdef CONFIG_ADC_ASYNC
 struct adc_hc32_dma_cfg {
@@ -71,6 +71,7 @@ struct adc_hc32_data {
 	uint16_t *repeat_buffer;
 	uint8_t resolution;
 	uint8_t channel_table[CHANNEL_TABLE_SIZE];
+	const uint8_t *sample_time;
 	uint8_t channel_count;
 	uint8_t samples_count;
 	int8_t acq_time_index;
@@ -140,7 +141,7 @@ static int adc_hc32_dma_start(const struct device *dev,
 
 	dma_addr_dst = (uint32_t)data->buffer;
 	dma_addr_src = (uint32_t)(&ADCx->DR0) + data->channel_table[0] * 2;
-	dma_size = data->samples_count * sizeof(uint16_t);
+	dma_size = CHANNEL_TABLE_SIZE * sizeof(uint16_t);
 
 	ret = dma_reload(dev_dma, dma_ch, dma_addr_src, dma_addr_dst, dma_size);
 	if (ret != 0) {
@@ -332,6 +333,14 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
+	for (idx = 0; idx < data->channel_count; idx++) {
+		if (data->sample_time[idx] >= 0x0B) {
+			ADC_SetSampleTime(ADCx, data->channel_table[idx],
+				data->sample_time[idx]);
+		} else {
+			ADC_SetSampleTime(ADCx, data->channel_table[idx], 0x40U);
+		}
+	}
 	ADC_Init(ADCx, &stc_adc_init_struct);
 
 	adc_context_start_read(&data->ctx, sequence);
@@ -515,6 +524,10 @@ void adc_hc32_seqa_seqb_isr(const struct device *dev, uint8_t u8Flag)
 	static const struct hc32_modules_clock_sys adc_fcg_config_##index[]		\
 		= HC32_MODULES_CLOCKS(DT_DRV_INST(index));
 
+#define ADC_SAMPLE_TIME_DEF(index)											\
+	static const uint8_t sample_time_##index[] = 							\
+		DT_PROP(DT_DRV_INST(index), sample_time);
+
 #if defined(CONFIG_ADC_ASYNC)
 void adc_hc32_dma_read_cb(const struct device *dev_dma, void *user_data,
 				   uint32_t channel, int status)
@@ -574,6 +587,7 @@ void adc_hc32_dma_read_cb(const struct device *dev_dma, void *user_data,
 #define ADC_HC32_INIT(index)												\
 	ADC_HC32_IRQ_HANDLER_DECL(index)										\
 	ADC_HC32_CLOCK_DECL(index)												\
+	ADC_SAMPLE_TIME_DEF(index)												\
 	PINCTRL_DT_INST_DEFINE(index);											\
 	static const struct adc_hc32_config adc_hc32_cfg_##index = {			\
 		.base = (CM_ADC_TypeDef *)DT_INST_REG_ADDR(index),					\
@@ -582,6 +596,7 @@ void adc_hc32_dma_read_cb(const struct device *dev_dma, void *user_data,
 		ADC_HC32_IRQ_CFG_FUNC(index)										\
 	};																		\
 	static struct adc_hc32_data adc_hc32_data_##index = {					\
+		.sample_time = sample_time_##index,									\
 		ADC_CONTEXT_INIT_TIMER(adc_hc32_data_##index, ctx),					\
 		ADC_CONTEXT_INIT_LOCK(adc_hc32_data_##index, ctx),					\
 		ADC_CONTEXT_INIT_SYNC(adc_hc32_data_##index, ctx),					\

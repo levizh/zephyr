@@ -12,6 +12,11 @@ properties:
   clocks:
     required: true
 
+  sample-time:
+    type: array
+    description: Specify sample time with cycle number of adc clock.
+        The calculation of this parameter please refer to the ADC_SSTR of RM.
+
   vref-mv:
     type: int
     default: 3300

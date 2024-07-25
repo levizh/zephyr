@@ -61,10 +61,24 @@
 	adc1_ch1_default: adc1_ch1_default {
 		pinmux = <HC32_PINMUX('A', 1, ANALOG, 0, 0)>; /* ADC12_IN1 */
 	};
+	adc1_ch2_default: adc1_ch2_default {
+		pinmux = <HC32_PINMUX('A', 2, ANALOG, 0, 0)>; /* ADC12_IN2 */
+	};
 	adc1_ch3_default: adc1_ch3_default {
 		pinmux = <HC32_PINMUX('A', 3, ANALOG, 0, 0)>; /* ADC12_IN3 */
 	};
-
+	adc1_ch4_default: adc1_ch4_default {
+		pinmux = <HC32_PINMUX('A', 4, ANALOG, 0, 0)>; /* ADC12_IN4 */
+	};
+	adc1_ch5_default: adc1_ch5_default {
+		pinmux = <HC32_PINMUX('A', 5, ANALOG, 0, 0)>; /* ADC12_IN5 */
+	};
+	adc1_ch7_default: adc1_ch6_default {
+		pinmux = <HC32_PINMUX('A', 7, ANALOG, 0, 0)>; /* ADC12_IN7 */
+	};
+	adc1_ch8_default: adc1_ch8_default {
+		pinmux = <HC32_PINMUX('B', 0, ANALOG, 0, 0)>; /* ADC12_IN8 */
+	};
 	tmra5_qdec_default: tmra5_qdec_default {
 		postionA {
 			pinmux = <HC32_PINMUX('A', 2, FUNC, 5, 0)>;

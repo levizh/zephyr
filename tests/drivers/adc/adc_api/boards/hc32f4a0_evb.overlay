@@ -85,6 +85,7 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <0>;
 		zephyr,resolution = <12>;
+
 	};
 
 	status = "okay";

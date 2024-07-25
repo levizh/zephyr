@@ -731,8 +731,8 @@
 		adc2: adc@40040400 {
 			compatible = "xhsc,hc32-adc";
 			reg = <0x40040400 0x400>;
-			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
-			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>;
 			interrupt-parent = <&intc>;
 			interrupt-names = "eoca", "eocb";
 			interrupts = <HC32_ADC2_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCA>,

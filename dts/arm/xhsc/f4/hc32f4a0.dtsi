@@ -1176,6 +1176,7 @@
 			rx-fifo-level = <2>;
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG1 HC32_FCG1_PERIPH_I2S1>;
 		};
+	};
 };
 
 &nvic {

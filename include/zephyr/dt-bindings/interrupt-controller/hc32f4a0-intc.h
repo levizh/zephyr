@@ -74,22 +74,46 @@
 /* DMA1 err */
 #define HC32_DMA1_ERR_IRQ_NUM            INT042_IRQn
 #define HC32_DMA1_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch4 */
+#define HC32_DMA1_CH4_IRQ_NUM            INT043_IRQn
+#define HC32_DMA1_CH4_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch5 */
+#define HC32_DMA1_CH5_IRQ_NUM            INT008_IRQn
+#define HC32_DMA1_CH5_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch6 */
+#define HC32_DMA1_CH6_IRQ_NUM            INT007_IRQn
+#define HC32_DMA1_CH6_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch7 */
+#define HC32_DMA1_CH7_IRQ_NUM            INT006_IRQn
+#define HC32_DMA1_CH7_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 
 /* DMA2 ch0 */
-#define HC32_DMA2_CH0_IRQ_NUM            INT043_IRQn
+#define HC32_DMA2_CH0_IRQ_NUM            INT044_IRQn
 #define HC32_DMA2_CH0_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 ch1 */
-#define HC32_DMA2_CH1_IRQ_NUM            INT018_IRQn
+#define HC32_DMA2_CH1_IRQ_NUM            INT045_IRQn
 #define HC32_DMA2_CH1_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 ch2 */
-#define HC32_DMA2_CH2_IRQ_NUM            INT019_IRQn
+#define HC32_DMA2_CH2_IRQ_NUM            INT046_IRQn
 #define HC32_DMA2_CH2_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 ch3 */
-#define HC32_DMA2_CH3_IRQ_NUM            INT020_IRQn
+#define HC32_DMA2_CH3_IRQ_NUM            INT047_IRQn
 #define HC32_DMA2_CH3_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 /* DMA2 err */
-#define HC32_DMA2_ERR_IRQ_NUM            INT021_IRQn
+#define HC32_DMA2_ERR_IRQ_NUM            INT048_IRQn
 #define HC32_DMA2_ERR_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA2 ch4 */
+#define HC32_DMA2_CH4_IRQ_NUM            INT049_IRQn
+#define HC32_DMA2_CH4_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch5 */
+#define HC32_DMA2_CH5_IRQ_NUM            INT005_IRQn
+#define HC32_DMA2_CH5_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch6 */
+#define HC32_DMA2_CH6_IRQ_NUM            INT004_IRQn
+#define HC32_DMA2_CH6_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
+/* DMA1 ch7 */
+#define HC32_DMA2_CH7_IRQ_NUM            INT003_IRQn
+#define HC32_DMA2_CH7_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 
 /* USART */
 #define HC32_UART1_RXERR_IRQ_NUM         INT010_IRQn
@@ -208,10 +232,10 @@
 #define HC32_SPI6_TBE_IRQ_PRIO           DDL_IRQ_PRIO_DEFAULT
 
 /* RTC */
-#define HC32_RTC_ALARM_IRQ_NUM           INT044_IRQn
+#define HC32_RTC_ALARM_IRQ_NUM           INT050_IRQn
 #define HC32_RTC_ALARM_IRQ_PRIO          DDL_IRQ_PRIO_DEFAULT
 
-#define HC32_RTC_PRD_IRQ_NUM             INT045_IRQn
+#define HC32_RTC_PRD_IRQ_NUM             INT051_IRQn
 #define HC32_RTC_PRD_IRQ_PRIO            DDL_IRQ_PRIO_DEFAULT
 
 /* TimerA1*/

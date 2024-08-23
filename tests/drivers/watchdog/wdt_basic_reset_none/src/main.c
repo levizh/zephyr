@@ -29,7 +29,7 @@ static struct wdt_timeout_cfg m_cfg_wdt0;
 static volatile int wdt_interrupted_flag;
 static volatile int wdt_feed_flag;
 
-#ifndef HC32F460
+#if !defined(HC32F460) && !defined(HC32F4A0)
 static void wdt_callback(const struct device *dev, int channel_id)
 {
 	wdt_interrupted_flag += WDT_TEST_CB_TEST_VALUE;
@@ -52,7 +52,7 @@ static int test_wdt_callback_reset_none(void)
 	m_cfg_wdt0.window.min = 0U;
 	m_cfg_wdt0.window.max = WDT_MAX_WINDOW;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_NONE;
-#if defined(HC32F460)
+#if defined(HC32F460) || defined(HC32F4A0)
 	m_cfg_wdt0.callback = NULL;
 #else
 	m_cfg_wdt0.callback = wdt_callback;
@@ -83,7 +83,7 @@ static int test_wdt_callback_reset_none(void)
 		k_sleep(SLEEP_TIME);
 	}
 
-#if defined(HC32F460)
+#if defined(HC32F460) || defined(HC32F4A0)
 	k_timeout_t timeout = SLEEP_TIME;
 #else
 	k_timeout_t timeout = WDT_TIMEOUT;
@@ -96,7 +96,7 @@ static int test_wdt_callback_reset_none(void)
 		}
 	}
 
-#ifndef HC32F460
+#if !defined(HC32F460) && !defined(HC32F4A0)
 	zassert_equal(wdt_interrupted_flag, WDT_TEST_CB_TEST_VALUE,
 		      "wdt callback failed");
 

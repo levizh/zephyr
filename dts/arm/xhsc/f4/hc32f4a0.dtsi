@@ -337,6 +337,11 @@
 			reg = <0x40049000 0x400>;
 			status = "disabled";
 		};
+		swdt: watchdog@40049400 {
+			compatible = "xhsc,hc32-specialized-watchdog";
+			reg = <0x40049400 0x400>;
+			status = "disabled";
+		};
 		spi1: spi@4001c000 {
 			compatible = "xhsc,hc32-spi";
 			reg = <0x4001c000 0x400>;
@@ -481,7 +486,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -513,7 +518,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -545,7 +550,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -577,7 +582,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -609,7 +614,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -641,7 +646,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -673,7 +678,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -705,7 +710,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -737,7 +742,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -769,7 +774,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 
@@ -801,7 +806,7 @@
 
             counter {
 				compatible = "xhsc,hc32-timera-counter";
-				ch-nums = <8>;
+				ch-nums = <4>;
 				status = "disabled";
 			};
 

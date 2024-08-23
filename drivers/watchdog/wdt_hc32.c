@@ -57,7 +57,7 @@ static uint32_t wdt_hc32_get_timeout(const struct device *dev,
 {
 	uint32_t divVal  = BIT((clk_div) >> WDT_CR_CKS_POS);
 	float wdt_freq = (float)CLK_GetBusClockFreq(CLK_BUS_PCLK3) / divVal;
-	uint32_t periodVal;
+	uint32_t periodVal = 65536;
 
 	ARG_UNUSED(dev);
 	switch (period) {

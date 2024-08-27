@@ -26,8 +26,8 @@
 	};
 
 	flash-controller@40010400 {
-		compatible = "xhsc,hc32_flash";
-		reg = <0x40010400 0x01b0>;
+		compatible = "xhsc,hc32-flash-controller";
+		reg = <0x40010400 0x0400>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 

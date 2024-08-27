@@ -142,3 +142,22 @@
 		counts-per-revolution = <1000>;
 	};
 };
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "fixed-partitions";
+
+		/* Set 4Kb for storage using in the 256KB flash 0 */
+		storage_partition: partition@20000 {
+			label = "storage";
+			reg = <0x00020000 DT_SIZE_K(4)>;
+		};
+		/* reserved region */
+		reserved_partition: partition@7ffe0 {
+			label = "reserved";
+			reg = <0x0007ffe0 32>;
+		};
+	};
+};

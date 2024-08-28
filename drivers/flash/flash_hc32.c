@@ -1,19 +1,43 @@
 /*
- * Copyright (c) 2022 BrainCo Inc.
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT xhsc_hc32_flash_controller
 
-#include "flash_hc32.h"
-
+#include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(flash_hc32, CONFIG_FLASH_LOG_LEVEL);
+LOG_MODULE_REGISTER(xhsc_hc32_flash_controller, CONFIG_FLASH_LOG_LEVEL);
+
+#define HC32_SOC_NV_FLASH_NODE		DT_INST(0, soc_nv_flash)
+#define HC32_SOC_NV_FLASH_SIZE		DT_REG_SIZE(HC32_SOC_NV_FLASH_NODE)
+#define HC32_SOC_NV_FLASH_ADDR		DT_REG_ADDR(HC32_SOC_NV_FLASH_NODE)
+#define HC32_SOC_NV_FLASH_PRG_SIZE	\
+	DT_PROP(HC32_SOC_NV_FLASH_NODE, write_block_size)
+
+/* Reserved address in flash */
+#define HC32_SOC_NV_FLASH_RSVD_ADDR	\
+	DT_REG_ADDR_BY_IDX(DT_NODELABEL(reserved_partition), 0)
+#define HC32_SOC_NV_FLASH_RSVD_SIZE	\
+	DT_REG_SIZE_BY_IDX(DT_NODELABEL(reserved_partition), 1)
+
+#if (4 == HC32_SOC_NV_FLASH_PRG_SIZE)
+typedef uint32_t flash_prg_t;
+#elif (2 == HC32_SOC_NV_FLASH_PRG_SIZE)
+typedef uint16_t flash_prg_t;
+#elif (1 == HC32_SOC_NV_FLASH_PRG_SIZE)
+typedef uint8_t flash_prg_t;
+#else
+#error "Invalid write-unit-size value"
+#endif
+
+/* Helper for conditional compilation directives, KB cannot be used because it has type casting. */
+#define PRE_KB(x) ((x) << 10)
 
 struct flash_hc32_data {
 	struct k_sem mutex;

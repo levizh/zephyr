@@ -17,7 +17,7 @@
 	cs_release_time = <1>;
 	status = "okay";
 
-	w25q64jv: qspi-nor@0 {
+	w25q64jv: qspi-nor@98000000 {
 		compatible = "xhsc,hc32-qspi-nor";
 		reg = <0x98000000>;
 		qspi_max_frequency = <100000000>;

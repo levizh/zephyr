@@ -365,7 +365,7 @@
 			#size-cells = <0>;
 		};
 
-		qspi1: qspi@98000000 {
+		qspi1: qspi@9c000000 {
 			compatible = "xhsc,hc32-qspi";
 			reg = <0x9c000000 0x8000000>;
 			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG1 HC32_FCG1_PERIPH_QSPI>;

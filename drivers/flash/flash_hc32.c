@@ -134,6 +134,8 @@ void flash_hc32_pages_layout(const struct device *dev,
 static int flash_hc32_read(const struct device *dev, off_t offset,
 			   void *data, size_t len)
 {
+	ARG_UNUSED(dev);
+
 	if ((offset > HC32_SOC_NV_FLASH_SIZE) ||
 	    ((offset + len) > HC32_SOC_NV_FLASH_SIZE)) {
 		return -EINVAL;

@@ -160,4 +160,6 @@ source "drivers/flash/Kconfig.andes"
 
 source "drivers/flash/Kconfig.hc32"
 
+source "drivers/flash/Kconfig.hc32_qspi"
+
 endif # FLASH

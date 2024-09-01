@@ -52,6 +52,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_XMC4XXX soc_flash_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_HC32 flash_hc32.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_HC32_QSPI flash_hc32_qspi.c flash_hc32_qspi_nor.c)
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   dt_chosen(chosen_flash PROPERTY "zephyr,flash")

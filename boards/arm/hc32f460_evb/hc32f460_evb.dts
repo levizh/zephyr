@@ -50,6 +50,12 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 	};
+
+	qspi_memory: memory@98000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x98000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "QSPI";
+	};
 };
 &gpioa {
 	status = "okay";

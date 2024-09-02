@@ -1,0 +1,5 @@
+description: HC32 F4 flash controller
+
+compatible: "xhsc,hc32-flash-controller"
+
+include: flash-controller.yaml

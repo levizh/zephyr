@@ -14,6 +14,8 @@
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
+#elif defined(CONFIG_FLASH_HC32_QSPI)
+#define TEST_AREA_DEV_NODE	DT_INST(0, xhsc_hc32_qspi_nor)
 #elif defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 /* SoC embedded NVM */
 #define TEST_AREA	slot1_ns_partition

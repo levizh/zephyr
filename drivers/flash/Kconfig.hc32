@@ -1,0 +1,56 @@
+
+config SOC_FLASH_HC32
+	bool "HC32 flash driver"
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_PAGE_LAYOUT
+	select HC32_LL_EFM
+	default y
+	select FLASH_HAS_EX_OP if SOC_SERIES_HC32F4X
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enable flash driver for HC32 series
+
+if SOC_FLASH_HC32
+
+config FLASH_HC32_WRITE_PROTECT
+	bool "Extended operation for flash write protection control"
+	depends on SOC_SERIES_HC32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash write
+	  protection.
+
+config FLASH_HC32_WRITE_PROTECT_DISABLE_PREVENTION
+	bool "Prevent from disabling flash write protection"
+	depends on FLASH_HC32_WRITE_PROTECT
+	default n
+	help
+	  If enabled, all requests to disable flash write protection will be
+	  blocked.
+
+config FLASH_HC32_READOUT_PROTECTION
+	bool "Extended operation for flash readout protection control"
+	depends on SOC_SERIES_HC32F4X
+	default n
+	help
+	  Enables flash extended operation for enabling/disabling flash readout
+	  protection.
+
+config FLASH_HC32_READOUT_PROTECTION_DISABLE_ALLOW
+	bool "Allow disabling readout protection"
+	depends on FLASH_HC32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to disable readout
+	  protection. On HC32 devices it will trigger flash mass erase!
+
+config FLASH_HC32_READOUT_PROTECTION_PERMANENT_ALLOW
+	bool "Allow enabling readout protection permanently"
+	depends on FLASH_HC32_READOUT_PROTECTION
+	default n
+	help
+	  With this option enabled it will be possible to enable readout
+	  protection permanently.
+
+endif # SOC_FLASH_HC32

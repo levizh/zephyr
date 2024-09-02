@@ -26,8 +26,8 @@
 	};
 
 	flash-controller@40010400 {
-		compatible = "xhsc,hc32_flash";
-		reg = <0x40010400 0x01b0>;
+		compatible = "xhsc,hc32-flash-controller";
+		reg = <0x40010400 0x0400>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -362,6 +362,18 @@
 						 <HC32_SPI4_RBF_IRQ_NUM HC32_SPI4_RBF_IRQ_PRIO INT_SRC_SPI4_SPRI>,
 						 <HC32_SPI4_TBE_IRQ_NUM HC32_SPI4_TBE_IRQ_PRIO INT_SRC_SPI4_SPTI>;
 			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		qspi1: qspi@9c000000 {
+			compatible = "xhsc,hc32-qspi";
+			reg = <0x9c000000 0x8000000>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG1 HC32_FCG1_PERIPH_QSPI>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_QSPI_IRQ_NUM HC32_QSPI_IRQ_PRIO INT_SRC_QSPI_INTR>;
+			interrupt-names = "qspi_fault";
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

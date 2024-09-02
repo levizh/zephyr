@@ -1,0 +1,100 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Refer to the test example, located in
+    tests/drivers/flash/common/boards/hc32f460_evb.overlay
+
+compatible: "xhsc,hc32-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: |
+      Optional.
+
+  clock_divider:
+    type: int
+    default: 2
+    description: |
+      Divide HCLK for QSPI bus.
+      Calculation formula is qspi_clock = hclk / clock_divider.
+      The max divider is 64, and the min divider is 2.
+
+  dummy_cycles:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 3
+    description: |
+      Read dummy cycles.
+      0: 3 cycles
+      1: 4 cycles
+      2: 5 cycles
+      ...
+      15: 18 cycles
+
+  read_mode:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5 ,6 ,7]
+    default: 0
+    description: |
+      0: Standard read mode (no dummy cycles)
+      1: Fast read mode (dummy cycles between address and data)
+      2: Fast read dual output mode (data on 2 lines)
+      3: Fast read dual I/O mode (address and data on 2 lines)
+      4: Fast read quad output mode (data on 4 lines)
+      5: Fast read quad I/O mode (address and data on 4 lines)
+      6: Custom standard read mode
+      7: Custom fast read mode
+
+  addr_width:
+    type: int
+    enum: [0, 1, 2, 3, 7]
+    default: 0
+    description: |
+      0: memory bus  8 bit.
+      1: memory bus 16 bit.
+      2: memory bus 24 bit.
+      3: memory bus 32 bit, don't use 4-byte command.
+      7: memory bus 32 bit, command 4 byte.
+
+  cs_setup_time:
+    type: int
+    enum: [0, 1]
+    default: 0
+    description: |
+      0: CS output 0.5-QSCK ahead of the first rising edge of QSCK.
+      1: CS output 1.5-QSCK ahead of the first rising edge of QSCK.
+
+  cs_release_time:
+    type: int
+    enum: [0, 1]
+    default: 0
+    description: |
+      0: Release CS 0.5-QSCKs after the last rising edge of QSCK.
+      1: Release CS 1.5-QSCKs after the last rising edge of QSCK.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier.
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "qspi_tx".
+
+      For example
+         dma-names = "qspi_tx";
+

@@ -13,11 +13,18 @@
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-	ARG_UNUSED(buffer);
-	ARG_UNUSED(length);
+	uint8_t i, id_len;
+	stc_efm_unique_id_t stc_uid = {0};
 
+	EFM_GetUID(&stc_uid);
 
-	return 0;
+	id_len = (length < sizeof(stc_uid) / sizeof(uint8_t)) ? length :
+		(sizeof(stc_uid) / sizeof(uint8_t));
+	for (i = 0; i < id_len; i++) {
+		buffer[i] = *((uint8_t *)&stc_uid + i);
+	}
+
+	return id_len;
 }
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)

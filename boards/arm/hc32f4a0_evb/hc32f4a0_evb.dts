@@ -167,3 +167,17 @@
 	src-clk = <0>; /* PLL */
 	i2s-pll-clk = <0>; /* PCLK1 */
 };
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "fixed-partitions";
+
+		/* Set 4Kb for storage using in the 2048KB flash 0 */
+		storage_partition: partition@20000 {
+			label = "storage";
+			reg = <0x00020000 DT_SIZE_K(4)>;
+		};
+	};
+};

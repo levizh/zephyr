@@ -19,12 +19,16 @@ LOG_MODULE_REGISTER(xhsc_hc32_flash_controller, CONFIG_FLASH_LOG_LEVEL);
 #define HC32_SOC_NV_FLASH_ADDR		DT_REG_ADDR(HC32_SOC_NV_FLASH_NODE)
 #define HC32_SOC_NV_FLASH_PRG_SIZE	\
 	DT_PROP(HC32_SOC_NV_FLASH_NODE, write_block_size)
+#define HC32_SOC_NV_FLASH_ERASE_SIZE	\
+	DT_PROP(HC32_SOC_NV_FLASH_NODE, erase_block_size)
 
 /* Reserved address in flash */
+#if defined(HC32F460)
 #define HC32_SOC_NV_FLASH_RSVD_ADDR	\
 	DT_REG_ADDR_BY_IDX(DT_NODELABEL(reserved_partition), 0)
 #define HC32_SOC_NV_FLASH_RSVD_SIZE	\
 	DT_REG_SIZE_BY_IDX(DT_NODELABEL(reserved_partition), 1)
+#endif /* HC32F460 */
 
 #if (4 == HC32_SOC_NV_FLASH_PRG_SIZE)
 typedef uint32_t flash_prg_t;
@@ -53,8 +57,8 @@ static const struct flash_parameters flash_hc32_parameters = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout hc32_efm_layout[] = {
 	{
-	.pages_size = HC32_SOC_NV_FLASH_PRG_SIZE,
-	.pages_count = HC32_SOC_NV_FLASH_SIZE / HC32_SOC_NV_FLASH_PRG_SIZE
+	.pages_size = HC32_SOC_NV_FLASH_ERASE_SIZE,
+	.pages_count = HC32_SOC_NV_FLASH_SIZE / HC32_SOC_NV_FLASH_ERASE_SIZE
 	}
 };
 #endif
@@ -76,21 +80,42 @@ bool flash_hc32_valid_range(off_t offset, uint32_t len, bool write)
 	return true;
 }
 
+/* flag == true lock flash sector
+   flag == false unlock flash sector
+*/
+static void flash_lock(off_t offset, bool flag)
+{
+	if (flag == false) {
+		EFM_REG_Unlock();
+		EFM_FWMC_Cmd(ENABLE);
+#if defined(HC32F4A0)
+		EFM_SingleSectorOperateCmd(offset / HC32_SOC_NV_FLASH_ERASE_SIZE, ENABLE);
+#endif /* HC32F4A0 */
+	} else {
+#if defined(HC32F4A0)
+		EFM_SingleSectorOperateCmd(offset / HC32_SOC_NV_FLASH_ERASE_SIZE, DISABLE);
+#endif /* HC32F4A0 */
+		EFM_FWMC_Cmd(DISABLE);
+		EFM_REG_Lock();
+	}
+}
+
 int flash_hc32_write_range(off_t offset, const void *data, size_t len)
 {
 	int ret = -1;
 
+#if defined (HC32F460)
 	/* Program reserved area is invalid operation */
 	if ((offset >= HC32_SOC_NV_FLASH_RSVD_ADDR) ||
 		((offset + len) >= HC32_SOC_NV_FLASH_RSVD_ADDR)) {
 		return ret;
 	}
+#endif /* HC32F460 */
 
-	EFM_REG_Unlock();
-	EFM_FWMC_Cmd(ENABLE);
+	flash_lock(offset, false);
 	ret = EFM_SequenceProgram(offset, data, len);
-	EFM_FWMC_Cmd(DISABLE);
-	EFM_REG_Lock();
+	flash_lock(offset, true);
+
 	return ret;
 }
 
@@ -99,8 +124,7 @@ int flash_hc32_erase_block(off_t offset, size_t size)
 	size_t erased_size= 0;
 	int ret = 0;
 
-	EFM_REG_Unlock();
-	EFM_FWMC_Cmd(ENABLE);
+	flash_lock(offset, false);
 
 	while (erased_size < size) {
 		ret = EFM_SectorErase(offset);
@@ -109,12 +133,11 @@ int flash_hc32_erase_block(off_t offset, size_t size)
 			EFM_REG_Lock();
 			return ret;
 		}
-		erased_size += HC32_SOC_NV_FLASH_PRG_SIZE;
-		offset += HC32_SOC_NV_FLASH_PRG_SIZE;
+		erased_size += HC32_SOC_NV_FLASH_ERASE_SIZE;
+		offset += HC32_SOC_NV_FLASH_ERASE_SIZE;
 	}
 
-	EFM_FWMC_Cmd(DISABLE);
-	EFM_REG_Lock();
+	flash_lock(offset, true);
 
 	return ret;
 }

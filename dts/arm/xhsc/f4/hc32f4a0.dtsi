@@ -183,21 +183,21 @@
 				reg = <0x40053d40 0x40>;
 			};
 
-            gpiog: gpio@40053d80 {
+			gpiog: gpio@40053d80 {
 				compatible = "xhsc,hc32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40053d80 0x40>;
 			};
 
-            gpioh: gpio@40053dc0 {
+			gpioh: gpio@40053dc0 {
 				compatible = "xhsc,hc32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x40053dc0 0x40>;
 			};
 
-            gpioi: gpio@40053e00 {
+			gpioi: gpio@40053e00 {
 				compatible = "xhsc,hc32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -288,10 +288,10 @@
 			reg = <0x4001cc00 0x400>;
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART1>;
 			interrupt-parent = <&intc>;
-			interrupts = <HC32_UART1_RXERR_IRQ_NUM   HC32_UART1_RXERR_IRQ_PRIO   INT_SRC_USART1_EI>,
-						 <HC32_UART1_RX_IRQ_NUM      HC32_UART1_RX_IRQ_PRIO      INT_SRC_USART1_RI>,
-						 <HC32_UART1_TX_IRQ_NUM      HC32_UART1_TX_IRQ_PRIO      INT_SRC_USART1_TI>,
-						 <HC32_UART1_TX_CPLT_IRQ_NUM HC32_UART1_TX_CPLT_IRQ_PRIO INT_SRC_USART1_TCI>;
+			interrupts = <HC32_UART1_RXERR_IRQ_NUM		HC32_UART1_RXERR_IRQ_PRIO	INT_SRC_USART1_EI>,
+						 <HC32_UART1_RX_IRQ_NUM			HC32_UART1_RX_IRQ_PRIO		INT_SRC_USART1_RI>,
+						 <HC32_UART1_TX_IRQ_NUM			HC32_UART1_TX_IRQ_PRIO		INT_SRC_USART1_TI>,
+						 <HC32_UART1_TX_CPLT_IRQ_NUM	HC32_UART1_TX_CPLT_IRQ_PRIO	INT_SRC_USART1_TCI>;
 			interrupt-names = "ei", "ri", "ti", "tci";
 			status = "disabled";
 		};
@@ -301,34 +301,36 @@
 			reg = <0x4001d000 0x400>;
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART2>;
 			interrupt-parent = <&intc>;
-			interrupts = <HC32_UART2_RXERR_IRQ_NUM   HC32_UART2_RXERR_IRQ_PRIO   INT_SRC_USART2_EI>,
-						 <HC32_UART2_RX_IRQ_NUM      HC32_UART2_RX_IRQ_PRIO      INT_SRC_USART2_RI>,
-						 <HC32_UART2_TX_IRQ_NUM      HC32_UART2_TX_IRQ_PRIO      INT_SRC_USART2_TI>,
-						 <HC32_UART2_TX_CPLT_IRQ_NUM HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>;
+			interrupts = <HC32_UART2_RXERR_IRQ_NUM		HC32_UART2_RXERR_IRQ_PRIO	INT_SRC_USART2_EI>,
+						 <HC32_UART2_RX_IRQ_NUM			HC32_UART2_RX_IRQ_PRIO		INT_SRC_USART2_RI>,
+						 <HC32_UART2_TX_IRQ_NUM			HC32_UART2_TX_IRQ_PRIO		INT_SRC_USART2_TI>,
+						 <HC32_UART2_TX_CPLT_IRQ_NUM	HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>;
 			interrupt-names = "ei", "ri", "ti", "tci";
 			status = "disabled";
 		};
+
 		usart3: serial@4001d400 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x4001d400 0x400>;
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART3>;
 			interrupt-parent = <&intc>;
-			interrupts = <HC32_UART3_RXERR_IRQ_NUM   HC32_UART3_RXERR_IRQ_PRIO   INT_SRC_USART3_EI>,
-						 <HC32_UART3_RX_IRQ_NUM      HC32_UART3_RX_IRQ_PRIO      INT_SRC_USART3_RI>,
-						 <HC32_UART3_TX_IRQ_NUM      HC32_UART3_TX_IRQ_PRIO      INT_SRC_USART3_TI>,
-						 <HC32_UART3_TX_CPLT_IRQ_NUM HC32_UART3_TX_CPLT_IRQ_PRIO INT_SRC_USART3_TCI>;
+			interrupts = <HC32_UART3_RXERR_IRQ_NUM		HC32_UART3_RXERR_IRQ_PRIO	INT_SRC_USART3_EI>,
+						 <HC32_UART3_RX_IRQ_NUM			HC32_UART3_RX_IRQ_PRIO		INT_SRC_USART3_RI>,
+						 <HC32_UART3_TX_IRQ_NUM			HC32_UART3_TX_IRQ_PRIO		INT_SRC_USART3_TI>,
+						 <HC32_UART3_TX_CPLT_IRQ_NUM	HC32_UART3_TX_CPLT_IRQ_PRIO INT_SRC_USART3_TCI>;
 			interrupt-names = "ei", "ri", "ti", "tci";
 			status = "disabled";
 		};
+
 		usart4: serial@4001d800 {
 			compatible = "xhsc,hc32-uart";
 			reg = <0x4001d800 0x400>;
 			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART4>;
 			interrupt-parent = <&intc>;
-			interrupts = <HC32_UART4_RXERR_IRQ_NUM   HC32_UART4_RXERR_IRQ_PRIO   INT_SRC_USART4_EI>,
-						 <HC32_UART4_RX_IRQ_NUM      HC32_UART4_RX_IRQ_PRIO      INT_SRC_USART4_RI>,
-						 <HC32_UART4_TX_IRQ_NUM      HC32_UART4_TX_IRQ_PRIO      INT_SRC_USART4_TI>,
-						 <HC32_UART4_TX_CPLT_IRQ_NUM HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>;
+			interrupts = <HC32_UART4_RXERR_IRQ_NUM		HC32_UART4_RXERR_IRQ_PRIO	INT_SRC_USART4_EI>,
+						 <HC32_UART4_RX_IRQ_NUM			HC32_UART4_RX_IRQ_PRIO		INT_SRC_USART4_RI>,
+						 <HC32_UART4_TX_IRQ_NUM			HC32_UART4_TX_IRQ_PRIO		INT_SRC_USART4_TI>,
+						 <HC32_UART4_TX_CPLT_IRQ_NUM	HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>;
 			interrupt-names = "ei", "ri", "ti", "tci";
 			status = "disabled";
 		};
@@ -426,6 +428,18 @@
 			#size-cells = <0>;
 		};
 
+		qspi1: qspi@9c000000 {
+			compatible = "xhsc,hc32-qspi";
+			reg = <0x9c000000 0x8000000>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG1 HC32_FCG1_PERIPH_QSPI>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_QSPI_IRQ_NUM HC32_QSPI_IRQ_PRIO INT_SRC_QSPI_INTR>;
+			interrupt-names = "qspi_fault";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		rtc: rtc@4004c000 {
 			compatible = "xhsc,hc32-rtc";
 			reg = <0x4004c000 0x400>;
@@ -484,7 +498,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -516,7 +530,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -548,7 +562,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -580,7 +594,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -612,7 +626,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -644,7 +658,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -676,7 +690,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -708,7 +722,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -740,7 +754,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -772,7 +786,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";
@@ -804,7 +818,7 @@
 			count-direction = <HC32_TMR_CNT_DIR_UP>;
 			status = "disabled";
 
-            counter {
+			counter {
 				compatible = "xhsc,hc32-timera-counter";
 				ch-nums = <4>;
 				status = "disabled";

@@ -126,4 +126,15 @@
 			pinmux = <HC32_PINMUX('A', 5, FUNC, 17, 0)>;
 		};
 	};
+
+	qspi_default: qspi_default {
+		group0 {
+			pinmux = <HC32_PINMUX('C', 6, FUNC, 18, 0)>, /* qspi_clk */
+			<HC32_PINMUX('C', 7, FUNC, 18, 0)>, /* qspi_cs */
+			<HC32_PINMUX('B', 13, FUNC, 18, 0)>, /* qspi_io0 */
+			<HC32_PINMUX('B', 12, FUNC, 18, 0)>, /* qspi_io1 */
+			<HC32_PINMUX('B', 10, FUNC, 18, 0)>, /* qspi_io2 */
+			<HC32_PINMUX('B', 2, FUNC, 18, 0)>; /* qspi_io3 */
+		};
+	};
 };

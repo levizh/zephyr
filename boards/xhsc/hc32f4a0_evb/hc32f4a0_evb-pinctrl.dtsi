@@ -1,0 +1,140 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/hc32-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group0 {
+			pinmux = <HC32_PINMUX('H', 15, FUNC, 32, 0)>,
+				<HC32_PINMUX('H', 13, FUNC, 33, 0)>;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <HC32_PINMUX('D', 5, FUNC, 20, 0)>,
+				<HC32_PINMUX('D', 6, FUNC, 20, 0)>;
+		};
+	};
+
+	usart3_default: usart3_default {
+		group1 {
+			pinmux = <HC32_PINMUX('I', 1, FUNC, 36, 0)>,
+				<HC32_PINMUX('I', 2, FUNC, 37, 0)>;
+		};
+	};
+
+	usart4_default: usart4_default {
+		group1 {
+			pinmux = <HC32_PINMUX('I', 6, FUNC, 38, 0)>,
+				<HC32_PINMUX('I', 7, FUNC, 39, 0)>;
+		};
+	};
+
+	spi6_default: spi6_default {
+		group1 {
+			pinmux = <HC32_PINMUX('E', 3, FUNC, 46, 0)>, /*  SCK */
+				 <HC32_PINMUX('E', 4, FUNC, 47, 0)>, /* MOSI */
+				 <HC32_PINMUX('E', 5, FUNC, 48, 0)>; /* MISO */
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		i2c1_scl {
+			pinmux = <HC32_PINMUX('D', 3, FUNC, 49, 0)>;
+		};
+		i2c1_sda {
+			pinmux = <HC32_PINMUX('F', 10, FUNC, 48, 0)>;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		i2c2_scl {
+			pinmux = <HC32_PINMUX('D', 1, FUNC, 51, 0)>;
+		};
+		i2c2_sda {
+			pinmux = <HC32_PINMUX('D', 2, FUNC, 50, 0)>;
+		};
+	};
+
+	i2c3_default: i2c3_default {
+		i2c3_scl {
+			pinmux = <HC32_PINMUX('I', 5, FUNC, 53, 0)>;
+		};
+		i2c3_sda {
+			pinmux = <HC32_PINMUX('I', 6, FUNC, 52, 0)>;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		i2c4_scl {
+			pinmux = <HC32_PINMUX('G', 12, FUNC, 53, 0)>;
+		};
+		i2c4_sda {
+			pinmux = <HC32_PINMUX('G', 13, FUNC, 52, 0)>;
+		};
+	};
+
+	adc1_ch0_default: adc1_ch0_default {
+			pinmux = <HC32_PINMUX('A', 0, ANALOG, 0, 0)>; /* ADC123_IN0 */
+	};
+	adc1_ch1_default: adc1_ch1_default {
+		pinmux = <HC32_PINMUX('A', 1, ANALOG, 0, 0)>; /* ADC123_IN1 */
+	};
+	adc1_ch2_default: adc1_ch2_default {
+		pinmux = <HC32_PINMUX('A', 2, ANALOG, 0, 0)>; /* ADC123_IN2 */
+	};
+	adc1_ch3_default: adc1_ch3_default {
+		pinmux = <HC32_PINMUX('A', 3, ANALOG, 0, 0)>; /* ADC123_IN3 */
+	};
+	adc1_ch4_default: adc1_ch4_default {
+		pinmux = <HC32_PINMUX('A', 4, ANALOG, 0, 0)>; /* ADC123_IN4 */
+	};
+	adc1_ch8_default: adc1_ch8_default {
+		pinmux = <HC32_PINMUX('B', 0, ANALOG, 0, 0)>; /* ADC12_IN8 */
+	};
+
+	tmra9_qdec_default: tmra9_qdec_default {
+		postionA {
+			pinmux = <HC32_PINMUX('G', 4, FUNC, 4, 0)>;
+		};
+		postionB {
+			pinmux = <HC32_PINMUX('G', 5, FUNC, 4, 0)>;
+		};
+	};
+
+	i2s1_default: i2s1_default {
+		i2s1_ck {
+			pinmux = <HC32_PINMUX('F', 6, FUNC, 54, 0)>;
+		};
+		i2s1_ws {
+			pinmux = <HC32_PINMUX('F', 8, FUNC, 55, 0)>;
+		};
+		i2s1_sd {
+			pinmux = <HC32_PINMUX('F', 7, FUNC, 56, 0)>;
+		};
+		i2s1_sdin {
+			pinmux = <HC32_PINMUX('I', 2, FUNC, 17, 0)>;
+		};
+		i2s1_exck {
+			pinmux = <HC32_PINMUX('G', 7, FUNC, 17, 0)>;
+		};
+		i2s1_mck {
+			pinmux = <HC32_PINMUX('A', 5, FUNC, 17, 0)>;
+		};
+	};
+
+	qspi_default: qspi_default {
+		group0 {
+			pinmux = <HC32_PINMUX('C', 6, FUNC, 18, 0)>, /* qspi_clk */
+			<HC32_PINMUX('C', 7, FUNC, 18, 0)>, /* qspi_cs */
+			<HC32_PINMUX('B', 13, FUNC, 18, 0)>, /* qspi_io0 */
+			<HC32_PINMUX('B', 12, FUNC, 18, 0)>, /* qspi_io1 */
+			<HC32_PINMUX('B', 10, FUNC, 18, 0)>, /* qspi_io2 */
+			<HC32_PINMUX('B', 2, FUNC, 18, 0)>; /* qspi_io3 */
+		};
+	};
+};

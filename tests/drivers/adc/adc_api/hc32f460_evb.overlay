@@ -1,0 +1,79 @@
+/ {
+	zephyr,user {
+		io-channels =
+		<&adc1 0>
+		,<&adc1 1>
+		//,<&adc1 2>
+		//,<&adc1 3>
+		//,<&adc1 4>
+		//,<&adc1 5>
+		//,<&adc1 6>
+		//,<&adc1 7>
+		//<&adc1 8>
+		;
+	};
+};
+
+test_dma: &dma1 {
+	status = "okay";
+	dma-buf-addr-alignment = <2>;
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+	};
+
+	pinctrl-0 = <&adc1_ch0_default>, <&adc1_ch1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	sample-time =
+		<70> 	/* sample time for ch0 */
+		,<80> 	/* sample time for ch1 */
+		//,<90> 	/* sample time for ch2 */
+		//,<100> 	/* sample time for ch3 */
+		//,<110> 	/* sample time for ch4 */
+		//,<64> 	/* sample time for ch5 */
+		//,<64> 	/* sample time for ch6 */
+		//,<64> 	/* sample time for ch7 */
+		//,<120> 	/* sample time for ch8 */
+		;
+		<&adc1_ch0_default>
+		,<&adc1_ch1_default>
+		//,<&adc1_ch2_default>
+		//,<&adc1_ch3_default>
+		//,<&adc1_ch4_default>
+		//,<&adc1_ch5_default>
+		//,<&adc1_ch7_default>
+		//<&adc1_ch8_default>
+		;
+	pinctrl-names = "default";
+
+	dmas =  <&dma1 2 EVT_SRC_ADC1_EOCA (HC32_DMA_PERIPH_TO_MEMORY | \
+				HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | \
+				HC32_DMA_DATA_WIDTH_16BIT)>;
+	dma-names = "read";
+};

@@ -1,0 +1,15 @@
+# XHSC HC32 PWM configuration options
+
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_HC32_TIMER6
+	bool "HC32 MCU TIMER6 PWM driver"
+	default y if PWM
+	depends on DT_HAS_XHSC_HC32_TIMER6_PWM_ENABLED
+	select HC32_LL_TMR6
+	help
+	  This option enables the PWM driver for HC32 family of
+	  processors. Say y if you wish to use PWM port on HC32
+	  MCU.
+

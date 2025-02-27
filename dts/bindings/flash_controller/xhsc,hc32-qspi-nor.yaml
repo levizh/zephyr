@@ -1,0 +1,33 @@
+
+description: |
+    Refer to the test example, located in
+    tests/drivers/flash/common/boards/hc32f460_evb.overlay
+
+compatible: "xhsc,hc32-qspi-nor"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  qspi_max_frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's QSPI interface in Hz
+
+  size:
+    required: true
+    description: Flash Memory size in bits
+
+  page_size:
+    type: int
+    required: true
+    description: Flash program unit size in bytes
+
+  sector_size:
+    type: int
+    required: true
+    description: Erase unit size in bytes

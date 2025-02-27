@@ -1,0 +1,58 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		/* Second index must be a 32-Bit timer */
+		/* channel flag */
+		pwms = <&tmr61_pwm1 CHANNEL_CAPTURE_TMR6_PWMB 0 0>,
+			<&tmr63_pwm2 CHANNEL_CAPTURE_TMR6_TRIGC 0 0>;
+	};
+};
+
+
+&pinctrl {
+	pwm_timer61: pwm_timer61 {
+		group1 {
+			pinmux = <HC32_PINMUX('B', 8, FUNC, 3, 0)>; /* PWMB */
+		};
+	};
+
+	pwm_timer63: pwm_timer63 {
+		group1 {
+			pinmux = <HC32_PINMUX('E', 1, FUNC, 3, 0)>; /* PWMB*/
+		};
+	};
+};
+
+&timer61 {
+	clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+	count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+	count-direction = <HC32_TMR_CNT_DIR_DOWN>;
+	status = "okay";
+
+	tmr61_pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm_timer61>;
+		pinctrl-names = "default";
+	};
+};
+
+&timer63 {
+	clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+	count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+	count-direction = <HC32_TMR_CNT_DIR_DOWN>;
+	status = "okay";
+
+	tmr63_pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm_timer63>;
+		pinctrl-names = "default";
+	};
+};
+
+

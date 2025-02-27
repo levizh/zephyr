@@ -10,10 +10,22 @@
 
 #include "test_pwm_loopback.h"
 
+#if DT_HAS_COMPAT_STATUS_OKAY(xhsc_hc32_timera_pwm)
+#define TEST_PWM_PERIOD_NSEC    655000
+#define TEST_PWM_PULSE_NSEC     200000
+#define TEST_PWM_PERIOD_USEC    280
+#define TEST_PWM_PULSE_USEC     150
+#elif DT_HAS_COMPAT_STATUS_OKAY(xhsc_hc32_timer6_pwm) || defined(HC32F460)
+#define TEST_PWM_PERIOD_NSEC    655000
+#define TEST_PWM_PULSE_NSEC     200000
+#define TEST_PWM_PERIOD_USEC    280
+#define TEST_PWM_PULSE_USEC     150
+#else
 #define TEST_PWM_PERIOD_NSEC 100000000
 #define TEST_PWM_PULSE_NSEC   15000000
 #define TEST_PWM_PERIOD_USEC    100000
 #define TEST_PWM_PULSE_USEC      75000
+#endif
 
 enum test_pwm_unit {
 	TEST_PWM_UNIT_NSEC,
@@ -59,7 +71,7 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 			 pulse, period);
 		err = pwm_set(out.dev, out.pwm, PWM_USEC(period),
 			      PWM_USEC(pulse), out.flags ^=
-			      (flags & PWM_POLARITY_MASK));
+				  (flags & PWM_POLARITY_MASK));
 		break;
 
 	default:
@@ -291,8 +303,7 @@ ZTEST(pwm_loopback, test_capture_busy)
 		.count = 0,
 		.pulse_capture = true,
 	};
-	pwm_flags_t flags = PWM_CAPTURE_MODE_SINGLE |
-		PWM_CAPTURE_TYPE_PULSE;
+	pwm_flags_t flags = PWM_CAPTURE_MODE_SINGLE | PWM_CAPTURE_TYPE_PULSE;
 	int err;
 
 	get_test_pwms(&out, &in);

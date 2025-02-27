@@ -141,6 +141,7 @@ source "drivers/sensor/nct75/Kconfig"
 source "drivers/sensor/ntc_thermistor/Kconfig"
 source "drivers/sensor/pms7003/Kconfig"
 source "drivers/sensor/qdec_sam/Kconfig"
+source "drivers/sensor/qdec_hc32/Kconfig"
 source "drivers/sensor/rpi_pico_temp/Kconfig"
 source "drivers/sensor/s11059/Kconfig"
 source "drivers/sensor/sbs_gauge/Kconfig"
@@ -151,5 +152,4 @@ source "drivers/sensor/veaa_x_3/Kconfig"
 source "drivers/sensor/voltage_divider/Kconfig"
 source "drivers/sensor/xbr818/Kconfig"
 source "drivers/sensor/ene_tach_kb1200/Kconfig"
-
 endif # SENSOR

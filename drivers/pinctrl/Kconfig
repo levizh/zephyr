@@ -75,5 +75,6 @@ source "drivers/pinctrl/Kconfig.sy1xx"
 source "drivers/pinctrl/Kconfig.realtek_rts5912"
 
 rsource "renesas/Kconfig"
+source "drivers/pinctrl/Kconfig.hc32"
 
 endif # PINCTRL

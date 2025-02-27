@@ -48,3 +48,4 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_SY1XX pinctrl_sy1xx.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_REALTEK_RTS5912 pinctrl_realtek_rts5912.c)
 
 add_subdirectory(renesas)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_HC32 pinctrl_hc32.c)

@@ -273,4 +273,12 @@ config HWINFO_MAX32
 	help
 	  Enable MAX32 hwinfo driver.
 
+config HWINFO_HC32
+	bool "HC32 hwinfo"
+	default y
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_RMU
+	help
+	  Enable HC32 hwinfo driver
+
 endif

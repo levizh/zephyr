@@ -1,0 +1,13 @@
+identifier: hc32f460
+name: hc32f460_evb
+type: mcu
+arch: arm
+ram: 192
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+vendor: xhsc

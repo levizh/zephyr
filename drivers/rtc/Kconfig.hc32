@@ -1,0 +1,10 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_HC32
+	bool "HC32 RTC driver"
+	default y if !COUNTER
+	depends on DT_HAS_XHSC_HC32_RTC_ENABLED
+	select HC32_LL_RTC
+	help
+	  Build RTC driver for HC32 SoCs.

@@ -1,0 +1,12 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_HC32_QSPI
+	bool "HC32 Quad SPI Flash driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_QSPI_ENABLED
+	select HC32_LL_QSPI
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  Enable QSPI-NOR support on the HC32 family of processors.

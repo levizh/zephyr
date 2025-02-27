@@ -156,6 +156,7 @@ source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.xilinx_axi"
 # zephyr-keep-sorted-stop
+source "drivers/i2c/Kconfig.hc32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"

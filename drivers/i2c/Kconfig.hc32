@@ -1,0 +1,49 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_HC32
+	bool "HC32 I2C driver"
+	depends on SOC_FAMILY_HC32
+	select HC32_LL_I2C
+	help
+	  Enable I2C support on the HC32 SoCs
+
+if I2C_HC32
+
+choice I2C_TRANSFER_MODE
+	bool "Select i2c transfer mode"
+	default I2C_HC32_INTERRUPT
+
+config I2C_HC32_INTERRUPT
+	bool "HC32 MCU I2C Interrupt Support"
+	help
+	  Enable Interrupt support for the I2C Driver
+
+config I2C_HC32_DMA
+	bool "HC32 MCU I2C DMA Support"
+	select DMA
+	select DMA_HC32
+	help
+	  Enable DMA support for the I2C Driver
+endchoice
+
+config I2C_HC32_BUS_RECOVERY
+	bool "Bus recovery support"
+	default n
+	select I2C_BITBANG
+	help
+	  Enable HC32 driver bus recovery support via GPIO bitbanging.
+
+if I2C_HC32_INTERRUPT
+
+config I2C_HC32_INTERRUPT_SHARE
+	bool "I2C share interrupt enable"
+	default y if SOC_HC32F4A0
+	default n if SOC_HC32F460
+	help
+	  If set n, please reference user manual to 
+	  change I2C interrupts number in devicetree
+
+endif
+
+endif # I2C_HC32

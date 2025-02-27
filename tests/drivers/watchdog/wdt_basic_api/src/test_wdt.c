@@ -68,6 +68,9 @@
  */
 #if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
+#if defined(HC32F460) || defined(HC32F4A0)
+#define TIMEOUTS 0
+#endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
 #define TIMEOUTS 0

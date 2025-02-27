@@ -1,0 +1,11 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_HC32
+	bool "XHSC HC32 DMA driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_DMA_ENABLED
+	select HC32_LL_DMA
+	select HC32_LL_AOS
+	help
+	  DMA driver for XHSC HC32 series MCUs.

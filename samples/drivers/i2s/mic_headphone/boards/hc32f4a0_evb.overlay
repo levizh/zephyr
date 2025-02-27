@@ -1,0 +1,23 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	wm8731: wm8731@1a {
+		status = "okay";
+		compatible = "wolfson,wm8731";
+		reg = <0x1a>;
+	};
+};
+
+i2s_rxtx: &i2s1 {
+	status = "okay";
+	pinctrl-0 = <&i2s1_default>;
+	pinctrl-names = "default";
+};
+
+&dma1 {
+	status = "okay";
+};

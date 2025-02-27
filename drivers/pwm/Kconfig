@@ -120,4 +120,8 @@ source "drivers/pwm/Kconfig.fake"
 
 source "drivers/pwm/Kconfig.renesas_rz"
 
+source "drivers/pwm/Kconfig.hc32_timera"
+
+source "drivers/pwm/Kconfig.hc32_timer6"
+
 endif # PWM

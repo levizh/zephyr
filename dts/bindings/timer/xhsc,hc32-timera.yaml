@@ -1,0 +1,37 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 timer
+
+compatible: "xhsc,hc32-timera"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-division:
+    type: int
+    default: 0 # HC32_TMR_CNT_CLK_DIV1 - reset state
+    description: |
+      Set timer count clock division.
+      Use constants defined in dt-bindings/timer/hc32-timer.h.
+
+  count-mode:
+    type: int
+    default: 0 # HC32_TMR_CNT_MD_SAWTOOTH - reset state
+    description: |
+      Set timer count mode.
+      Use constants defined in dt-bindings/timer/hc32-timer.h.
+
+  count-direction:
+    type: int
+    default: 0 # HC32_TMR_CNT_DIR_UP - reset state
+    description: |
+      Set timer count direction.
+      Use constants defined in dt-bindings/timer/hc32-timer.h.

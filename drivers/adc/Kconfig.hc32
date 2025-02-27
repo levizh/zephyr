@@ -1,0 +1,29 @@
+# ADC configuration options
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_HC32
+	bool "HC32 ADC driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_ADC_ENABLED
+	select HC32_LL_ADC
+	help
+	  Enable the driver implementation for the HC32 serials ADC
+
+if ADC_HC32
+
+	config ADC_HC32_DMA
+		bool "HC32 MCU ADC DMA Support"
+		default y
+		select DMA
+		depends on ADC_HC32 && ADC_ASYNC
+		help
+		Enable the ADC DMA mode for ADC instances
+		that enable dma channels in their device tree node.
+
+	config ADC_HC32_INTERRUPT
+		bool "HC32 ADC shared interrupts"
+		default y
+		depends on ADC_HC32
+		help
+		Enable the use of shared interrupts
+endif

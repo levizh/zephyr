@@ -1,0 +1,15 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 RTC
+
+compatible: "xhsc,hc32-rtc"
+
+include:
+  - name: rtc.yaml
+  - name: rtc-device.yaml
+
+
+properties:
+  reg:
+    required: true

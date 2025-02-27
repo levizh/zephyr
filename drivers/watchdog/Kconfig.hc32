@@ -1,0 +1,23 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_HC32
+	bool "Watchdog Timer (WDT) Driver for HC32 family of MCUs"
+	default y
+	depends on DT_HAS_XHSC_HC32_WATCHDOG_ENABLED
+	select HC32_LL_WDT
+	select HC32_LL_CLK
+	select HC32_LL_DBGC
+	help
+	  Enable WDT driver for HC32 line of MCUs
+
+config SWDT_HC32
+	bool "Specialized Watchdog Timer (SWDT) Driver for HC32 family of MCUs"
+	default y
+	depends on DT_HAS_XHSC_HC32_SPECIALIZED_WATCHDOG_ENABLED
+	select HC32_LL_SWDT
+	select HC32_LL_CLK
+	select HC32_LL_DBGC
+	help
+	  Enable SWDT driver for HC32 line of MCUs

@@ -1,0 +1,42 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ */
+
+ &pinctrl {
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <HC32_PINMUX('A', 8, FUNC, 43, 0)>, /*  SCK */
+				 <HC32_PINMUX('B', 0, FUNC, 40, 0)>, /* MOSI */
+				 <HC32_PINMUX('C', 5, FUNC, 41, 0)>, /* MISO */
+				 <HC32_PINMUX('A', 7, FUNC, 42, 0)>; /* CS */
+				 drive-strength = "high";
+		};
+	};	
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	
+	dmas =  <&dma1 2 EVT_SRC_SPI1_SPTI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX)>,
+	   <&dma1 3 EVT_SRC_SPI1_SPRI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC)>;
+	dma-names = "tx", "rx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};

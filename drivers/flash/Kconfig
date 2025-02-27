@@ -211,4 +211,8 @@ module = FLASH
 module-str = flash
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/flash/Kconfig.hc32"
+
+source "drivers/flash/Kconfig.hc32_qspi"
+
 endif # FLASH

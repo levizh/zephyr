@@ -1,0 +1,7 @@
+&timera1 {
+    status = "okay";
+    clock-division = <HC32_TMR_CNT_CLK_DIV1024>;
+    counter {
+        status = "okay";
+    };
+};

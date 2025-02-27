@@ -1,0 +1,8 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: WM8731 Audio CODEC
+
+compatible: "wolfson,wm8731"
+
+include: i2c-device.yaml

@@ -54,3 +54,6 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_MAX32           counter_max32_rt
 zephyr_library_sources_ifdef(CONFIG_COUNTER_NXP_MRT             counter_nxp_mrt.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RA_AGT              counter_renesas_ra_agt.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_RENESAS_RZ_GTM      counter_renesas_rz_gtm.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_TIMERA_HC32         counter_hc32_timera.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_TIMER6_HC32         counter_hc32_timer6.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_RTC_HC32            counter_hc32_rtc.c)

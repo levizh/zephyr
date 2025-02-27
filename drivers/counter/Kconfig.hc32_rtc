@@ -1,0 +1,21 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig COUNTER_RTC_HC32
+	bool "HC32 Counter RTC driver"
+	default y if !RTC
+	depends on DT_HAS_XHSC_HC32_RTC_ENABLED
+	select HC32_LL_RTC
+	help
+	  Build RTC driver for HC32 SoCs.
+	  Please note: The alarm has an accuracy of 1 minute.
+
+if COUNTER_RTC_HC32
+
+config COUNTER_RTC_HC32_SAVE_VALUE_BETWEEN_RESETS
+	bool "Save rtc time value between resets"
+	default n
+	help
+	  Keep the counter value after each reset.
+
+endif # COUNTER_RTC_HC32

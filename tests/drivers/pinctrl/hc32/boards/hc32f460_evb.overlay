@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2021 Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		test_device1_default = <&test_device1_default>;
+		test_device1_sleep = <&test_device1_sleep>;
+	};
+
+	my_device: my_device {
+		compatible = "vnd,pinctrl-device";
+		pinctrl-0 = <&test_device_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	test_device_default: test_device_default {
+		/* Note: the groups are just meant for testing if properties and
+		   pins are parsed correctly, but do not necessarily represent a
+		   feasible combination */
+		group1 {
+			pinmux = <HC32_PINMUX('H', 2, FUNC, 36, 0)>,
+				 <HC32_PINMUX('B', 8, FUNC, 37, 0)>;
+		};
+		group2 {
+			pinmux = <HC32_PINMUX('A', 1, ANALOG, 0, 0)>,
+				 <HC32_PINMUX('C', 2, GPIO, 0, HC32_PUSH_PULL |HC32_OUTPUT_ENABLE | HC32_OUTPUT_HIGH | HC32_DRIVER_STRENGTH_HIGH)>;
+		};
+		group3 {
+			pinmux = <HC32_PINMUX('A', 5, GPIO, 0, (HC32_PUSH_PULL |HC32_OUTPUT_ENABLE | HC32_OUTPUT_HIGH | HC32_DRIVER_STRENGTH_HIGH))>;
+		};
+
+		group4 {
+			pinmux = <HC32_PINMUX('A', 6, GPIO, 0, (HC32_OPEN_DRAIN| HC32_OUTPUT_ENABLE| HC32_OUTPUT_LOW))>;
+		};
+
+		group5 {
+			pinmux = <HC32_PINMUX('D', 7, GPIO, 0, (HC32_INPUT_ENABLE |HC32_PULL_UP| HC32_INVERT_ENABLE| HC32_CINSEL_CMOS))>;
+		};
+
+		group6 {
+			pinmux = <HC32_PINMUX('B', 12, FUNC, 3, HC32_DRIVER_STRENGTH_MEDIUM)>,
+			         <HC32_PINMUX('B', 13, SUBFUNC, 4, HC32_DRIVER_STRENGTH_HIGH)>;
+		};
+	};
+
+	test_device1_default: test_device1_default {
+		/* Note: the groups are just meant for testing if properties and
+		   pins are parsed correctly, but do not necessarily represent a
+		   feasible combination */
+		group1 {
+			pinmux = <HC32_PINMUX('C', 5, FUNC, 63, 0)>,
+				 <HC32_PINMUX('B', 15, ANALOG, 0, 0)>;
+		};
+		group2 {
+			pinmux = <HC32_PINMUX('H', 1, GPIO, 0, 0)>;
+		};
+	};
+
+	test_device1_sleep: test_device1_sleep {
+		/* Note: the groups are just meant for testing if properties and
+		   pins are parsed correctly, but do not necessarily represent a
+		   feasible combination */
+		group1 {
+			pinmux = <HC32_PINMUX('C', 15, FUNC, 0, 0)>,
+				 <HC32_PINMUX('B', 0, ANALOG, 0, 0)>;
+		};
+		group2 {
+			pinmux = <HC32_PINMUX('D', 10, GPIO, 5, 0)>;
+		};
+	};
+};

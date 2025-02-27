@@ -1,0 +1,41 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "xhsc,hc32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  sample-time:
+    type: array
+    description: Specify sample time with cycle number of adc clock.
+        The calculation of this parameter please refer to the ADC_SSTR of RM.
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: Indicates the reference voltage of the ADC in mV (on the target board).
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

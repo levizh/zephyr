@@ -1,0 +1,26 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@gmail.com>
+ */
+
+&spi6 {
+	dmas =  <&dma1 2 EVT_SRC_SPI6_SPTI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX)>,
+	   <&dma1 3 EVT_SRC_SPI6_SPRI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC)>;
+	dma-names = "tx", "rx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};

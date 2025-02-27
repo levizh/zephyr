@@ -1,0 +1,45 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&qspi1 {
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-names = "default";
+	/delete-property/ interrupts;
+	/delete-property/ interrupt-names;
+	clock_divider = <4>;
+	dummy_cycles = <3>;
+	addr_width = <2>;
+	read_mode = <5>;
+	cs_setup_time = <1>;
+	cs_release_time = <1>;
+	status = "okay";
+
+	w25q64jv: qspi-nor@98000000 {
+		compatible = "xhsc,hc32-qspi-nor";
+		reg = <0x98000000>;
+		qspi_max_frequency = <100000000>;
+		size = <DT_SIZE_M(64 / 8)>;
+		page_size = <256>;
+		sector_size = <4096>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/* reserved region, maybe assigned for code */
+			slot1_partition: partition@0 {
+				label = "qspi_flash_rsvd";
+				reg = <0x00000000 DT_SIZE_M(1)>;
+			};
+
+			slot2_partition: partition@100000 {
+				label = "qspi_flash_storage";
+				reg = <0x00100000 DT_SIZE_M(15)>;
+			};
+		};
+		};
+	};

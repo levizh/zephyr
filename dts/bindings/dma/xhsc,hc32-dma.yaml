@@ -1,0 +1,70 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  HC32 DMA controller
+
+  a phandle to the DMA controller plus the following four integer cells:
+    1. channel: the dma channel from 0 to <dma-requests>
+    2. slot: DMA triger source, which is the event source number
+       this value please ref RM INTC chapter
+    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    which is device dependent:
+        -bit 4-5 : Direction  (see dma.h)
+               0x0: MEM to MEM
+               0x1: MEM to PERIPH
+               0x2: PERIPH to MEM
+               0x3: reserved for PERIPH to PERIPH
+        -bit 6-7 : Source Increment Address
+               0x0: increment address between transfers
+               0x1: decrement address between transfers
+               0x2: no address increment between transfers
+               0x3: reserved
+        -bit 8-9 : Dest Increment Address
+               0x0: increment address between transfers
+               0x1: decrement address between transfers
+               0x2: no address increment between transfers
+               0x3: reserved
+        -bit 10-11 : data size (source and dest all use this parameter)
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 12-31 : reserved
+
+    examples for hc32f460
+     dma2: dma-controller@40020400 {
+         compatible = "xhsc,hc32-dma";
+         ...
+         dma-requests = <511>;
+         status = "disabled";
+        };
+
+  For the client part, example for hc32f460 on DMA2 instance
+    Tx using channel 0
+    Rx using channel 3
+    spi1 {
+     dmas = <&dma2 0 EVT_SRC_SPI1_SPTI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+            <&dma2 3 EVT_SRC_SPI1_SPRI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+     dma-names = "tx", "rx";
+     };
+
+compatible: "xhsc,hc32-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config
+

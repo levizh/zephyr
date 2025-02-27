@@ -1,0 +1,32 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = < 100000 >;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	interrupts = < INT010_IRQn HC32_I2C1_EE_IRQ_PRIO INT_SRC_I2C1_EEI>,
+				< INT011_IRQn HC32_I2C1_TE_IRQ_PRIO INT_SRC_I2C1_TEI>,
+				< INT012_IRQn HC32_I2C1_TX_IRQ_PRIO INT_SRC_I2C1_TXI>,
+				< INT013_IRQn HC32_I2C1_RX_IRQ_PRIO INT_SRC_I2C1_RXI>;
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <20>;
+	};
+};
+
+
+&i2c3 {
+	status = "okay";
+	clock-frequency = < 100000 >;
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <20>;
+	};
+};
+

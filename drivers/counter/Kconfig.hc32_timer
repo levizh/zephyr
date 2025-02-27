@@ -1,0 +1,30 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TIMERA_HC32
+	bool "HC32 counter driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_TIMERA_COUNTER_ENABLED
+	select HC32_LL_TMRA
+	select RESET
+	help
+	  Enable the counter driver for HC32 family of processors.
+
+config COUNTER_TIMER4_HC32
+	bool "HC32 counter driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_TIMER4_COUNTER_ENABLED
+	select HC32_LL_TMR4
+	select RESET
+	help
+	  Enable the counter driver for HC32 family of processors.
+
+config COUNTER_TIMER6_HC32
+	bool "HC32 counter driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_TIMER6_COUNTER_ENABLED
+	select HC32_LL_TMR6
+	select RESET
+	help
+	  Enable the counter driver for HC32 family of processors.

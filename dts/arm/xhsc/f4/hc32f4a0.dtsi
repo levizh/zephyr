@@ -1,0 +1,1211 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/hc32f4a0_clock.h>
+#include <zephyr/dt-bindings/timer/hc32-timer.h>
+#include <zephyr/dt-bindings/interrupt-controller/hc32f4a0-intc.h>
+#include <zephyr/dt-bindings/dma/hc32_dma.h>
+#include <zephyr/dt-bindings/sensor/qdec_hc32.h>
+
+ / {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash-controller@40010400 {
+		compatible = "xhsc,hc32-flash-controller";
+		reg = <0x40010400 0x0400>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0 0x200000>;
+			erase-block-size = <8192>;
+			write-block-size = <4>;
+		};
+	};
+
+/* The on-chip SRAM is split into SRAM0 and SRAMH regions that form a
+	 * contiguous block in the memory map, however misaligned accesses
+	 * across the 0x2000_0000 boundary are not supported in the Arm
+	 * Cortex-M4 architecture.*/
+ 	sramh: memory@1ffe0000 {
+		device_type = "memory";
+		compatible ="zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAMH";
+		reg = <0x1ffe0000 DT_SIZE_K(128)>;
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(384)>;
+	};
+
+	sramb: memory@200F0000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region","mmio-sram";
+		zephyr,memory-region = "SRAMB";
+		reg = <0x200F0000 DT_SIZE_K(4)>;
+	};
+
+	soc {
+		clocks: clock@40048400{
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = < 0x40048400 0x400 >;
+			compatible = "xhsc,hc32-clock-control";
+			clock-conf = <HC32_CLK_CONF_PERI HC32_CLK_CONF_USB
+						HC32_CLK_CONF_TPIU
+						HC32_CLK_CONF_SRC HC32_CLK_CONF_MCO>;
+
+			clk_xtal: clock_xtal {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 8000000 >;
+			};
+
+			clk_xtal32: clock_xtal32 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 32768 >;
+			};
+
+			clk_hrc: clock_hrc {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 16000000 >;
+			};
+
+			clk_mrc: clock_mrc {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 8000000 >;
+			};
+
+			clk_lrc: clock_lrc {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = < 32768 >;
+			};
+
+			clk_pll: clock_pll {
+				#clock-cells = <0>;
+				compatible = "xhsc,hc32-clock-pll";
+				clock_frequency = <240000000>;
+				clocks = <&clk_xtal>;
+				div-m = <1>;
+				mul-n = <120>;
+				div-p = <4>;
+				div-q = <4>;
+				div-r = <4>;
+			};
+
+			clk_sys: clock_system {
+				compatible = "xhsc,hc32-clock-sys";
+				clocks = < &clk_pll >;
+				div-hclk = <1>;
+				div-exclk = <2>;
+				div-pclk0 = <1>;
+				div-pclk1 = <2>;
+				div-pclk2 = <4>;
+				div-pclk3 = <4>;
+				div-pclk4 = <2>;
+			};
+
+			bus_fcg: pwc_fcg@40048000 {
+				#clock-cells = <3>;
+				compatible = "xhsc,hc32-bus-fcg";
+				reg = < 0x40048000 DT_SIZE_K(1) >;
+			};
+		};
+
+		pinctrl: pin-controller@40053c00 {
+			compatible = "xhsc,hc32-pinctrl";
+			reg = <0x40053c00 0x400>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			gpioa: gpio@40053c00 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053c00 0x40>;
+			};
+
+			gpiob: gpio@40053c40 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053c40 0x40>;
+			};
+
+			gpioc: gpio@40053c80 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053c80 0x40>;
+			};
+
+			gpiod: gpio@40053cc0 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053cc0 0x40>;
+			};
+
+			gpioe: gpio@40053d00 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053d00 0x40>;
+			};
+
+			gpiof: gpio@40053d40 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053d40 0x40>;
+			};
+
+			gpiog: gpio@40053d80 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053d80 0x40>;
+			};
+
+			gpioh: gpio@40053dc0 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053dc0 0x40>;
+			};
+
+			gpioi: gpio@40053e00 {
+				compatible = "xhsc,hc32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40053e00 0x40>;
+			};
+		};
+
+		intc: interrupt-controller@40051000 {
+			compatible = "xhsc,hc32-intc";
+			reg = <0x40051000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			status = "okay";
+
+			extint {
+				compatible = "xhsc,hc32-extint";
+				interrupt-parent = <&intc>;
+				extint-nums = <16>;
+				extint-chs = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15>;
+				interrupts = <HC32_EXTINT0_IRQ_NUM  HC32_EXTINT0_IRQ_PRIO  INT_SRC_PORT_EIRQ0>,
+							 <HC32_EXTINT1_IRQ_NUM  HC32_EXTINT1_IRQ_PRIO  INT_SRC_PORT_EIRQ1>,
+							 <HC32_EXTINT2_IRQ_NUM  HC32_EXTINT2_IRQ_PRIO  INT_SRC_PORT_EIRQ2>,
+							 <HC32_EXTINT3_IRQ_NUM  HC32_EXTINT3_IRQ_PRIO  INT_SRC_PORT_EIRQ3>,
+							 <HC32_EXTINT4_IRQ_NUM  HC32_EXTINT4_IRQ_PRIO  INT_SRC_PORT_EIRQ4>,
+							 <HC32_EXTINT5_IRQ_NUM  HC32_EXTINT5_IRQ_PRIO  INT_SRC_PORT_EIRQ5>,
+							 <HC32_EXTINT6_IRQ_NUM  HC32_EXTINT6_IRQ_PRIO  INT_SRC_PORT_EIRQ6>,
+							 <HC32_EXTINT7_IRQ_NUM  HC32_EXTINT7_IRQ_PRIO  INT_SRC_PORT_EIRQ7>,
+							 <HC32_EXTINT8_IRQ_NUM  HC32_EXTINT8_IRQ_PRIO  INT_SRC_PORT_EIRQ8>,
+							 <HC32_EXTINT9_IRQ_NUM  HC32_EXTINT9_IRQ_PRIO  INT_SRC_PORT_EIRQ9>,
+							 <HC32_EXTINT10_IRQ_NUM HC32_EXTINT10_IRQ_PRIO INT_SRC_PORT_EIRQ10>,
+							 <HC32_EXTINT11_IRQ_NUM HC32_EXTINT11_IRQ_PRIO INT_SRC_PORT_EIRQ11>,
+							 <HC32_EXTINT12_IRQ_NUM HC32_EXTINT12_IRQ_PRIO INT_SRC_PORT_EIRQ12>,
+							 <HC32_EXTINT13_IRQ_NUM HC32_EXTINT13_IRQ_PRIO INT_SRC_PORT_EIRQ13>,
+							 <HC32_EXTINT14_IRQ_NUM HC32_EXTINT14_IRQ_PRIO INT_SRC_PORT_EIRQ14>,
+							 <HC32_EXTINT15_IRQ_NUM HC32_EXTINT15_IRQ_PRIO INT_SRC_PORT_EIRQ15>;
+				interrupt-names = "extint0",  "extint1",  "extint2",  "extint3",
+								  "extint4",  "extint5",  "extint6",  "extint7",
+								  "extint8",  "extint9",  "extint10", "extint11",
+								  "extint12", "extint13", "extint14", "extint15";
+				status = "okay";
+			};
+		};
+
+		dma1: dma@40053000 {
+			compatible = "xhsc,hc32-dma";
+			#dma-cells = <3>;
+			reg = <0x40053000 0x400>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_DMA1_CH0_IRQ_NUM HC32_DMA1_CH0_IRQ_PRIO INT_SRC_DMA1_TC0>,
+						 <HC32_DMA1_CH1_IRQ_NUM HC32_DMA1_CH1_IRQ_PRIO INT_SRC_DMA1_TC1>,
+						 <HC32_DMA1_CH2_IRQ_NUM HC32_DMA1_CH2_IRQ_PRIO INT_SRC_DMA1_TC2>,
+						 <HC32_DMA1_CH3_IRQ_NUM HC32_DMA1_CH3_IRQ_PRIO INT_SRC_DMA1_TC3>,
+						 <HC32_DMA1_CH4_IRQ_NUM HC32_DMA1_CH4_IRQ_PRIO INT_SRC_DMA1_TC4>,
+						 <HC32_DMA1_CH5_IRQ_NUM HC32_DMA1_CH5_IRQ_PRIO INT_SRC_DMA1_TC5>,
+						 <HC32_DMA1_CH6_IRQ_NUM HC32_DMA1_CH6_IRQ_PRIO INT_SRC_DMA1_TC6>,
+						 <HC32_DMA1_CH7_IRQ_NUM HC32_DMA1_CH7_IRQ_PRIO INT_SRC_DMA1_TC7>,
+						 <HC32_DMA1_ERR_IRQ_NUM HC32_DMA1_ERR_IRQ_PRIO INT_SRC_DMA1_ERR>;
+			interrupt-names = "tc0", "tc1", "tc2", "tc3", "tc4", "tc5", "tc6", "tc7", "err";
+			dma-channels = <8>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>,
+					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA1>;
+			status = "disabled";
+		};
+
+		dma2: dma@40053400 {
+			compatible = "xhsc,hc32-dma";
+			#dma-cells = <3>;
+			reg = <0x40053400 0x400>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_DMA2_CH0_IRQ_NUM HC32_DMA2_CH0_IRQ_PRIO INT_SRC_DMA2_TC0>,
+						 <HC32_DMA2_CH1_IRQ_NUM HC32_DMA2_CH1_IRQ_PRIO INT_SRC_DMA2_TC1>,
+						 <HC32_DMA2_CH2_IRQ_NUM HC32_DMA2_CH2_IRQ_PRIO INT_SRC_DMA2_TC2>,
+						 <HC32_DMA2_CH3_IRQ_NUM HC32_DMA2_CH3_IRQ_PRIO INT_SRC_DMA2_TC3>,
+						 <HC32_DMA2_CH4_IRQ_NUM HC32_DMA2_CH4_IRQ_PRIO INT_SRC_DMA2_TC4>,
+						 <HC32_DMA2_CH5_IRQ_NUM HC32_DMA2_CH5_IRQ_PRIO INT_SRC_DMA2_TC5>,
+						 <HC32_DMA2_CH6_IRQ_NUM HC32_DMA2_CH6_IRQ_PRIO INT_SRC_DMA2_TC6>,
+						 <HC32_DMA2_CH7_IRQ_NUM HC32_DMA2_CH7_IRQ_PRIO INT_SRC_DMA2_TC7>,
+						 <HC32_DMA2_ERR_IRQ_NUM HC32_DMA2_ERR_IRQ_PRIO INT_SRC_DMA2_ERR>;
+			interrupt-names = "tc0", "tc1", "tc2", "tc3", "tc4", "tc5", "tc6", "tc7", "err";
+			dma-channels = <8>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_AOS>,
+					 <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG0 HC32_FCG0_PERIPH_DMA2>;
+			status = "disabled";
+		};
+
+		usart1: serial@4001cc00 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001cc00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART1_RXERR_IRQ_NUM		HC32_UART1_RXERR_IRQ_PRIO	INT_SRC_USART1_EI>,
+						 <HC32_UART1_RX_IRQ_NUM			HC32_UART1_RX_IRQ_PRIO		INT_SRC_USART1_RI>,
+						 <HC32_UART1_TX_IRQ_NUM			HC32_UART1_TX_IRQ_PRIO		INT_SRC_USART1_TI>,
+						 <HC32_UART1_TX_CPLT_IRQ_NUM	HC32_UART1_TX_CPLT_IRQ_PRIO	INT_SRC_USART1_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+
+		usart2: serial@4001d000 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART2_RXERR_IRQ_NUM		HC32_UART2_RXERR_IRQ_PRIO	INT_SRC_USART2_EI>,
+						 <HC32_UART2_RX_IRQ_NUM			HC32_UART2_RX_IRQ_PRIO		INT_SRC_USART2_RI>,
+						 <HC32_UART2_TX_IRQ_NUM			HC32_UART2_TX_IRQ_PRIO		INT_SRC_USART2_TI>,
+						 <HC32_UART2_TX_CPLT_IRQ_NUM	HC32_UART2_TX_CPLT_IRQ_PRIO INT_SRC_USART2_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+
+		usart3: serial@4001d400 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART3_RXERR_IRQ_NUM		HC32_UART3_RXERR_IRQ_PRIO	INT_SRC_USART3_EI>,
+						 <HC32_UART3_RX_IRQ_NUM			HC32_UART3_RX_IRQ_PRIO		INT_SRC_USART3_RI>,
+						 <HC32_UART3_TX_IRQ_NUM			HC32_UART3_TX_IRQ_PRIO		INT_SRC_USART3_TI>,
+						 <HC32_UART3_TX_CPLT_IRQ_NUM	HC32_UART3_TX_CPLT_IRQ_PRIO INT_SRC_USART3_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+
+		usart4: serial@4001d800 {
+			compatible = "xhsc,hc32-uart";
+			reg = <0x4001d800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG3 HC32_FCG3_PERIPH_USART4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_UART4_RXERR_IRQ_NUM		HC32_UART4_RXERR_IRQ_PRIO	INT_SRC_USART4_EI>,
+						 <HC32_UART4_RX_IRQ_NUM			HC32_UART4_RX_IRQ_PRIO		INT_SRC_USART4_RI>,
+						 <HC32_UART4_TX_IRQ_NUM			HC32_UART4_TX_IRQ_PRIO		INT_SRC_USART4_TI>,
+						 <HC32_UART4_TX_CPLT_IRQ_NUM	HC32_UART4_TX_CPLT_IRQ_PRIO INT_SRC_USART4_TCI>;
+			interrupt-names = "ei", "ri", "ti", "tci";
+			status = "disabled";
+		};
+		wdt: watchdog@40049000 {
+			compatible = "xhsc,hc32-watchdog";
+			reg = <0x40049000 0x400>;
+			status = "disabled";
+		};
+		swdt: watchdog@40049400 {
+			compatible = "xhsc,hc32-specialized-watchdog";
+			reg = <0x40049400 0x400>;
+			status = "disabled";
+		};
+		spi1: spi@4001c000 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI1_ERR_IRQ_NUM HC32_SPI1_ERR_IRQ_PRIO INT_SRC_SPI1_SPEI>,
+						 <HC32_SPI1_RBF_IRQ_NUM HC32_SPI1_RBF_IRQ_PRIO INT_SRC_SPI1_SPRI>,
+						 <HC32_SPI1_TBE_IRQ_NUM HC32_SPI1_TBE_IRQ_PRIO INT_SRC_SPI1_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi2: spi@4001c400 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI2_ERR_IRQ_NUM HC32_SPI2_ERR_IRQ_PRIO INT_SRC_SPI2_SPEI>,
+						 <HC32_SPI2_RBF_IRQ_NUM HC32_SPI2_RBF_IRQ_PRIO INT_SRC_SPI2_SPRI>,
+						 <HC32_SPI2_TBE_IRQ_NUM HC32_SPI2_TBE_IRQ_PRIO INT_SRC_SPI2_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi3: spi@4001c800 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x4001c800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI3_ERR_IRQ_NUM HC32_SPI3_ERR_IRQ_PRIO INT_SRC_SPI3_SPEI>,
+						 <HC32_SPI3_RBF_IRQ_NUM HC32_SPI3_RBF_IRQ_PRIO INT_SRC_SPI3_SPRI>,
+						 <HC32_SPI3_TBE_IRQ_NUM HC32_SPI3_TBE_IRQ_PRIO INT_SRC_SPI3_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi4: spi@40020000 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI4_ERR_IRQ_NUM HC32_SPI4_ERR_IRQ_PRIO INT_SRC_SPI4_SPEI>,
+						 <HC32_SPI4_RBF_IRQ_NUM HC32_SPI4_RBF_IRQ_PRIO INT_SRC_SPI4_SPRI>,
+						 <HC32_SPI4_TBE_IRQ_NUM HC32_SPI4_TBE_IRQ_PRIO INT_SRC_SPI4_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi5: spi@40020400 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI5>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI5_ERR_IRQ_NUM HC32_SPI3_ERR_IRQ_PRIO INT_SRC_SPI5_SPEI>,
+						 <HC32_SPI5_RBF_IRQ_NUM HC32_SPI3_RBF_IRQ_PRIO INT_SRC_SPI5_SPRI>,
+						 <HC32_SPI5_TBE_IRQ_NUM HC32_SPI3_TBE_IRQ_PRIO INT_SRC_SPI5_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi6: spi@40020800 {
+			compatible = "xhsc,hc32-spi";
+			reg = <0x40020800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG1 HC32_FCG1_PERIPH_SPI6>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_SPI6_ERR_IRQ_NUM HC32_SPI4_ERR_IRQ_PRIO INT_SRC_SPI6_SPEI>,
+						 <HC32_SPI6_RBF_IRQ_NUM HC32_SPI4_RBF_IRQ_PRIO INT_SRC_SPI6_SPRI>,
+						 <HC32_SPI6_TBE_IRQ_NUM HC32_SPI4_TBE_IRQ_PRIO INT_SRC_SPI6_SPTI>;
+			interrupt-names = "err", "spri", "spti";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		qspi1: qspi@9c000000 {
+			compatible = "xhsc,hc32-qspi";
+			reg = <0x9c000000 0x8000000>;
+			clocks = <&bus_fcg HC32_CLK_BUS_HCLK HC32_CLK_FCG1 HC32_FCG1_PERIPH_QSPI>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_QSPI_IRQ_NUM HC32_QSPI_IRQ_PRIO INT_SRC_QSPI_INTR>;
+			interrupt-names = "qspi_fault";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		rtc: rtc@4004c000 {
+			compatible = "xhsc,hc32-rtc";
+			reg = <0x4004c000 0x400>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_RTC_ALARM_IRQ_NUM HC32_RTC_ALARM_IRQ_PRIO INT_SRC_RTC_ALM>,
+						 <HC32_RTC_PRD_IRQ_NUM   HC32_RTC_PRD_IRQ_PRIO   INT_SRC_RTC_PRD>;
+			interrupt-names = "alm", "prd";
+			clocks = <&clk_lrc>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		timera1: timer@4003a000 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003a000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA1_OVF_IRQ_NUM HC32_TMRA1_OVF_IRQ_PRIO INT_SRC_TMRA_1_OVF>,
+						 <HC32_TMRA1_UDF_IRQ_NUM HC32_TMRA1_UDF_IRQ_PRIO INT_SRC_TMRA_1_UDF>,
+						 <HC32_TMRA1_CMP_IRQ_NUM HC32_TMRA1_CMP_IRQ_PRIO INT_SRC_TMRA_1_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera2: timer@4003a400 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003a400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA2_OVF_IRQ_NUM HC32_TMRA2_OVF_IRQ_PRIO INT_SRC_TMRA_2_OVF>,
+						 <HC32_TMRA2_UDF_IRQ_NUM HC32_TMRA2_UDF_IRQ_PRIO INT_SRC_TMRA_2_UDF>,
+						 <HC32_TMRA2_CMP_IRQ_NUM HC32_TMRA2_CMP_IRQ_PRIO INT_SRC_TMRA_2_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera3: timer@4003a800 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003a800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA3_OVF_IRQ_NUM HC32_TMRA3_OVF_IRQ_PRIO INT_SRC_TMRA_3_OVF>,
+						 <HC32_TMRA3_UDF_IRQ_NUM HC32_TMRA3_UDF_IRQ_PRIO INT_SRC_TMRA_3_UDF>,
+						 <HC32_TMRA3_CMP_IRQ_NUM HC32_TMRA3_CMP_IRQ_PRIO INT_SRC_TMRA_3_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera4: timer@4003ac00 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x4003ac00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA4_OVF_IRQ_NUM HC32_TMRA4_OVF_IRQ_PRIO INT_SRC_TMRA_4_OVF>,
+						 <HC32_TMRA4_UDF_IRQ_NUM HC32_TMRA4_UDF_IRQ_PRIO INT_SRC_TMRA_4_UDF>,
+						 <HC32_TMRA4_CMP_IRQ_NUM HC32_TMRA4_CMP_IRQ_PRIO INT_SRC_TMRA_4_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera5: timer@40026000 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_5>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA5_OVF_IRQ_NUM HC32_TMRA5_OVF_IRQ_PRIO INT_SRC_TMRA_5_OVF>,
+						 <HC32_TMRA5_UDF_IRQ_NUM HC32_TMRA5_UDF_IRQ_PRIO INT_SRC_TMRA_5_UDF>,
+						 <HC32_TMRA5_CMP_IRQ_NUM HC32_TMRA5_CMP_IRQ_PRIO INT_SRC_TMRA_5_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera6: timer@40026400 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_6>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA6_OVF_IRQ_NUM HC32_TMRA6_OVF_IRQ_PRIO INT_SRC_TMRA_6_OVF>,
+						 <HC32_TMRA6_UDF_IRQ_NUM HC32_TMRA6_UDF_IRQ_PRIO INT_SRC_TMRA_6_UDF>,
+						 <HC32_TMRA6_CMP_IRQ_NUM HC32_TMRA6_CMP_IRQ_PRIO INT_SRC_TMRA_6_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera7: timer@40026800 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_7>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA7_OVF_IRQ_NUM HC32_TMRA7_OVF_IRQ_PRIO INT_SRC_TMRA_7_OVF>,
+						 <HC32_TMRA7_UDF_IRQ_NUM HC32_TMRA7_UDF_IRQ_PRIO INT_SRC_TMRA_7_UDF>,
+						 <HC32_TMRA7_CMP_IRQ_NUM HC32_TMRA7_CMP_IRQ_PRIO INT_SRC_TMRA_7_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera8: timer@40026c00 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40026c00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_8>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA8_OVF_IRQ_NUM HC32_TMRA8_OVF_IRQ_PRIO INT_SRC_TMRA_8_OVF>,
+						 <HC32_TMRA8_UDF_IRQ_NUM HC32_TMRA8_UDF_IRQ_PRIO INT_SRC_TMRA_8_UDF>,
+						 <HC32_TMRA8_CMP_IRQ_NUM HC32_TMRA8_CMP_IRQ_PRIO INT_SRC_TMRA_8_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera9: timer@40027000 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_9>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA9_OVF_IRQ_NUM HC32_TMRA9_OVF_IRQ_PRIO INT_SRC_TMRA_9_OVF>,
+						 <HC32_TMRA9_UDF_IRQ_NUM HC32_TMRA9_UDF_IRQ_PRIO INT_SRC_TMRA_9_UDF>,
+						 <HC32_TMRA9_CMP_IRQ_NUM HC32_TMRA9_CMP_IRQ_PRIO INT_SRC_TMRA_9_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera10: timer@40027400 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_10>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA10_OVF_IRQ_NUM HC32_TMRA10_OVF_IRQ_PRIO INT_SRC_TMRA_10_OVF>,
+						 <HC32_TMRA10_UDF_IRQ_NUM HC32_TMRA10_UDF_IRQ_PRIO INT_SRC_TMRA_10_UDF>,
+						 <HC32_TMRA10_CMP_IRQ_NUM HC32_TMRA10_CMP_IRQ_PRIO INT_SRC_TMRA_10_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera11: timer@40027800 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_11>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA11_OVF_IRQ_NUM HC32_TMRA11_OVF_IRQ_PRIO INT_SRC_TMRA_11_OVF>,
+						 <HC32_TMRA11_UDF_IRQ_NUM HC32_TMRA11_UDF_IRQ_PRIO INT_SRC_TMRA_11_UDF>,
+						 <HC32_TMRA11_CMP_IRQ_NUM HC32_TMRA11_CMP_IRQ_PRIO INT_SRC_TMRA_11_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timera12: timer@40027c00 {
+			compatible = "xhsc,hc32-timera";
+			reg = <0x40027c00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK1 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMRA_12>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMRA12_OVF_IRQ_NUM HC32_TMRA12_OVF_IRQ_PRIO INT_SRC_TMRA_12_OVF>,
+						 <HC32_TMRA12_UDF_IRQ_NUM HC32_TMRA12_UDF_IRQ_PRIO INT_SRC_TMRA_12_UDF>,
+						 <HC32_TMRA12_CMP_IRQ_NUM HC32_TMRA12_CMP_IRQ_PRIO INT_SRC_TMRA_12_CMP>;
+			interrupt-names = "ovf", "udf", "cmp";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			counter {
+				compatible = "xhsc,hc32-timera-counter";
+				ch-nums = <4>;
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "xhsc,hc32-timera-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer61: timer@40018000 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_1>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR61_CMPA_IRQ_NUM  HC32_TMR61_CMPA_IRQ_PRIO  INT_SRC_TMR6_1_GCMP_A>,
+						 <HC32_TMR61_CMPB_IRQ_NUM  HC32_TMR61_CMPB_IRQ_PRIO  INT_SRC_TMR6_1_GCMP_B>,
+						 <HC32_TMR61_CMPC_IRQ_NUM  HC32_TMR61_CMPC_IRQ_PRIO  INT_SRC_TMR6_1_GCMP_C>,
+						 <HC32_TMR61_CMPD_IRQ_NUM  HC32_TMR61_CMPD_IRQ_PRIO  INT_SRC_TMR6_1_GCMP_D>,
+						 <HC32_TMR61_CMPE_IRQ_NUM  HC32_TMR61_CMPE_IRQ_PRIO  INT_SRC_TMR6_1_GCMP_E>,
+						 <HC32_TMR61_CMPF_IRQ_NUM  HC32_TMR61_CMPF_IRQ_PRIO  INT_SRC_TMR6_1_GCMP_F>,
+						 <HC32_TMR61_OVF_IRQ_NUM  HC32_TMR61_OVF_IRQ_PRIO  INT_SRC_TMR6_1_OVF>,
+						 <HC32_TMR61_UDF_IRQ_NUM  HC32_TMR61_UDF_IRQ_PRIO  INT_SRC_TMR6_1_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer62: timer@40018400 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_2>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR62_CMPA_IRQ_NUM  HC32_TMR62_CMPA_IRQ_PRIO  INT_SRC_TMR6_2_GCMP_A>,
+						 <HC32_TMR62_CMPB_IRQ_NUM  HC32_TMR62_CMPB_IRQ_PRIO  INT_SRC_TMR6_2_GCMP_B>,
+						 <HC32_TMR62_CMPC_IRQ_NUM  HC32_TMR62_CMPC_IRQ_PRIO  INT_SRC_TMR6_2_GCMP_C>,
+						 <HC32_TMR62_CMPD_IRQ_NUM  HC32_TMR62_CMPD_IRQ_PRIO  INT_SRC_TMR6_2_GCMP_D>,
+						 <HC32_TMR62_CMPE_IRQ_NUM  HC32_TMR62_CMPE_IRQ_PRIO  INT_SRC_TMR6_2_GCMP_E>,
+						 <HC32_TMR62_CMPF_IRQ_NUM  HC32_TMR62_CMPF_IRQ_PRIO  INT_SRC_TMR6_2_GCMP_F>,
+						 <HC32_TMR62_OVF_IRQ_NUM  HC32_TMR62_OVF_IRQ_PRIO  INT_SRC_TMR6_2_OVF>,
+						 <HC32_TMR62_UDF_IRQ_NUM  HC32_TMR62_UDF_IRQ_PRIO  INT_SRC_TMR6_2_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer63: timer@40018800 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_3>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR63_CMPA_IRQ_NUM  HC32_TMR63_CMPA_IRQ_PRIO  INT_SRC_TMR6_3_GCMP_A>,
+						 <HC32_TMR63_CMPB_IRQ_NUM  HC32_TMR63_CMPB_IRQ_PRIO  INT_SRC_TMR6_3_GCMP_B>,
+						 <HC32_TMR63_CMPC_IRQ_NUM  HC32_TMR63_CMPC_IRQ_PRIO  INT_SRC_TMR6_3_GCMP_C>,
+						 <HC32_TMR63_CMPD_IRQ_NUM  HC32_TMR63_CMPD_IRQ_PRIO  INT_SRC_TMR6_3_GCMP_D>,
+						 <HC32_TMR63_CMPE_IRQ_NUM  HC32_TMR63_CMPE_IRQ_PRIO  INT_SRC_TMR6_3_GCMP_E>,
+						 <HC32_TMR63_CMPF_IRQ_NUM  HC32_TMR63_CMPF_IRQ_PRIO  INT_SRC_TMR6_3_GCMP_F>,
+						 <HC32_TMR63_OVF_IRQ_NUM  HC32_TMR63_OVF_IRQ_PRIO  INT_SRC_TMR6_3_OVF>,
+						 <HC32_TMR63_UDF_IRQ_NUM  HC32_TMR63_UDF_IRQ_PRIO  INT_SRC_TMR6_3_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer64: timer@40018c00 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40018c00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_4>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR64_CMPA_IRQ_NUM  HC32_TMR64_CMPA_IRQ_PRIO  INT_SRC_TMR6_4_GCMP_A>,
+						 <HC32_TMR64_CMPB_IRQ_NUM  HC32_TMR64_CMPB_IRQ_PRIO  INT_SRC_TMR6_4_GCMP_B>,
+						 <HC32_TMR64_CMPC_IRQ_NUM  HC32_TMR64_CMPC_IRQ_PRIO  INT_SRC_TMR6_4_GCMP_C>,
+						 <HC32_TMR64_CMPD_IRQ_NUM  HC32_TMR64_CMPD_IRQ_PRIO  INT_SRC_TMR6_4_GCMP_D>,
+						 <HC32_TMR64_CMPE_IRQ_NUM  HC32_TMR64_CMPE_IRQ_PRIO  INT_SRC_TMR6_4_GCMP_E>,
+						 <HC32_TMR64_CMPF_IRQ_NUM  HC32_TMR64_CMPF_IRQ_PRIO  INT_SRC_TMR6_4_GCMP_F>,
+						 <HC32_TMR64_OVF_IRQ_NUM  HC32_TMR64_OVF_IRQ_PRIO  INT_SRC_TMR6_4_OVF>,
+						 <HC32_TMR64_UDF_IRQ_NUM  HC32_TMR64_UDF_IRQ_PRIO  INT_SRC_TMR6_4_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer65: timer@40019000 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40019000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_5>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR65_CMPA_IRQ_NUM  HC32_TMR65_CMPA_IRQ_PRIO  INT_SRC_TMR6_5_GCMP_A>,
+						 <HC32_TMR65_CMPB_IRQ_NUM  HC32_TMR65_CMPB_IRQ_PRIO  INT_SRC_TMR6_5_GCMP_B>,
+						 <HC32_TMR65_CMPC_IRQ_NUM  HC32_TMR65_CMPC_IRQ_PRIO  INT_SRC_TMR6_5_GCMP_C>,
+						 <HC32_TMR65_CMPD_IRQ_NUM  HC32_TMR65_CMPD_IRQ_PRIO  INT_SRC_TMR6_5_GCMP_D>,
+						 <HC32_TMR65_CMPE_IRQ_NUM  HC32_TMR65_CMPE_IRQ_PRIO  INT_SRC_TMR6_5_GCMP_E>,
+						 <HC32_TMR65_CMPF_IRQ_NUM  HC32_TMR65_CMPF_IRQ_PRIO  INT_SRC_TMR6_5_GCMP_F>,
+						 <HC32_TMR65_OVF_IRQ_NUM  HC32_TMR65_OVF_IRQ_PRIO  INT_SRC_TMR6_5_OVF>,
+						 <HC32_TMR65_UDF_IRQ_NUM  HC32_TMR65_UDF_IRQ_PRIO  INT_SRC_TMR6_5_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer66: timer@40019400 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40019400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_6>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR66_CMPA_IRQ_NUM  HC32_TMR66_CMPA_IRQ_PRIO  INT_SRC_TMR6_6_GCMP_A>,
+						 <HC32_TMR66_CMPB_IRQ_NUM  HC32_TMR66_CMPB_IRQ_PRIO  INT_SRC_TMR6_6_GCMP_B>,
+						 <HC32_TMR66_CMPC_IRQ_NUM  HC32_TMR66_CMPC_IRQ_PRIO  INT_SRC_TMR6_6_GCMP_C>,
+						 <HC32_TMR66_CMPD_IRQ_NUM  HC32_TMR66_CMPD_IRQ_PRIO  INT_SRC_TMR6_6_GCMP_D>,
+						 <HC32_TMR66_CMPE_IRQ_NUM  HC32_TMR66_CMPE_IRQ_PRIO  INT_SRC_TMR6_6_GCMP_E>,
+						 <HC32_TMR66_CMPF_IRQ_NUM  HC32_TMR66_CMPF_IRQ_PRIO  INT_SRC_TMR6_6_GCMP_F>,
+						 <HC32_TMR66_OVF_IRQ_NUM  HC32_TMR66_OVF_IRQ_PRIO  INT_SRC_TMR6_6_OVF>,
+						 <HC32_TMR66_UDF_IRQ_NUM  HC32_TMR66_UDF_IRQ_PRIO  INT_SRC_TMR6_6_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer67: timer@40019800 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40019800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_7>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR67_CMPA_IRQ_NUM  HC32_TMR67_CMPA_IRQ_PRIO  INT_SRC_TMR6_7_GCMP_A>,
+						 <HC32_TMR67_CMPB_IRQ_NUM  HC32_TMR67_CMPB_IRQ_PRIO  INT_SRC_TMR6_7_GCMP_B>,
+						 <HC32_TMR67_CMPC_IRQ_NUM  HC32_TMR67_CMPC_IRQ_PRIO  INT_SRC_TMR6_7_GCMP_C>,
+						 <HC32_TMR67_CMPD_IRQ_NUM  HC32_TMR67_CMPD_IRQ_PRIO  INT_SRC_TMR6_7_GCMP_D>,
+						 <HC32_TMR67_CMPE_IRQ_NUM  HC32_TMR67_CMPE_IRQ_PRIO  INT_SRC_TMR6_7_GCMP_E>,
+						 <HC32_TMR67_CMPF_IRQ_NUM  HC32_TMR67_CMPF_IRQ_PRIO  INT_SRC_TMR6_7_GCMP_F>,
+						 <HC32_TMR67_OVF_IRQ_NUM  HC32_TMR67_OVF_IRQ_PRIO  INT_SRC_TMR6_7_OVF>,
+						 <HC32_TMR67_UDF_IRQ_NUM  HC32_TMR67_UDF_IRQ_PRIO  INT_SRC_TMR6_7_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		timer68: timer@40019c00 {
+			compatible = "xhsc,hc32-timer6";
+			reg = <0x40019c00 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK0 HC32_CLK_FCG2 HC32_FCG2_PERIPH_TMR6_8>;
+			interrupt-parent = <&intc>;
+			interrupts = <HC32_TMR68_CMPA_IRQ_NUM  HC32_TMR68_CMPA_IRQ_PRIO  INT_SRC_TMR6_8_GCMP_A>,
+						 <HC32_TMR68_CMPB_IRQ_NUM  HC32_TMR68_CMPB_IRQ_PRIO  INT_SRC_TMR6_8_GCMP_B>,
+						 <HC32_TMR68_CMPC_IRQ_NUM  HC32_TMR68_CMPC_IRQ_PRIO  INT_SRC_TMR6_8_GCMP_C>,
+						 <HC32_TMR68_CMPD_IRQ_NUM  HC32_TMR68_CMPD_IRQ_PRIO  INT_SRC_TMR6_8_GCMP_D>,
+						 <HC32_TMR68_CMPE_IRQ_NUM  HC32_TMR68_CMPE_IRQ_PRIO  INT_SRC_TMR6_8_GCMP_E>,
+						 <HC32_TMR68_CMPF_IRQ_NUM  HC32_TMR68_CMPF_IRQ_PRIO  INT_SRC_TMR6_8_GCMP_F>,
+						 <HC32_TMR68_OVF_IRQ_NUM  HC32_TMR68_OVF_IRQ_PRIO  INT_SRC_TMR6_8_OVF>,
+						 <HC32_TMR68_UDF_IRQ_NUM  HC32_TMR68_UDF_IRQ_PRIO  INT_SRC_TMR6_8_UDF>;
+			interrupt-names = "cmpa", "cmpb", "cmpc", "cmpd", "cmpe", "cmpf", "ovf", "udf";
+			clock-division = <HC32_TMR_CNT_CLK_DIV1>;
+			count-mode = <HC32_TMR_CNT_MD_SAWTOOTH>;
+			count-direction = <HC32_TMR_CNT_DIR_UP>;
+			status = "disabled";
+
+			pwm {
+				compatible = "xhsc,hc32-timer6-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
+			qdec {
+				compatible = "xhsc,hc32-qdec";
+				status = "disabled";
+			};
+		};
+
+		i2c_sys: i2c_system@4004e000
+		{
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = < 0x4004e000 DT_SIZE_K(6) >;
+			i2c1: i2c1@4004e000 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004e000 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C1>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C1_EE_IRQ_NUM HC32_I2C1_EE_IRQ_PRIO INT_SRC_I2C1_EEI>,
+							 < HC32_I2C1_TE_IRQ_NUM HC32_I2C1_TE_IRQ_PRIO INT_SRC_I2C1_TEI>,
+							 < HC32_I2C1_TX_IRQ_NUM HC32_I2C1_TX_IRQ_PRIO INT_SRC_I2C1_TXI>,
+							 < HC32_I2C1_RX_IRQ_NUM HC32_I2C1_RX_IRQ_PRIO INT_SRC_I2C1_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
+
+			i2c2: i2c2@4004e400 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004e400 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C2>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C2_EE_IRQ_NUM HC32_I2C2_EE_IRQ_PRIO INT_SRC_I2C2_EEI>,
+							 < HC32_I2C2_TE_IRQ_NUM HC32_I2C2_TE_IRQ_PRIO INT_SRC_I2C2_TEI>,
+							 < HC32_I2C2_TX_IRQ_NUM HC32_I2C2_TX_IRQ_PRIO INT_SRC_I2C2_TXI>,
+							 < HC32_I2C2_RX_IRQ_NUM HC32_I2C2_RX_IRQ_PRIO INT_SRC_I2C2_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
+
+			i2c3: i2c3@4004e800 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004e800 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C3>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C3_EE_IRQ_NUM HC32_I2C3_EE_IRQ_PRIO INT_SRC_I2C3_EEI>,
+							 < HC32_I2C3_TE_IRQ_NUM HC32_I2C3_TE_IRQ_PRIO INT_SRC_I2C3_TEI>,
+							 < HC32_I2C3_TX_IRQ_NUM HC32_I2C3_TX_IRQ_PRIO INT_SRC_I2C3_TXI>,
+							 < HC32_I2C3_RX_IRQ_NUM HC32_I2C3_RX_IRQ_PRIO INT_SRC_I2C3_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
+
+			i2c4: i2c4@4004ec00 {
+				compatible = "xhsc,hc32-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x4004ec00 DT_SIZE_K(1)>;
+				clocks = <&bus_fcg HC32_CLK_BUS_PCLK3 HC32_CLK_FCG1
+									HC32_FCG1_PERIPH_I2C4>;
+				interrupt-parent = <&intc>;
+				interrupts = < HC32_I2C4_EE_IRQ_NUM HC32_I2C4_EE_IRQ_PRIO INT_SRC_I2C4_EEI>,
+							 < HC32_I2C4_TE_IRQ_NUM HC32_I2C4_TE_IRQ_PRIO INT_SRC_I2C4_TEI>,
+							 < HC32_I2C4_TX_IRQ_NUM HC32_I2C4_TX_IRQ_PRIO INT_SRC_I2C4_TXI>,
+							 < HC32_I2C4_RX_IRQ_NUM HC32_I2C4_RX_IRQ_PRIO INT_SRC_I2C4_RXI>;
+				interrupt-names = "eei", "tei", "txi", "rxi";
+				status = "disabled";
+			};
+		};
+
+
+		adc1: adc@40040000 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040000 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC1>;
+			interrupt-parent = <&intc>;
+			interrupt-names = "eoca", "eocb";
+			interrupts = <HC32_ADC1_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC1_EOCA>,
+						 <HC32_ADC1_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC1_EOCB>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc2: adc@40040400 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040400 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC2>;
+			interrupt-parent = <&intc>;
+			interrupt-names = "eoca", "eocb";
+			interrupts = <HC32_ADC2_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCA>,
+						 <HC32_ADC2_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC2_EOCB>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		adc3: adc@40040800 {
+			compatible = "xhsc,hc32-adc";
+			reg = <0x40040800 0x400>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC3>,
+			<&bus_fcg HC32_CLK_BUS_PCLK4 HC32_CLK_FCG3 HC32_FCG3_PERIPH_ADC3>;
+			interrupt-parent = <&intc>;
+			interrupt-names = "eoca", "eocb";
+			interrupts = <HC32_ADC3_EOCA_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC3_EOCA>,
+						 <HC32_ADC3_EOCB_IRQ_NUM DDL_IRQ_PRIO_DEFAULT INT_SRC_ADC3_EOCB>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@4001e000 {
+			compatible = "xhsc,hc32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4001E000 0x400>;
+			tx-fifo-level = <2>;
+			rx-fifo-level = <2>;
+			clocks = <&bus_fcg HC32_CLK_BUS_PCLK2 HC32_CLK_FCG1 HC32_FCG1_PERIPH_I2S1>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

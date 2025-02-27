@@ -14,6 +14,8 @@ tests:
     platform_allow: cc3220sf_launchxl
   drivers.adc.ite.it8xxx2.build:
     platform_allow: it8xxx2_evb
+  drivers.adc.hc32f460.build:
+    platform_allow: hc32f460_evb
   drivers.adc.mcux.adc12.build:
     platform_allow: twr_ke18f
   drivers.adc.mcux.adc16.build:

@@ -1,0 +1,169 @@
+/*
+ * Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <xhsc/f4/hc32f460.dtsi>
+#include "hc32f460_evb-pinctrl.dtsi"
+
+/ {
+	model = "xhsc, EV_F460_LQ100_Rev2.0 board";
+	compatible = "xhsc,hc32f460_evb";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart4;
+		zephyr,shell-uart = &usart4;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "User LD0";
+		};
+		green_led: led_1 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		yellow_led: led_2 {
+			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		blue_led: led_3 {
+			gpios = <&gpiod 6 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "Wkup_key";
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	qspi_memory: memory@98000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x98000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "QSPI";
+	};
+};
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&clk_xtal {
+	status = "okay";
+};
+
+&clk_xtal32 {
+	status = "okay";
+};
+
+&clk_hrc {
+	status = "okay";
+};
+
+&clk_mrc {
+	status = "okay";
+};
+
+&clk_lrc {
+	status = "okay";
+};
+
+&clk_pll {
+	status = "okay";
+};
+
+&usart4 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart4_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	dmas = <&dma1 0 INT_SRC_I2C3_TEI (HC32_DMA_MEMORY_TO_PERIPH | HC32_DMA_SOURCE_ADDR_INC | HC32_DMA_DEST_ADDR_FIX | HC32_DMA_DATA_WIDTH_8BIT)>,
+			<&dma1 1 INT_SRC_I2C3_RXI (HC32_DMA_PERIPH_TO_MEMORY | HC32_DMA_SOURCE_ADDR_FIX | HC32_DMA_DEST_ADDR_INC | HC32_DMA_DATA_WIDTH_8BIT)>;
+	dma-names = "tx_dma","rx_dma";
+	scl-gpios = <&gpioe 15 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpiob 5 GPIO_OPEN_DRAIN>;
+	clock-frequency = < 100000 >;
+	/* delete dma property once use interrupt transfer.
+	** dma-names must be named "tx_dma","rx_dma" while used dma transfer for i2c.
+	** example :
+	** dma-names = "tx_dma","rx_dma";
+	*/
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+};
+
+&timera5 {
+	status = "okay";
+
+	qdec {
+		pinctrl-0 = <&tmra5_qdec_default>;
+		pinctrl-names = "default";
+		hw-count-conditions = <(TMR_UP_COND_A_H_B_R | TMR_UP_COND_B_H_A_R)>;
+		counts-per-revolution = <1000>;
+	};
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "fixed-partitions";
+
+		/* Set 4Kb for storage using in the 256KB flash 0 */
+		storage_partition: partition@20000 {
+			label = "storage";
+			reg = <0x00020000 DT_SIZE_K(4)>;
+		};
+		/* reserved region */
+		reserved_partition: partition@7ffe0 {
+			label = "reserved";
+			reg = <0x0007ffe0 32>;
+		};
+	};
+};

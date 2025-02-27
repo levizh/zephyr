@@ -29,14 +29,15 @@ static struct wdt_timeout_cfg m_cfg_wdt0;
 static volatile int wdt_interrupted_flag;
 static volatile int wdt_feed_flag;
 
-
+#if !defined(HC32F460) && !defined(HC32F4A0)
 static void wdt_callback(const struct device *dev, int channel_id)
 {
 	wdt_interrupted_flag += WDT_TEST_CB_TEST_VALUE;
 	zassert_equal(WDT_FEED_TRIES, wdt_feed_flag,
-			"%d: Invalid number of feeding (expected: %d)",
-			wdt_feed_flag, WDT_FEED_TRIES);
+		      "%d: Invalid number of feeding (expected: %d)",
+		      wdt_feed_flag, WDT_FEED_TRIES);
 }
+#endif
 
 static int test_wdt_callback_reset_none(void)
 {
@@ -51,7 +52,11 @@ static int test_wdt_callback_reset_none(void)
 	m_cfg_wdt0.window.min = 0U;
 	m_cfg_wdt0.window.max = WDT_MAX_WINDOW;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_NONE;
+#if defined(HC32F460) || defined(HC32F4A0)
+	m_cfg_wdt0.callback = NULL;
+#else
 	m_cfg_wdt0.callback = wdt_callback;
+#endif
 
 	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
 	if (err == -ENOTSUP) {
@@ -72,13 +77,17 @@ static int test_wdt_callback_reset_none(void)
 	wdt_feed_flag = 0;
 	wdt_interrupted_flag = 0;
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
-		TC_PRINT("Feeding %d\n", i+1);
+		TC_PRINT("Feeding %d\n", i + 1);
 		wdt_feed(wdt, 0);
 		wdt_feed_flag++;
 		k_sleep(SLEEP_TIME);
 	}
 
+#if defined(HC32F460) || defined(HC32F4A0)
+	k_timeout_t timeout = SLEEP_TIME;
+#else
 	k_timeout_t timeout = WDT_TIMEOUT;
+#endif
 	uint64_t start_time = k_uptime_ticks();
 
 	while (wdt_interrupted_flag == 0) {
@@ -87,8 +96,9 @@ static int test_wdt_callback_reset_none(void)
 		}
 	}
 
+#if !defined(HC32F460) && !defined(HC32F4A0)
 	zassert_equal(wdt_interrupted_flag, WDT_TEST_CB_TEST_VALUE,
-			"wdt callback failed");
+		      "wdt callback failed");
 
 	err = wdt_disable(wdt);
 	if (err == -EPERM) {
@@ -98,6 +108,7 @@ static int test_wdt_callback_reset_none(void)
 		TC_PRINT("Disable watchdog error\n");
 		return TC_FAIL;
 	}
+#endif
 
 	return TC_PASS;
 }

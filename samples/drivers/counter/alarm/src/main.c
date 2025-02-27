@@ -63,6 +63,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_INST(0, renesas_rz_gtm_counter)
 #else
 #error Unable to find a counter device node in devicetree
+#elif defined(CONFIG_COUNTER_TIMERA_HC32)
+#define TIMER DT_INST(0, xhsc_hc32_timera_counter)
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,

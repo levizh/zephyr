@@ -1,0 +1,25 @@
+# XHSC HC32 PWM configuration options
+
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_HC32_TIMERA
+	bool "HC32 MCU TIMERA PWM driver"
+	default y if PWM
+	depends on DT_HAS_XHSC_HC32_TIMERA_PWM_ENABLED
+	select HC32_LL_TMRA
+	help
+	  This option enables the PWM driver for HC32 family of
+	  processors. Say y if you wish to use PWM port on HC32
+	  MCU.
+
+if PWM_HC32_TIMERA
+
+config HC32_TIMERA_CAPTURE_FREQ_HIGH
+	bool "HC32 MCU TIMERA CAPTURE FREQ IS HIGH"
+	default y if PWM_HC32_TIMERA
+	help
+	  If the capture frequency is greater than 10khz, then this option should be y,
+	  otherwise it should be n.
+
+endif

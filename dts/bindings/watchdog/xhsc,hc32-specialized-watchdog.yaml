@@ -1,0 +1,12 @@
+# Copyright (C) 2022-2024, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 specialized watchdog
+
+compatible: "xhsc,hc32-specialized-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

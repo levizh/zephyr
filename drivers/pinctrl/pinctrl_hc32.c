@@ -32,10 +32,11 @@ static volatile uint8_t gpio_ports_valid[] = {
 static inline uint8_t HC32_get_port(uint8_t port_num)
 {
 #if defined(HC32F460)
-	if ('H' == (port_num + 'A'))
+	if ('H' == (port_num + 'A')) {
 		return GPIO_PORT_H;
-	else
+	} else {
 		return port_num;
+	}
 #elif defined(HC32F4A0)
 	return port_num;
 #endif

@@ -1404,7 +1404,7 @@ static int uart_hc32_init(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define HC32_UART_CLOCK_DECL(index)										\
-static const struct hc32_modules_clock_sys uart_fcg_config_##index[]	\
+static struct hc32_modules_clock_sys uart_fcg_config_##index[]	\
 		= HC32_MODULES_CLOCKS(DT_DRV_INST(index));
 
 #define HC32_UART_INIT(index)											\

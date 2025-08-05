@@ -5498,7 +5498,7 @@ West:
     - Pengbiao12345
     - ETRD
     - greya5
-    - YangJP
+    - JamieTx
     - TrackingRobot
   files:
     - modules/Kconfig.xhsc
@@ -5924,7 +5924,7 @@ XHSC Platform:
     - Pengbiao12345
     - ETRD
     - greya5
-    - YangJP
+    - JamieTx
     - TrackingRobot
   files:
     - boards/xhsc/

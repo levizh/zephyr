@@ -40,7 +40,7 @@ struct uart_hc32_config {
 	/* USART instance */
 	CM_USART_TypeDef *usart;
 	/* clock subsystem driving this peripheral */
-	const struct hc32_modules_clock_sys *clk_cfg;
+	struct hc32_modules_clock_sys *clk_cfg;
 	/* pin muxing */
 	const struct pinctrl_dev_config *pin_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -56,9 +56,10 @@ struct hc32_dma_cfg {
 	uint16_t src_addr_increment;
 	uint16_t dst_addr_increment;
 	struct dma_block_config blk_cfg;
-	uint8_t *buffer;
 	size_t buffer_length;
 	size_t offset;
+	const uint8_t *tx_buffer;
+	uint8_t *rx_buffer;
 	volatile size_t counter;
 	int32_t timeout;
 	struct k_work_delayable timeout_work;
@@ -88,8 +89,8 @@ struct uart_hc32_data {
 	const struct device *uart_dev;
 	uart_callback_t async_cb;
 	void *async_user_data;
-	struct hc32_dma_cfg dma_rx;
 	struct hc32_dma_cfg dma_tx;
+	struct hc32_dma_cfg dma_rx;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif

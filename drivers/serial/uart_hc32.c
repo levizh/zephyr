@@ -156,20 +156,11 @@ static inline uint32_t uart_hc32_cfg2ll_stopbits(
 {
 	uint32_t ret_ll_stopbits = USART_STOPBIT_1BIT;
 
-	switch (sb) {
-	/* Some MCU's don't support 0.5 stop bits */
 #ifdef USART_STOPBIT_2BIT
-	case UART_CFG_STOP_BITS_2:
+	if (UART_CFG_STOP_BITS_2 == sb) {
 		ret_ll_stopbits = USART_STOPBIT_2BIT;
-		break;
-#endif	/* USART_STOPBIT_2BIT */
-
-#ifdef USART_STOPBIT_1BIT
-	case UART_CFG_STOP_BITS_1:
-#endif	/* USART_STOPBIT_1BIT */
-	default:
-		break;
 	}
+#endif	/* USART_STOPBIT_2BIT */
 
 	return ret_ll_stopbits;
 }
@@ -178,19 +169,11 @@ static inline enum uart_config_stop_bits uart_hc32_ll2cfg_stopbits(uint32_t sb)
 {
 	enum uart_config_stop_bits ret_cfg_stopbits = USART_STOPBIT_1BIT;
 
-	switch (sb) {
 #ifdef USART_STOPBIT_2BIT
-	case USART_STOPBIT_2BIT:
+	if(USART_STOPBIT_2BIT == sb) {
 		ret_cfg_stopbits = UART_CFG_STOP_BITS_2;
-		break;
-#endif	/* USART_STOPBIT_1BIT */
-
-#ifdef USART_STOPBIT_1BIT
-		case USART_STOPBIT_1BIT:
-#endif	/* USART_STOPBIT_1BIT */
-		default:
-			break;
 	}
+#endif	/* USART_STOPBIT_2BIT */
 
 	return ret_cfg_stopbits;
 }
@@ -199,17 +182,12 @@ static inline uint32_t uart_hc32_cfg2ll_databits(enum uart_config_data_bits db)
 {
 	uint32_t ret_ll_databits = USART_DATA_WIDTH_8BIT;
 
-	switch (db) {
 /* Some MCU's don't support 9B datawidth */
 #ifdef USART_DATA_WIDTH_9BIT
-	case UART_CFG_DATA_BITS_9:
+	if(UART_CFG_DATA_BITS_9 == db) {
 		ret_ll_databits = USART_DATA_WIDTH_9BIT;
-		break;
-#endif	/* USART_DATA_WIDTH_9BIT */
-	case UART_CFG_DATA_BITS_8:
-	default:
-		break;
 	}
+#endif	/* USART_DATA_WIDTH_9BIT */
 
 	return ret_ll_databits;
 }
@@ -219,17 +197,12 @@ static inline enum
 {
 	enum uart_config_data_bits ret_cfg_databits = UART_CFG_DATA_BITS_8;
 
-	switch (db) {
 /* Some MCU's don't support 9B datawidth */
 #ifdef USART_DATA_WIDTH_9BIT
-	case USART_DATA_WIDTH_9BIT:
+	if (USART_DATA_WIDTH_9BIT == db) {
 		ret_cfg_databits = UART_CFG_DATA_BITS_9;
-		break;
-#endif	/* USART_DATA_WIDTH_9BIT */
-	case USART_DATA_WIDTH_8BIT:
-	default:
-		break;
 	}
+#endif	/* USART_DATA_WIDTH_9BIT */
 
 	return ret_cfg_databits;
 }
@@ -611,7 +584,7 @@ static inline void async_evt_rx_rdy(struct uart_hc32_data *data)
 
 	struct uart_event event = {
 		.type = UART_RX_RDY,
-		.data.rx.buf = data->dma_rx.buffer,
+		.data.rx.buf = data->dma_rx.rx_buffer,
 		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset,
 		.data.rx.offset = data->dma_rx.offset
 	};
@@ -634,7 +607,7 @@ static inline void async_evt_rx_err(struct uart_hc32_data *data, int err_code)
 		.data.rx_stop.reason = err_code,
 		.data.rx_stop.data.len = data->dma_rx.counter,
 		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.buf = data->dma_rx.buffer
+		.data.rx_stop.data.buf = data->dma_rx.rx_buffer
 	};
 
 	async_user_callback(data, &event);
@@ -646,7 +619,7 @@ static inline void async_evt_tx_done(struct uart_hc32_data *data)
 
 	struct uart_event event = {
 		.type = UART_TX_DONE,
-		.data.tx.buf = data->dma_tx.buffer,
+		.data.tx.buf = data->dma_tx.tx_buffer,
 		.data.tx.len = data->dma_tx.counter
 	};
 
@@ -663,7 +636,7 @@ static inline void async_evt_tx_abort(struct uart_hc32_data *data)
 
 	struct uart_event event = {
 		.type = UART_TX_ABORTED,
-		.data.tx.buf = data->dma_tx.buffer,
+		.data.tx.buf = data->dma_tx.tx_buffer,
 		.data.tx.len = data->dma_tx.counter
 	};
 
@@ -687,7 +660,7 @@ static inline void async_evt_rx_buf_release(struct uart_hc32_data *data)
 {
 	struct uart_event evt = {
 		.type = UART_RX_BUF_RELEASED,
-		.data.rx_buf.buf = data->dma_rx.buffer,
+		.data.rx_buf.buf = data->dma_rx.rx_buffer,
 	};
 
 	async_user_callback(data, &evt);
@@ -854,10 +827,10 @@ static void uart_hc32_dma_replace_buffer(const struct device *dev)
 	/* reload DMA */
 	data->dma_rx.offset = 0;
 	data->dma_rx.counter = 0;
-	data->dma_rx.buffer = data->rx_next_buffer;
+	data->dma_rx.rx_buffer = data->rx_next_buffer;
 	data->dma_rx.buffer_length = data->rx_next_buffer_len;
 	data->dma_rx.blk_cfg.block_size = data->dma_rx.buffer_length;
-	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
+	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.rx_buffer;
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
@@ -975,7 +948,7 @@ static int uart_hc32_async_tx(const struct device *dev,
 		return -EBUSY;
 	}
 
-	data->dma_tx.buffer = (uint8_t *)tx_data;
+	data->dma_tx.tx_buffer = tx_data;
 	data->dma_tx.buffer_length = buf_size;
 	data->dma_tx.timeout = timeout;
 
@@ -989,7 +962,7 @@ static int uart_hc32_async_tx(const struct device *dev,
 	USART_FuncCmd(config->usart, USART_TX, DISABLE);
 
 	/* set source address */
-	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.buffer;
+	data->dma_tx.blk_cfg.source_address = (uint32_t)data->dma_tx.tx_buffer;
 	data->dma_tx.blk_cfg.dest_address = (uint32_t)&USARTx->TDR;
 	data->dma_tx.blk_cfg.block_size = data->dma_tx.buffer_length;
 
@@ -1040,13 +1013,13 @@ static int uart_hc32_async_rx_enable(const struct device *dev,
 	USART_FuncCmd(config->usart, USART_INT_RX, DISABLE);
 
 	data->dma_rx.offset = 0;
-	data->dma_rx.buffer = rx_buf;
+	data->dma_rx.rx_buffer = rx_buf;
 	data->dma_rx.buffer_length = buf_size;
 	data->dma_rx.counter = 0;
 	data->dma_rx.timeout = timeout;
 
 	data->dma_rx.blk_cfg.block_size = buf_size;
-	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.buffer;
+	data->dma_rx.blk_cfg.dest_address = (uint32_t)data->dma_rx.rx_buffer;
 	data->dma_rx.blk_cfg.source_address = (uint32_t)&USARTx->RDR;
 
 	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
@@ -1124,7 +1097,8 @@ static int uart_hc32_async_init(const struct device *dev)
 
 	data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
 
-	data->dma_rx.user_cfg.user_data = (const void *)dev;
+	/* user_data will be assigned to dev when support dma uart */
+	data->dma_rx.user_cfg.user_data = NULL;
 	data->dma_rx.dma_cfg.user_data = (void *)&data->dma_rx.user_cfg;
 
 	data->rx_next_buffer = NULL;
@@ -1141,7 +1115,8 @@ static int uart_hc32_async_init(const struct device *dev)
 	data->dma_tx.blk_cfg.dest_addr_adj = data->dma_tx.dst_addr_increment;
 	data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
 
-	data->dma_tx.user_cfg.user_data = (void *)dev;
+	/* user_data will be assigned to dev when support dma uart */
+	data->dma_tx.user_cfg.user_data = NULL;
 	data->dma_tx.dma_cfg.user_data = (void *)&data->dma_tx.user_cfg;
 	k_work_init_delayable(&data->dma_tx.timeout_work,
 							uart_hc32_async_tx_timeout);
@@ -1229,7 +1204,7 @@ static int uart_hc32_clocks_enable(const struct device *dev)
 	}
 
 	/* enable clock */
-	err = clock_control_on(data->clock, (clock_control_subsys_t)config->clk_cfg);
+	err = clock_control_on(data->clock, (clock_control_subsys_t)(config->clk_cfg));
 	if (err != 0) {
 		LOG_ERR("Could not enable UART clock");
 		return err;

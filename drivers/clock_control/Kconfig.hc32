@@ -20,9 +20,10 @@ config HC32_XTAL32_DRV_H
 	  Select High Driver for XTAL32
 
 config HC32_XTAL32_DRV_M
-	bool "medium Driver"
+	bool "Medium Driver"
 	help
 	  Select medium Driver for XTAL32
+
 endchoice
 
 config HC32_XTAL32_DRV

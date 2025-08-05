@@ -10,7 +10,6 @@ config INTC_HC32
 	help
 	  Enable INTC driver for HC32 line of MCUs
 
-
 config INTC_EXTINT_HC32
 	bool "External Interrupt Controller (EXTINT) Driver for HC32 family of MCUs"
 	default y

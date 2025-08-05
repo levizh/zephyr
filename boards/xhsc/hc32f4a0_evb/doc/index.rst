@@ -3,7 +3,10 @@
 Overview
 ********
 
-HC32F4A0_EVB,  also named as EV_F4A0_LQ176, is the official development board of XHSC, equipped with HC32F4A0SITB chip, based on ARM Cortex-M4 core, with a maximum frequency of 240 MHz, and rich on-board resources, which can give full play to the performance of HC32F4A0SITB chip.
+HC32F4A0_EVB, also named as EV_F4A0_LQ176, is the official development board of 
+XHSC, equipped with HC32F4A0SITB chip, based on ARM Cortex-M4 core, with a 
+maximum frequency of 240 MHz, and rich on-board resources, which can give full 
+play to the performance of HC32F4A0SITB chip.
 
 Hardware
 ********
@@ -37,28 +40,14 @@ More information about the board and MCU can be found at [XHSC](https://www.xhsc
 Supported Features
 ==================
 
-The board configuration supports the following hardware features:
+.. zephyr:board-supported-hw::
 
-.. list-table::
-   :header-rows: 1
+Pin Mapping
+===========
 
-   * - Peripheral
-     - Kconfig option
-     - Devicetree compatible
-   * - GPIO
-     - :kconfig:option:`CONFIG_GPIO`
-     - :dtcompatible:`xhsc,hc32-gpio`
-   * - NVIC
-     - N/A
-     - :dtcompatible:`arm,v7m-nvic`
-   * - PINMUX
-     - :kconfig:option:`CONFIG_PINCTRL`
-     - :dtcompatible:`xhsc,hc32-pinctrl`
-  * - USART
-     * - :kconfig:option:`CONFIG_SERIAL`
-     - :dtcompatible:`xhsc,hc32-uart`
-
-Other hardware features are not yet supported on this Zephyr port.
+The peripherals of the HC32F4A0 SoC can be routed to various pins on the board.
+The configuration of these routes can be modified through DTS. Please refer to
+the datasheet to see the possible routings for each peripheral.
 
 Default Zephyr Peripheral Mapping
 ----------------------------------
@@ -70,9 +59,9 @@ Default Zephyr Peripheral Mapping
 System Clock
 ------------
 
-HC32F4A0_EVB System Clock could be driven by an internal or external
-oscillator, as well as the PLL clock. By default, the System clock is
-driven by the PLL clock at 240MHz, driven by an 8MHz high-speed external clock.
+HC32F4A0_EVB System Clock could be driven by an internal or external oscillator,
+ as well as the PLL clock. By default, the System clock is driven by the PLL 
+ clock at 240MHz, driven by an 8MHz high-speed external clock.
 
 Serial Port
 -----------
@@ -133,4 +122,4 @@ allow flash programming and debug over USB.
       :compact:
 
 .. _HC32F4A0 Datasheet, Reference Manual, HC32F4A0_EVB Schematics:
-	https://www.xhsc.com.cn/product/112.html
+    https://www.xhsc.com.cn/product/112.html

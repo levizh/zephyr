@@ -115,91 +115,123 @@ static inline void uart_hc32_set_baudrate(const struct device *dev,
 
 static inline uint32_t uart_hc32_cfg2ll_parity(enum uart_config_parity parity)
 {
+	uint32_t ret_ll_parity = USART_PARITY_NONE;
+
 	switch (parity) {
 	case UART_CFG_PARITY_ODD:
-		return USART_PARITY_ODD;
+		ret_ll_parity = USART_PARITY_ODD;
+		break;
 	case UART_CFG_PARITY_EVEN:
-		return USART_PARITY_EVEN;
+		ret_ll_parity = USART_PARITY_EVEN;
+		break;
 	case UART_CFG_PARITY_NONE:
 	default:
-		return USART_PARITY_NONE;
+		break;
 	}
+
+	return ret_ll_parity;
 }
 
 static inline enum uart_config_parity uart_hc32_ll2cfg_parity(uint32_t parity)
 {
+	enum uart_config_parity ret_cfg_parity = UART_CFG_PARITY_NONE;
+
 	switch (parity) {
 	case USART_PARITY_ODD:
-		return UART_CFG_PARITY_ODD;
+		ret_cfg_parity = UART_CFG_PARITY_ODD;
+		break;
 	case USART_PARITY_EVEN:
-		return UART_CFG_PARITY_EVEN;
+		ret_cfg_parity = UART_CFG_PARITY_EVEN;
+		break;
 	case USART_PARITY_NONE:
 	default:
-		return UART_CFG_PARITY_NONE;
+		break;
 	}
+
+	return ret_cfg_parity;
 }
 
 static inline uint32_t uart_hc32_cfg2ll_stopbits(
 		enum uart_config_stop_bits sb)
 {
+	uint32_t ret_ll_stopbits = USART_STOPBIT_1BIT;
+
 	switch (sb) {
 	/* Some MCU's don't support 0.5 stop bits */
 #ifdef USART_STOPBIT_2BIT
 	case UART_CFG_STOP_BITS_2:
-		return USART_STOPBIT_2BIT;
+		ret_ll_stopbits = USART_STOPBIT_2BIT;
+		break;
 #endif	/* USART_STOPBIT_2BIT */
 
 #ifdef USART_STOPBIT_1BIT
 	case UART_CFG_STOP_BITS_1:
 #endif	/* USART_STOPBIT_1BIT */
 	default:
-		return USART_STOPBIT_1BIT;
+		break;
 	}
+
+	return ret_ll_stopbits;
 }
 
 static inline enum uart_config_stop_bits uart_hc32_ll2cfg_stopbits(uint32_t sb)
 {
+	enum uart_config_stop_bits ret_cfg_stopbits = USART_STOPBIT_1BIT;
+
 	switch (sb) {
 #ifdef USART_STOPBIT_2BIT
 	case USART_STOPBIT_2BIT:
-		return UART_CFG_STOP_BITS_2;
+		ret_cfg_stopbits = UART_CFG_STOP_BITS_2;
+		break;
 #endif	/* USART_STOPBIT_1BIT */
 
 #ifdef USART_STOPBIT_1BIT
 		case USART_STOPBIT_1BIT:
 #endif	/* USART_STOPBIT_1BIT */
 		default:
-			return UART_CFG_STOP_BITS_1;
+			break;
 	}
+
+	return ret_cfg_stopbits;
 }
 
 static inline uint32_t uart_hc32_cfg2ll_databits(enum uart_config_data_bits db)
 {
+	uint32_t ret_ll_databits = USART_DATA_WIDTH_8BIT;
+
 	switch (db) {
 /* Some MCU's don't support 9B datawidth */
 #ifdef USART_DATA_WIDTH_9BIT
 	case UART_CFG_DATA_BITS_9:
-		return USART_DATA_WIDTH_9BIT;
+		ret_ll_databits = USART_DATA_WIDTH_9BIT;
+		break;
 #endif	/* USART_DATA_WIDTH_9BIT */
 	case UART_CFG_DATA_BITS_8:
 	default:
-		return USART_DATA_WIDTH_8BIT;
+		break;
 	}
+
+	return ret_ll_databits;
 }
 
 static inline enum
 	uart_config_data_bits uart_hc32_ll2cfg_databits(uint32_t db)
 {
+	enum uart_config_data_bits ret_cfg_databits = UART_CFG_DATA_BITS_8;
+
 	switch (db) {
 /* Some MCU's don't support 9B datawidth */
 #ifdef USART_DATA_WIDTH_9BIT
 	case USART_DATA_WIDTH_9BIT:
-		return UART_CFG_DATA_BITS_9;
+		ret_cfg_databits = UART_CFG_DATA_BITS_9;
+		break;
 #endif	/* USART_DATA_WIDTH_9BIT */
 	case USART_DATA_WIDTH_8BIT:
 	default:
-		return UART_CFG_DATA_BITS_8;
+		break;
 	}
+
+	return ret_cfg_databits;
 }
 
 /**
@@ -704,9 +736,9 @@ static int uart_hc32_async_callback_set(const struct device *dev,
 					 void *user_data)
 {
 	struct uart_hc32_data *data = dev->data;
-	uint8_t i = 0;
+
 #if CONFIG_UART_INTERRUPT_DRIVEN
-	for(i = 0; i < UART_INT_NUM; i++)
+	for(uint8_t i = 0; i < UART_INT_NUM; i++)
 	{
 		data->cb[i].user_cb = NULL;
 		data->cb[i].user_data = NULL;
@@ -1092,7 +1124,7 @@ static int uart_hc32_async_init(const struct device *dev)
 
 	data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
 
-	data->dma_rx.user_cfg.user_data = (void *)dev;
+	data->dma_rx.user_cfg.user_data = (const void *)dev;
 	data->dma_rx.dma_cfg.user_data = (void *)&data->dma_rx.user_cfg;
 
 	data->rx_next_buffer = NULL;

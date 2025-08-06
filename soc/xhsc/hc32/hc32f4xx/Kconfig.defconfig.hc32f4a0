@@ -9,17 +9,17 @@ config SOC
 
 config NUM_IRQS
 	int
-	# must be >= the highest interrupt number used
+	# Must be >= the highest interrupt number used
 	default 143
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 8000000
+	default $(dt_node_int_prop_int,/soc/clock@40048400/clock_pll,clock-frequency)
 
 config HC32_DDL_DEBUG
-	bool "if enable assert function in hc32_ddl drivers"
+	bool "Enable assert function in hc32_ddl drivers"
 	default n
 
 config HC32_FLASH_CONFIG_OFFSET

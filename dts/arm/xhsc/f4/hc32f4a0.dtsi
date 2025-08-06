@@ -104,7 +104,7 @@
 			clk_pll: clock_pll {
 				#clock-cells = <0>;
 				compatible = "xhsc,hc32-clock-pll";
-				clock_frequency = <240000000>;
+				clock-frequency = <240000000>;
 				clocks = <&clk_xtal>;
 				div-m = <1>;
 				mul-n = <120>;

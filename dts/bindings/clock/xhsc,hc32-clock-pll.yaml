@@ -13,7 +13,7 @@ properties:
   clocks:
     required: true
 
-  clock_frequency:
+  clock-frequency:
     type: int
     required: true
 

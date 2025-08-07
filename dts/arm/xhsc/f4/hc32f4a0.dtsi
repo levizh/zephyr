@@ -79,8 +79,9 @@
 
 			clk_xtal32: clock_xtal32 {
 				#clock-cells = <0>;
-				compatible = "fixed-clock";
+				compatible = "xhsc,hc32-clock-xtal32";
 				clock-frequency = <32768>;
+				drive-strength = <0>;
 			};
 
 			clk_hrc: clock_hrc {

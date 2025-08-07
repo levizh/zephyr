@@ -53,19 +53,27 @@ static void hc32_clock_xtal_init(void)
 	(void)CLK_XtalInit(&stcXtalInit);
 	hc32_clock_stale(CLK_STB_FLAG_XTAL);
 }
-#endif
+#endif /* HC32_XTAL_ENABLED */
 
+#if HC32_XTAL32_ENABLED
 static void hc32_clock_xtal32_init(void)
 {
 	stc_clock_xtal32_init_t stcXtal32Init;
 
 	(void)CLK_Xtal32StructInit(&stcXtal32Init);
 	stcXtal32Init.u8State = CLK_XTAL32_ON;
-	stcXtal32Init.u8Drv = CONFIG_HC32_XTAL32_DRV;
+
+	if (1U == HC32_XTAL32_DRV) {
+		stcXtal32Init.u8Drv = CLK_XTAL32_DRV_HIGH;
+	} else {
+		stcXtal32Init.u8Drv = CLK_XTAL32_DRV_MID;
+	}
+
 	stcXtal32Init.u8Filter = CLK_XTAL32_FILTER_ALL_MD;
 	GPIO_AnalogCmd(BSP_XTAL32_PORT, BSP_XTAL32_IN_PIN | BSP_XTAL32_OUT_PIN, ENABLE);
 	(void)CLK_Xtal32Init(&stcXtal32Init);
 }
+#endif /* HC32_XTAL32_ENABLED */
 
 static void hc32_clock_hrc_init(void)
 {
@@ -117,16 +125,16 @@ static void hc32_clk_conf(void)
 	hc32_clock_xtal_init();
 #endif
 #if HC32_HRC_ENABLED
-		hc32_clock_hrc_init();
+	hc32_clock_hrc_init();
 #endif
 #if HC32_MRC_ENABLED
-		hc32_clock_mrc_init();
+	hc32_clock_mrc_init();
 #endif
 #if HC32_LRC_ENABLED
-		hc32_clock_lrc_init();
+	hc32_clock_lrc_init();
 #endif
 #if HC32_XTAL32_ENABLED
-		hc32_clock_xtal32_init();
+	hc32_clock_xtal32_init();
 #endif
 }
 

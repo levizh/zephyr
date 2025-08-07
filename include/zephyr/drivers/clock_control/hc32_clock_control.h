@@ -88,6 +88,7 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_xtal32), fixed_clock, okay)
 #define HC32_XTAL32_ENABLED	1
 #define HC32_XTAL32_FREQ	DT_PROP(DT_NODELABEL(clk_xtal32), clock_frequency)
+#define HC32_XTAL32_DRV		DT_PROP(DT_NODELABEL(clk_xtal32), drive_strength)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_hrc), fixed_clock, okay)

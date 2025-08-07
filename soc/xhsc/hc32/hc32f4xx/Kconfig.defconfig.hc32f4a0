@@ -8,15 +8,13 @@ config SOC
 	default "hc32f4a0"
 
 config NUM_IRQS
-	int
-	# Must be >= the highest interrupt number used
 	default 143
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/soc/clock@40048400/clock_pll,clock-frequency)
+	default $(dt_nodelabel_int_prop,clk_pll,clock-frequency)
 
 config HC32_DDL_DEBUG
 	bool "Enable assert function in hc32_ddl drivers"

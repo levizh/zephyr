@@ -144,28 +144,52 @@ static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 	uint8_t old_run_mode;
 	uint8_t new_run_mode;
 
-	new_run_mode = (new_freq >= 168000000) ? \
-			2 : (new_freq >= 8000000) ? 1 : 0;
-	old_run_mode = (old_freq >= 168000000) ? \
-			2 : (old_freq >= 8000000) ? 1 : 0;
+	if (new_freq >= 168000000) {
+		new_run_mode = 2;
+	} else {
+		if (new_freq >= 8000000) {
+			new_run_mode = 1;
+		} else {
+			new_run_mode = 0;
+		}
+	}
+
+	if (old_freq >= 168000000) {
+		old_run_mode = 2;
+	} else {
+		if (old_freq >= 8000000) {
+			old_run_mode = 1;
+		} else {
+			old_run_mode = 0;
+		}
+	}
+
 	if (old_run_mode == 0) {
 		if (new_run_mode == 1) {
 			PWC_LowSpeedToHighSpeed();
 		} else if (new_run_mode == 2) {
 			PWC_LowSpeedToHighPerformance();
+		} else {
+			;
 		}
 	} else if (old_run_mode == 1) {
 		if (new_run_mode == 0) {
 			PWC_HighSpeedToLowSpeed();
 		} else if (new_run_mode == 2) {
 			PWC_HighSpeedToHighPerformance();
+		} else {
+			;
 		}
 	} else if (old_run_mode == 2) {
 		if (new_run_mode == 0) {
 			PWC_HighPerformanceToLowSpeed();
 		} else if (new_run_mode == 1) {
 			PWC_HighPerformanceToHighSpeed();
+		} else {
+			;
 		}
+	} else {
+		;
 	}
 }
 #elif defined (HC32F4A0)
@@ -181,6 +205,8 @@ static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 		PWC_LowSpeedToHighSpeed();
 	} else if (new_run_mode < old_run_mode) {
 		PWC_HighSpeedToLowSpeed();
+	} else {
+		;
 	}
 }
 #endif
@@ -236,8 +262,8 @@ static int hc32_clock_control_on(const struct device *dev,
 {
 	struct hc32_modules_clock_sys *clk_sys = \
 		(struct hc32_modules_clock_sys *)sub_system;
-	struct hc32_modules_clock_config *mod_conf = \
-		(struct hc32_modules_clock_config *)dev->config;
+	const struct hc32_modules_clock_config *mod_conf = \
+		(const struct hc32_modules_clock_config *)dev->config;
 
 	if (IN_RANGE(clk_sys->fcg, HC32_CLK_FCG0, HC32_CLK_FCG3) == 0) {
 		return -ENOTSUP;
@@ -254,8 +280,8 @@ static int hc32_clock_control_off(const struct device *dev,
 {
 	struct hc32_modules_clock_sys *clk_sys = \
 		(struct hc32_modules_clock_sys *)sub_system;
-	struct hc32_modules_clock_config *mod_conf = \
-		(struct hc32_modules_clock_config *)dev->config;
+	const struct hc32_modules_clock_config *mod_conf = \
+		(const struct hc32_modules_clock_config *)dev->config;
 
 	if (IN_RANGE(clk_sys->fcg, HC32_CLK_FCG0, HC32_CLK_FCG3) == 0) {
 		return -ENOTSUP;
@@ -331,8 +357,8 @@ static enum clock_control_status hc32_clock_control_get_status(
 {
 	struct hc32_modules_clock_sys *clk_sys = \
 		(struct hc32_modules_clock_sys *)sys;
-	struct hc32_modules_clock_config *mod_conf = \
-		(struct hc32_modules_clock_config *)dev->config;
+	const struct hc32_modules_clock_config *mod_conf = \
+		(const struct hc32_modules_clock_config *)dev->config;
 
 	if (IN_RANGE(clk_sys->fcg, HC32_CLK_FCG0, HC32_CLK_FCG3) == 0) {
 		return -CLOCK_CONTROL_STATUS_UNKNOWN;

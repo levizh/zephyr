@@ -83,4 +83,4 @@
 struct hc32_modules_clock_config {
 	uint32_t addr;
 };
-#endif // !_HC32F4_CLOCK_
+#endif /* !_HC32F4_CLOCK_ */

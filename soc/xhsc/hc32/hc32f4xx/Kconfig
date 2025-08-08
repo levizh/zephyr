@@ -10,5 +10,6 @@ config SOC_SERIES_HC32F4XX
 	select CPU_HAS_FPU
 	select HAS_HC32_DDL
 	select CLOCK_CONTROL_HC32 if CLOCK_CONTROL
+	select PINCTRL
 	help
 	  Enable support for xhsc hc32f4xx MCU series

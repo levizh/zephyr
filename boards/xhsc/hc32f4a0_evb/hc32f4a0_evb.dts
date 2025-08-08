@@ -106,4 +106,9 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_default>;
 	pinctrl-names = "default";
+	interrupt-parent = <&intc>;
+	interrupts = <HC32_UART1_RXERR_IRQ_NUM		HC32_UART1_RXERR_IRQ_PRIO	INT_SRC_USART1_EI>,
+				<HC32_UART1_RX_IRQ_NUM			HC32_UART1_RX_IRQ_PRIO		INT_SRC_USART1_RI>,
+				<HC32_UART1_TX_CPLT_IRQ_NUM		HC32_UART1_TX_CPLT_IRQ_PRIO	INT_SRC_USART1_TCI>;
+	interrupt-names = "ore", "rxne", "tc";
 };

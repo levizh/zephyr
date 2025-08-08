@@ -136,7 +136,7 @@
 /** STRENGTH field mask. */
 #define HC32_STRENGTH_MSK    (3U << HC32_STRENGTH_SHIFT)
 
-/** I\O invert data  */
+/** I/O invert data  */
 #define HC32_INVERT_SHIFT    30U
 #define HC32_INVERT_MSK      (1U << HC32_INVERT_SHIFT)
 

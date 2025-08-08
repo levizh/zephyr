@@ -30,11 +30,52 @@ static void gpio_hc32_isr(int line, void *arg)
 }
 
 /**
+ * @brief Calculate the on/off status of the exit interrupt by the given flags
+ *
+ */
+static int gpio_hc32_cfg2ll_intr_on(gpio_flags_t flags)
+{
+	int ext_int = PIN_EXTINT_OFF;
+
+	if ((flags & GPIO_INT_MASK) != 0) {
+		if ((flags & GPIO_INT_ENABLE) != 0) {
+			ext_int = PIN_EXTINT_ON;
+		}
+	}
+
+	return ext_int;
+}
+
+/**
+ * @brief Calculate interrupt trigger type by the given flags
+ *
+ */
+static int gpio_hc32_cfg2ll_intr_trig(gpio_flags_t flags)
+{
+	int trigger = HC32_EXTINT_TRIG_NOT_SUPPT;
+
+	if ((flags & GPIO_INT_EDGE_BOTH) == GPIO_INT_EDGE_BOTH) {
+		trigger = HC32_EXTINT_TRIG_BOTH;
+	} else if ((flags & GPIO_INT_EDGE_RISING) == GPIO_INT_EDGE_RISING) {
+		trigger = HC32_EXTINT_TRIG_RISING;
+	} else if ((flags & GPIO_INT_EDGE_FALLING) == GPIO_INT_EDGE_FALLING) {
+		trigger = HC32_EXTINT_TRIG_FALLING;
+	} else if ((flags & GPIO_INT_LEVEL_LOW) == GPIO_INT_LEVEL_LOW) {
+		trigger = HC32_EXTINT_TRIG_LOW_LVL;
+	} else {
+		;
+	}
+
+	return trigger;
+}
+
+/**
  * @brief Configure pin or port
  */
 static int gpio_hc32_configure(const struct device *port, gpio_pin_t pin,
 			       gpio_flags_t flags)
 {
+	int intr_trigger;
 	const struct gpio_hc32_config *cfg = port->config;;
 	uint8_t hc32_port = cfg->port;
 	stc_gpio_init_t stc_gpio_init;
@@ -68,6 +109,8 @@ static int gpio_hc32_configure(const struct device *port, gpio_pin_t pin,
 		} else if ((flags & GPIO_OUTPUT_INIT_LOGICAL) != 0U) {
 			/* Don't support logical set */
 			return -ENOTSUP;
+		} else {
+			;
 		}
 	} else if ((flags & GPIO_INPUT) != 0) {
 		/* Input */
@@ -78,6 +121,8 @@ static int gpio_hc32_configure(const struct device *port, gpio_pin_t pin,
 		} else if ((flags & GPIO_PULL_DOWN) != 0) {
 			/* No pull down */
 			return -ENOTSUP;
+		} else {
+			;
 		}
 	} else {
 		/* Deactivated: Analog */
@@ -85,26 +130,14 @@ static int gpio_hc32_configure(const struct device *port, gpio_pin_t pin,
 	}
 
 	/* GPIO interrupt configuration flags */
-	if ((flags & GPIO_INT_MASK) != 0) {
-		if ((flags & GPIO_INT_ENABLE) != 0) {
-			stc_gpio_init.u16ExtInt = PIN_EXTINT_ON;
-		} else if ((flags & GPIO_INT_DISABLE) != 0) {
-			stc_gpio_init.u16ExtInt = PIN_EXTINT_OFF;
-		}
-
-		if ((flags & GPIO_INT_EDGE_BOTH) == GPIO_INT_EDGE_BOTH) {
-			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_BOTH);
-		} else if ((flags & GPIO_INT_EDGE_RISING) == GPIO_INT_EDGE_RISING) {
-			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_RISING);
-		} else if ((flags & GPIO_INT_EDGE_FALLING) == GPIO_INT_EDGE_FALLING) {
-			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_FALLING);
-		} else if ((flags & GPIO_INT_LEVEL_LOW) == GPIO_INT_LEVEL_LOW) {
-			hc32_extint_trigger(pin, HC32_EXTINT_TRIG_LOW_LVL);
-		} else if (((flags & GPIO_INT_LEVEL_HIGH) == GPIO_INT_LEVEL_HIGH)
-			   || ((flags & GPIO_INT_LEVELS_LOGICAL) != 0)) {
-			/* Not support hight level and logical level set for int */
+	stc_gpio_init.u16ExtInt = gpio_hc32_cfg2ll_intr_on(flags);
+	if (PIN_EXTINT_ON == stc_gpio_init.u16ExtInt) {
+		intr_trigger = gpio_hc32_cfg2ll_intr_trig(flags);
+		if (HC32_EXTINT_TRIG_NOT_SUPPT == intr_trigger) {
 			stc_gpio_init.u16ExtInt = PIN_EXTINT_OFF;
 			return -ENOTSUP;
+		} else {
+			hc32_extint_trigger(pin, intr_trigger);
 		}
 	}
 
@@ -211,6 +244,8 @@ static int gpio_hc32_pin_interrupt_configure(const struct device *dev,
 	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
 		hc32_extint_enable(port, pin);
 		return 0;
+	} else {
+		;
 	}
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 

@@ -23,5 +23,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-description: HC32 USART controller

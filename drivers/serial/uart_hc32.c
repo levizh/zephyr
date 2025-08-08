@@ -167,7 +167,7 @@ static inline uint32_t uart_hc32_cfg2ll_stopbits(
 
 static inline enum uart_config_stop_bits uart_hc32_ll2cfg_stopbits(uint32_t sb)
 {
-	enum uart_config_stop_bits ret_cfg_stopbits = USART_STOPBIT_1BIT;
+	enum uart_config_stop_bits ret_cfg_stopbits = UART_CFG_STOP_BITS_1;
 
 #ifdef USART_STOPBIT_2BIT
 	if(USART_STOPBIT_2BIT == sb) {
@@ -554,8 +554,8 @@ static void uart_hc32_irq_callback_set(const struct device *dev,
 	uint32_t i;
 	struct uart_hc32_data *data = dev->data;
 
-	if ((user_data == NULL) || (*(uint32_t *)user_data >= UART_INT_NUM)) {
-		for (i = 0; i< UART_INT_NUM; i++) {
+	if ((user_data == NULL) || (*(uint32_t *)user_data >= HC32_UART_INT_NUM)) {
+		for (i = 0; i< HC32_UART_INT_NUM; i++) {
 			data->cb[i].user_cb = cb;
 			data->cb[i].user_data = user_data;
 		}
@@ -711,7 +711,7 @@ static int uart_hc32_async_callback_set(const struct device *dev,
 	struct uart_hc32_data *data = dev->data;
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
-	for(uint8_t i = 0; i < UART_INT_NUM; i++)
+	for(uint8_t i = 0; i < HC32_UART_INT_NUM; i++)
 	{
 		data->cb[i].user_cb = NULL;
 		data->cb[i].user_data = NULL;
@@ -1306,73 +1306,78 @@ static int uart_hc32_init(const struct device *dev)
 		DT_USART_HAS_INTR(DT_INST(index, xhsc_hc32_uart))
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define USART_IRQ_ISR_CONFIG(isr_name_prefix, isr_idx, index)				\
+
+#define DT_IS_HC32_USART_INT_DEF(node_id, isr_name)							\
+		IS_ENABLED(DT_CAT4(node_id, _IRQ_NAME_, isr_name, _VAL_irq_EXISTS))
+
+#define DT_IS_HC32_UART_INTR_EXIST(index, isr_name)							\
+		DT_IS_HC32_USART_INT_DEF(DT_INST(index, xhsc_hc32_uart), isr_name)
+
+#define USART_IRQ_ISR_CONFIG(isr_name, index)								\
 	IRQ_CONNECT(															\
-		DT_INST_IRQ_BY_IDX(index, isr_idx, irq),							\
-		DT_INST_IRQ_BY_IDX(index, isr_idx, priority),						\
-		DT_CAT3(isr_name_prefix, _, index),									\
+		DT_INST_IRQ_BY_NAME(index, isr_name, irq),							\
+		DT_INST_IRQ_BY_NAME(index, isr_name, priority),						\
+		DT_CAT4(usart_hc32_, isr_name, _isr_, index),						\
 		DEVICE_DT_INST_GET(index),											\
 		0);																	\
 	hc32_intc_irq_signin(													\
-		DT_INST_IRQ_BY_IDX(index, isr_idx, irq),							\
-		DT_INST_IRQ_BY_IDX(index, isr_idx, int_src));						\
-	irq_enable(DT_INST_IRQ_BY_IDX(index, isr_idx, irq));
+		DT_INST_IRQ_BY_NAME(index, isr_name, irq),							\
+		DT_INST_IRQ_BY_NAME(index, isr_name, int_src));						\
+	irq_enable(DT_INST_IRQ_BY_NAME(index, isr_name, irq));
 
 #define HC32_UART_IRQ_HANDLER_DECL(index)									\
 	static void usart_hc32_config_func_##index(const struct device *dev);	\
-	static void	usart_hc32_rx_error_isr_##index(const struct device *dev);	\
-	static void usart_hc32_rx_full_isr_##index(const struct device *dev);	\
-	static void usart_hc32_tx_empty_isr_##index(const struct device *dev);	\
-	static void usart_hc32_tx_complete_isr_##index(const struct device *dev);
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, ore), 					\
+		(static void usart_hc32_ore_isr_##index(const struct device *dev);)	\
+		,()) 																\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, rxne), 					\
+		(static void usart_hc32_rxne_isr_##index(const struct device *dev);)\
+		,()) 																\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, tc), 						\
+		(static void usart_hc32_tc_isr_##index(const struct device *dev);)	\
+		,()) 																\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, txe), 					\
+		(static void usart_hc32_txe_isr_##index(const struct device *dev);)	\
+		,()) 																\
+
+#define HC32_UART_IRQ_HANDLER_DEF_BY_NAME(index, name, cb_idx)				\
+	static void usart_hc32_##name##_isr_##index(const struct device *dev)	\
+	{																		\
+		struct uart_hc32_data *const data = dev->data;						\
+																			\
+		if (data->cb[cb_idx].user_cb) {										\
+			data->cb[cb_idx].user_cb(dev, data->cb[cb_idx].user_data);		\
+		}																	\
+	}
 
 #define HC32_UART_IRQ_HANDLER_DEF(index)									\
-	static void usart_hc32_rx_error_isr_##index(const struct device *dev)	\
-	{																		\
-		struct uart_hc32_data *const data = dev->data;						\
-																			\
-		if (data->cb[UART_INT_IDX_EI].user_cb) {							\
-			data->cb[UART_INT_IDX_EI].user_cb(dev,							\
-				data->cb[UART_INT_IDX_EI].user_data);						\
-		}																	\
-	}																		\
-																			\
-	static void usart_hc32_rx_full_isr_##index(const struct device *dev)	\
-	{																		\
-		struct uart_hc32_data *const data = dev->data;						\
-																			\
-		if (data->cb[UART_INT_IDX_RI].user_cb) {							\
-			data->cb[UART_INT_IDX_RI].user_cb(dev,							\
-			data->cb[UART_INT_IDX_RI].user_data);							\
-		}																	\
-	}																		\
-																			\
-	static void 															\
-		usart_hc32_tx_empty_isr_##index(const struct device *dev)			\
-	{																		\
-		struct uart_hc32_data *const data = dev->data;						\
-																			\
-		if (data->cb[UART_INT_IDX_TI].user_cb) {							\
-			data->cb[UART_INT_IDX_TI].user_cb(dev,							\
-				data->cb[UART_INT_IDX_TI].user_data);						\
-		}																	\
-	}																		\
-																			\
-	static void usart_hc32_tx_complete_isr_##index(const struct device *dev)\
-	{																		\
-		struct uart_hc32_data *const data = dev->data;						\
-																			\
-		if (data->cb[UART_INT_IDX_TCI].user_cb) {							\
-			data->cb[UART_INT_IDX_TCI].user_cb(dev,							\
-				data->cb[UART_INT_IDX_TCI].user_data);						\
-		}																	\
-	}																		\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, ore), 					\
+		(HC32_UART_IRQ_HANDLER_DEF_BY_NAME(index, ore, HC32_UART_IDX_EI)),	\
+		())																	\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, rxne), 					\
+		(HC32_UART_IRQ_HANDLER_DEF_BY_NAME(index, rxne, HC32_UART_IDX_EI)),	\
+		())																	\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, tc), 						\
+		(HC32_UART_IRQ_HANDLER_DEF_BY_NAME(index, tc, HC32_UART_IDX_EI)),	\
+		())																	\
+	COND_CODE_1(DT_IS_HC32_UART_INTR_EXIST(index, txe), 					\
+		(HC32_UART_IRQ_HANDLER_DEF_BY_NAME(index, txe, HC32_UART_IDX_EI)),	\
+		())																	\
 																			\
 	static void usart_hc32_config_func_##index(const struct device *dev)	\
 	{																		\
-		USART_IRQ_ISR_CONFIG(usart_hc32_rx_error_isr, 0, index)				\
-		USART_IRQ_ISR_CONFIG(usart_hc32_rx_full_isr, 1, index)				\
-		USART_IRQ_ISR_CONFIG(usart_hc32_tx_empty_isr, 2, index)				\
-		USART_IRQ_ISR_CONFIG(usart_hc32_tx_complete_isr, 3, index)			\
+		COND_CODE_1(														\
+			DT_IS_HC32_UART_INTR_EXIST(index, ore),							\
+			(USART_IRQ_ISR_CONFIG(ore, index)),())							\
+		COND_CODE_1(														\
+			DT_IS_HC32_UART_INTR_EXIST(index, rxne),						\
+			(USART_IRQ_ISR_CONFIG(rxne, index)),())							\
+		COND_CODE_1(														\
+			DT_IS_HC32_UART_INTR_EXIST(index, tc),							\
+			(USART_IRQ_ISR_CONFIG(tc, index)),())							\
+		COND_CODE_1(														\
+			DT_IS_HC32_UART_INTR_EXIST(index, txe),							\
+			(USART_IRQ_ISR_CONFIG(txe, index)),())							\
 	}
 
 #define HC32_UART_IRQ_HANDLER_FUNC(index)									\
@@ -1392,6 +1397,7 @@ static int uart_hc32_init(const struct device *dev)
 			DT_IS_INTR_EXIST(index),										\
 			(HC32_UART_IRQ_HANDLER_DECL(index)),							\
 			())
+
 #define HC32_UART_IRQ_HANDLER_PRE_DEF(index)								\
 	COND_CODE_1(															\
 			DT_IS_INTR_EXIST(index),										\
@@ -1404,7 +1410,7 @@ static int uart_hc32_init(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define HC32_UART_CLOCK_DECL(index)										\
-static struct hc32_modules_clock_sys uart_fcg_config_##index[]	\
+static struct hc32_modules_clock_sys uart_fcg_config_##index[]			\
 		= HC32_MODULES_CLOCKS(DT_DRV_INST(index));
 
 #define HC32_UART_INIT(index)											\

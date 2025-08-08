@@ -27,11 +27,11 @@
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
 enum UART_TYPE{
-    UART_INT_IDX_EI,
-    UART_INT_IDX_RI,
-    UART_INT_IDX_TI,
-    UART_INT_IDX_TCI,
-    UART_INT_NUM
+    HC32_UART_IDX_EI,
+    HC32_UART_IDX_RI,
+    HC32_UART_IDX_TI,
+    HC32_UART_IDX_TCI,
+    HC32_UART_INT_NUM
 };
 #endif /* UART_INTERRUPT_DRIVEN */
 
@@ -82,7 +82,7 @@ struct uart_hc32_data {
 	/* uart config */
 	struct uart_config *uart_cfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
-	struct hc32_usart_cb_data cb[UART_INT_NUM];
+	struct hc32_usart_cb_data cb[HC32_UART_INT_NUM];
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API

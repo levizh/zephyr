@@ -139,30 +139,30 @@ static void hc32_clk_conf(void)
 }
 
 #if defined (HC32F460)
+static uint8_t hc32_system_running_mode(uint32_t frequency)
+{
+	uint8_t running_mode;
+
+	if (frequency >= 168000000) {
+		running_mode = 2;
+	} else {
+		if (frequency >= 8000000) {
+			running_mode = 1;
+		} else {
+			running_mode = 0;
+		}
+	}
+
+	return running_mode;
+}
+
 static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 {
 	uint8_t old_run_mode;
 	uint8_t new_run_mode;
 
-	if (new_freq >= 168000000) {
-		new_run_mode = 2;
-	} else {
-		if (new_freq >= 8000000) {
-			new_run_mode = 1;
-		} else {
-			new_run_mode = 0;
-		}
-	}
-
-	if (old_freq >= 168000000) {
-		old_run_mode = 2;
-	} else {
-		if (old_freq >= 8000000) {
-			old_run_mode = 1;
-		} else {
-			old_run_mode = 0;
-		}
-	}
+	new_run_mode = hc32_system_running_mode(new_freq);
+	old_run_mode = hc32_system_running_mode(old_freq);
 
 	if (old_run_mode == 0) {
 		if (new_run_mode == 1) {
@@ -170,7 +170,7 @@ static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 		} else if (new_run_mode == 2) {
 			PWC_LowSpeedToHighPerformance();
 		} else {
-			;
+			/* Nothing to do */
 		}
 	} else if (old_run_mode == 1) {
 		if (new_run_mode == 0) {
@@ -178,7 +178,7 @@ static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 		} else if (new_run_mode == 2) {
 			PWC_HighSpeedToHighPerformance();
 		} else {
-			;
+			/* Nothing to do */
 		}
 	} else if (old_run_mode == 2) {
 		if (new_run_mode == 0) {
@@ -186,10 +186,10 @@ static void hc32_run_mode_switch(uint32_t old_freq, uint32_t new_freq)
 		} else if (new_run_mode == 1) {
 			PWC_HighPerformanceToHighSpeed();
 		} else {
-			;
+			/* Nothing to do */
 		}
 	} else {
-		;
+		/* Nothing to do */
 	}
 }
 #elif defined (HC32F4A0)

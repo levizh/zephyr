@@ -18,10 +18,11 @@
  * @brief external trigger flags
  */
 enum hc32_extint_trigger {
-	HC32_EXTINT_TRIG_FALLING = 0x0,     /* trigger on falling edge */
-	HC32_EXTINT_TRIG_RISING  = 0x1,     /* trigger on rising edge  */
-	HC32_EXTINT_TRIG_BOTH    = 0x2,     /* trigger on falling edge */
-	HC32_EXTINT_TRIG_LOW_LVL = 0x3,     /* trigger on low level */
+	HC32_EXTINT_TRIG_FALLING = 0x0,		/* trigger on falling edge */
+	HC32_EXTINT_TRIG_RISING  = 0x1,		/* trigger on rising edge  */
+	HC32_EXTINT_TRIG_BOTH    = 0x2,		/* trigger on falling edge */
+	HC32_EXTINT_TRIG_LOW_LVL = 0x3,		/* trigger on low level */
+	HC32_EXTINT_TRIG_NOT_SUPPT,			/* trigger not supported */
 };
 
 /* callback for exti interrupt */

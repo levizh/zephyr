@@ -53,3 +53,4 @@ child-binding:
           0 (low) - sets pin to low drive strength, default set.
           1 (medium) - sets pin to medium drive strength
           2 (high) - sets pin to high drive strength
+          Default is "low" because it is the reset value.

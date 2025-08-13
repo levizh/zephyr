@@ -1,8 +1,9 @@
 # Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+title: XHSC HC32 Pinctrl
+
 description: |
-  xhsc hc32 pinctrl node.
   Based on pincfg-node.yaml binding.
 
   Note: `bias-disable` and `drive-push-pull` are default pin configurations.

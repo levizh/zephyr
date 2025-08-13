@@ -1,7 +1,7 @@
 # Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: xhsc hc32 GPIO node
+description: XHSC HC32 GPIO
 
 compatible: "xhsc,hc32-gpio"
 

@@ -1,8 +1,7 @@
 # Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-  PLL node binding for HC32 devices
+description: HC32 PLL Clock
 
 compatible: "xhsc,hc32-clock-pll"
 

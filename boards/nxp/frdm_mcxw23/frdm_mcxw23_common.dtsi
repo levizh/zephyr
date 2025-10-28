@@ -32,6 +32,7 @@
 		accel0 = &fxls8974;
 		mcuboot-button0 = &btn_wk;
 		watchdog0 = &wwdt0;
+		pwm-0 = &sc_timer;
 	};
 
 	leds {
@@ -169,11 +170,38 @@
 	status = "okay";
 };
 
+&sc_timer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sctimer_default>;
+	pinctrl-names = "default";
+};
+
+/*
+ * MCXW23 FRDM board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "okay";
+};
+
 &wwdt0 {
 	status = "okay";
 };
 
 &rtc {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&dma1 {
 	status = "okay";
 };
 
@@ -207,7 +235,14 @@
 
 arduino_i2c: &flexcomm1 {};
 
-arduino_spi: &flexcomm2 {};
+arduino_spi: &flexcomm2 {
+	status = "okay";
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm2_spi>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
 
 mikrobus_i2c: &flexcomm1 {};
 

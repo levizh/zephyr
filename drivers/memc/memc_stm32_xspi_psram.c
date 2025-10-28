@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -322,7 +323,8 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	cmd.AddressMode = HAL_XSPI_ADDRESS_8_LINES;
 	cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
 	cmd.AddressDTRMode = HAL_XSPI_ADDRESS_DTR_ENABLE;
-	cmd.DataMode = HAL_XSPI_DATA_16_LINES;
+	cmd.DataMode = DT_INST_PROP(0, io_x16_mode) ? HAL_XSPI_DATA_16_LINES
+						    : HAL_XSPI_DATA_8_LINES;
 	cmd.DataDTRMode = HAL_XSPI_DATA_DTR_ENABLE;
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_WRITE;
 	cmd.DQSMode = HAL_XSPI_DQS_ENABLE;
@@ -353,7 +355,8 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 
 #if defined(XSPI_CR_NOPREF)
-	MODIFY_REG(hxspi.Instance->CR, XSPI_CR_NOPREF, HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
+	stm32_reg_modify_bits(&hxspi.Instance->CR, XSPI_CR_NOPREF,
+			      HAL_XSPI_AUTOMATIC_PREFETCH_DISABLE);
 #endif
 
 #ifdef CONFIG_SHARED_MULTI_HEAP

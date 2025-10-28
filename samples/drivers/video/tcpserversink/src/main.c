@@ -124,14 +124,17 @@ int configure_encoder(void)
 		return -1;
 	}
 
-	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
+	buffer = video_buffer_aligned_alloc(size, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_NO_WAIT);
 	if (buffer == NULL) {
 		LOG_ERR("Unable to alloc compressed video buffer size=%d", size);
 		return -1;
 	}
 
 	buffer->type = VIDEO_BUF_TYPE_OUTPUT;
-	video_enqueue(encoder_dev, buffer);
+	if (video_enqueue(encoder_dev, buffer)) {
+		LOG_ERR("Unable to enqueue encoder output buf");
+		return -1;
+	}
 
 	/* Set input format */
 	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
@@ -165,12 +168,16 @@ int encode_frame(struct video_buffer *in, struct video_buffer **out)
 	int ret;
 
 	in->type = VIDEO_BUF_TYPE_INPUT;
-	video_enqueue(encoder_dev, in);
+	ret = video_enqueue(encoder_dev, in);
+	if (ret) {
+		LOG_ERR("Unable to enqueue encoder input buf");
+		return ret;
+	}
 
 	(*out)->type = VIDEO_BUF_TYPE_OUTPUT;
 	ret = video_dequeue(encoder_dev, out, K_FOREVER);
 	if (ret) {
-		LOG_ERR("Unable to dequeue encoder buf");
+		LOG_ERR("Unable to dequeue encoder output buf");
 		return ret;
 	}
 
@@ -211,7 +218,6 @@ int main(void)
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 #endif
-	size_t bsize;
 	int i = 0;
 #if CONFIG_VIDEO_FRAME_HEIGHT || CONFIG_VIDEO_FRAME_WIDTH
 	int err;
@@ -278,11 +284,6 @@ int main(void)
 
 	LOG_INF("Video device detected, format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt.pixelformat), fmt.width, fmt.height);
-
-	if (caps.min_line_count != LINE_COUNT_HEIGHT) {
-		LOG_ERR("Partial framebuffers not supported by this sample");
-		return 0;
-	}
 
 	/* Set the crop setting if necessary */
 #if CONFIG_VIDEO_SOURCE_CROP_WIDTH && CONFIG_VIDEO_SOURCE_CROP_HEIGHT
@@ -392,21 +393,14 @@ int main(void)
 		tp_set_ret = video_set_ctrl(video_dev, &ctrl);
 	}
 
-	/* Size to allocate for each buffer */
-	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
-		bsize = fmt.pitch * fmt.height;
-	} else {
-		bsize = fmt.pitch * caps.min_line_count;
-	}
-
 	/* Alloc Buffers */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
 		/*
 		 * For some hardwares, such as the PxP used on i.MX RT1170 to do image rotation,
 		 * buffer alignment is needed in order to achieve the best performance
 		 */
-		buffers[i] = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
-							K_FOREVER);
+		buffers[i] = video_buffer_aligned_alloc(fmt.size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
+							K_NO_WAIT);
 		if (buffers[i] == NULL) {
 			LOG_ERR("Unable to alloc video buffer");
 			return 0;
@@ -435,7 +429,11 @@ int main(void)
 
 		/* Enqueue Buffers */
 		for (i = 0; i < ARRAY_SIZE(buffers); i++) {
-			video_enqueue(video_dev, buffers[i]);
+			ret = video_enqueue(video_dev, buffers[i]);
+			if (ret) {
+				LOG_ERR("Unable to enqueue video buf");
+				return 0;
+			}
 		}
 
 		/* Start video capture */
@@ -465,7 +463,12 @@ int main(void)
 			ret = sendall(client, vbuf_out->buffer, vbuf_out->bytesused);
 
 			vbuf_out->type = VIDEO_BUF_TYPE_OUTPUT;
-			video_enqueue(encoder_dev, vbuf_out);
+			ret = video_enqueue(encoder_dev, vbuf_out);
+			if (ret) {
+				LOG_ERR("Unable to enqueue encoder output buf");
+				return 0;
+			}
+
 #else
 			LOG_INF("Sending frame %d", i++);
 			/* Send video buffer to TCP client */
@@ -478,7 +481,11 @@ int main(void)
 			}
 
 			vbuf->type = VIDEO_BUF_TYPE_INPUT;
-			(void)video_enqueue(video_dev, vbuf);
+			ret = video_enqueue(video_dev, vbuf);
+			if (ret) {
+				LOG_ERR("Unable to enqueue video buf");
+				return 0;
+			}
 		} while (!ret);
 
 		/* stop capture */

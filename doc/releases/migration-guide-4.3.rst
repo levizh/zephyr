@@ -41,6 +41,25 @@ Base Libraries
 * ``Z_MIN``, ``Z_MAX`` and ``Z_CLAMP`` macros have been renamed to
   :c:macro:`min` :c:macro:`max` and :c:macro:`clamp`.
 
+* The header files ``<zephyr/posix/time.h>``, ``<zephyr/posix/signal.h>`` should no longer be used.
+  Include them in the standard path as ``<time.h>``, and ``<signal.h>``, provided by the C library.
+  Non-POSIX C library maintainers may include :zephyr_file:`include/zephyr/posix/posix_time.h`
+  and :zephyr_file:`include/zephyr/posix/posix_signal.h` to portably provide POSIX definitions.
+
+* POSIX limits are no longer defined in ``<zephyr/posix/posix_features.h>``. Similarly, include them
+  in the standard path via ``<limits.h>``, provided by the C library. Non-POSIX C library maintainers
+  may include :zephyr_file:`include/zephyr/posix/posix_limits.h` for Zephyr's definitions. Some
+  runtime-invariant values may need to be queried via :c:func:`sysconf`.
+
+* The number of file descriptor table size and its availability is now determined by
+  a ``ZVFS_OPEN_SIZE`` define instead of the :kconfig:option:`CONFIG_ZVFS_OPEN_MAX`
+  Kconfig option. Subsystems can specify their own custom file descriptor table size
+  requirements by specifying Kconfig options with the prefix ``CONFIG_ZVFS_OPEN_ADD_SIZE_``.
+  The old Kconfig option still exists, but will be overridden if the custom requirements
+  are larger. To force the old Kconfig option to be used, even when its value is less
+  than the indicated custom requirements, a new :kconfig:option:`CONFIG_ZVFS_OPEN_IGNORE_MIN`
+  option has been introduced (which defaults being disabled).
+
 Boards
 ******
 
@@ -49,6 +68,10 @@ Boards
   external NOR flash. This change currently prevents upgrade from older Zephyr release images to
   Zephyr 4.3 release images. More details in the TF-M migration and release notes.
 
+* nucleo_h753zi: the flash layout was updated and firmware upgrade may fail due to layout
+  incompatibility with the previous layout. The new layout includes storage partition enlarged to
+  2 sectors, scratch partition removed and all flash partitions reordered for better structure.
+
 * mimxrt11x0: renamed lpadc1 to lpadc2 and renamed lpadc0 to lpadc1.
 
 * NXP ``frdm_mcxa166`` is renamed to ``frdm_mcxa346``.
@@ -56,10 +79,44 @@ Boards
 
 * Panasonic ``panb511evb`` is renamed to ``panb611evb``.
 
+* STM32 boards OpenOCD configuration files have been changed to support latest OpenOCD versions
+  (> v0.12.0) in which the HLA/SWD transport has been deprecated (see
+  https://review.openocd.org/c/openocd/+/8523 and commit
+  https://sourceforge.net/p/openocd/code/ci/34ec5536c0ba3315bc5a841244bbf70141ccfbb4/).
+  Issues may be encountered when connecting to an ST-Link adapter running firmware prior
+  v2j24 which do not support the new transport. In this case, the ST-Link firmware should
+  be upgraded or, if not possible, the OpenOCD configuration script should be changed to
+  source "interface/stlink-hla.cfg" and select the "hla_swd" interface explicitly.
+  Backward compatibility with OpenOCD v0.12.0 or older is maintained.
+
 Device Drivers and Devicetree
 *****************************
 
 .. zephyr-keep-sorted-start re(^\w)
+
+ADC
+===
+
+* ``iadc_gecko.c`` driver is replaced by ``adc_silabs_iadc.c``.
+  :dtcompatible:`silabs,gecko-iadc` is replaced by :dtcompatible:`silabs,iadc`.
+
+* :dtcompatible:`st,stm32-adc` and its derivatives now require the ``clock-names`` property to be
+  defined and to match the number of clocks in the ``clocks`` property. The expected clock names are
+  ``adcx`` for the register clock, ``adc-ker`` for the kernel source clock, and ``adc-pre`` to set
+  the ADC prescaler (for series where it is located in the RCC registers).
+
+Clock Control
+=============
+
+* :kconfig:option:`CONFIG_CLOCK_STM32_HSE_CLOCK` is no longer user-configurable. Its value is now
+  always taken from the ``clock-frequency`` property of ``&clk_hse`` DT node, but only if the node
+  is enabled (otherwise, the symbol is not defined). This change should only affect STM32 MPU-based
+  platforms and aligns them with existing practice from STM32 MCU platforms.
+
+* :dtcompatible:`st,stm32f1-rcc` and :dtcompatible:`st,stm32f3-rcc` do not exist anymore. Therefore
+  ``adc-prescaler``, ``adc12-prescaler`` and ``adc34-prescaler`` properties are no longer defined
+  either. They are replaced by adding the prescaler as an additional clock in the ADC ``clocks``
+  property.
 
 Comparator
 ==========
@@ -72,10 +129,17 @@ Comparator
   and :c:macro:`NRF_COMP_AIN_VDDH_DIV5` represents VDDH/5.
   The old ``string`` properties type is deprecated.
 
+DMA
+===
+
+* DMA no longer implements user mode syscalls as part of its API. The syscalls were determined to be
+  too broadly defined in access and impossible to implement the syscall parameter verification step
+  in another.
+
 MFD
 ===
 
-* Driver suppor for AXP2101 has been separated from the AXP192 one. As a consequence the
+* Driver support for AXP2101 has been separated from the AXP192 one. As a consequence the
   kconfig symbol ``MFD_AXP192_AXP2101`` is removed. :kconfig:option:`MFD_AXP192` is now to be
   used for AXP192 device while :kconfig:option:`MFD_AXP2101` for the AXP2101 one.
 
@@ -125,6 +189,12 @@ Stepper
 
 * :dtcompatible:`zephyr,gpio-stepper` has been replaced by :dtcompatible:`zephyr,h-bridge-stepper`.
 
+USB
+===
+
+* The USB Video Class was configuring the framerate and format of the source video device.
+  This is now to be done by the application after the host selected the format (:github:`93192`).
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
@@ -139,10 +209,16 @@ Bluetooth
 Bluetooth Controller
 ====================
 
-* The following Kconfig option have been renamed:
+* The following have been renamed:
 
     * :kconfig:option:`CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP` to
       :kconfig:option:`CONFIG_BT_CTLR_ADV_ADI_IN_SCAN_RSP`
+    * :c:struct:`bt_hci_vs_fata_error_cpu_data_cortex_m` to
+      :c:struct:`bt_hci_vs_fatal_error_cpu_data_cortex_m` and now contains the program counter
+      value.
+
+   * :c:func:`bt_ctlr_set_public_addr` is deprecated. To set the public Bluetooth device address,
+     sending a vendor specific HCI command with :c:struct:`bt_hci_cp_vs_write_bd_addr` can be used.
 
 .. zephyr-keep-sorted-start re(^\w)
 
@@ -174,6 +250,22 @@ Bluetooth HCI
 * The deprecated ``ipm`` value was removed from ``bt-hci-bus`` devicetree property.
   ``ipc`` should be used instead.
 
+Bluetooth Mesh
+==============
+
+* Kconfigs ``CONFIG_BT_MESH_USES_MBEDTLS_PSA`` and ``CONFIG_BT_MESH_USES_TFM_PSA`` have
+  been removed. The selection of the PSA Crypto provider is now automatically controlled
+  by Kconfig :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
+Bluetooth Host
+==============
+
+* :kconfig:option:`CONFIG_BT_FIXED_PASSKEY` has been deprecated. Instead, the application can
+  provide passkeys for pairing using the :c:member:`bt_conn_auth_cb.app_passkey` callback, which is
+  available when :kconfig:option:`CONFIG_BT_APP_PASSKEY` is enabled. The application can return the
+  passkey for pairing, or :c:macro:`BT_PASSKEY_RAND` for the Host to generate a random passkey
+  instead.
+
 Ethernet
 ========
 
@@ -192,6 +284,11 @@ Ethernet
     * Replaced devicetree property ``tx-checksum-offload`` which enabled TX checksum offloading
       ``disable-tx-checksum-offload`` which now actively disables it.
 
+* The Xilinx GEM Ethernet driver (:dtcompatible:`xlnx,gem`) now obtains the AMBA AHB data bus
+  width matching the current target SoC (either Zynq-7000 or ZynqMP) from a design configuration
+  register at run-time, making the devicetree property ``amba-ahb-dbus-width`` obsolete, which
+  has therefore been removed.
+
 Power management
 ****************
 
@@ -200,11 +297,13 @@ Power management
   longer enable them directly, instead, enable or disable the "suspend-to-ram" power states
   in the devicetree.
 
+* For the NXP RW61x, the devicetree property ``exit-latency-us`` has been updated to reflect more
+  accurate, measured wake-up times. For applications utilizing Standby mode (PM3), this update and
+  an increase to the ``min-residency-us`` devicetree property may influence how the system
+  transitions between power modes. In some cases, this could lead to changes in power consumption.
+
 Networking
 **********
-
-* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
-  is passed as a :c:struct:`coap_client_response_data` pointer instead.
 
 * The HTTP server now respects the configured ``_config`` value. Check that
   you provide applicable value to :c:macro:`HTTP_SERVICE_DEFINE_EMPTY`,
@@ -217,6 +316,21 @@ Networking
   configuration.
 
 .. zephyr-keep-sorted-start re(^\w)
+
+CoAP
+====
+
+* The :c:type:`coap_client_response_cb_t` signature has changed. The list of arguments
+  is passed as a :c:struct:`coap_client_response_data` pointer instead.
+
+* The :c:struct:`coap_client_request` has changed to improve the library's resilience against
+  misconfiguration (i.e. using transient pointers within the struct):
+
+  * The :c:member:`coap_client_request.path` is now a ``char`` array instead of a pointer.
+    The array size is configurable with :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`.
+  * The :c:member:`coap_client_request.options` is now a :c:struct:`coap_client_option` array
+    instead of a pointer. The array size is configurable with
+    :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`.
 
 .. zephyr-keep-sorted-stop
 
@@ -245,6 +359,12 @@ PTP Clock
   ratio adjusting based on nominal frequency. Drivers implementing :c:func:`ptp_clock_rate_adjust`
   should be adjusted to account for the new behavior.
 
+Video
+*****
+
+* The ``min_line_count`` and ``max_line_count`` fields have been removed from :c:struct:`video_caps`.
+  Application should base on the new :c:member:`video_format.size` to allocate buffers.
+
 Other subsystems
 ****************
 
@@ -255,6 +375,21 @@ Cellular
 
  * :c:enum:`cellular_access_technology` values have been redefined to align with 3GPP TS 27.007.
  * :c:enum:`cellular_registration_status` values have been extended to align with 3GPP TS 27.007.
+
+Crypto
+======
+
+* Hashing operations now require a constant input in the :c:struct:`hash_pkt`.
+  This shouldn't affect any existing code, unless an out-of-tree hashing backend actually
+  performs that operation in-place (see :github:`94218`)
+
+Flash Map
+=========
+
+* With the long-term goal of transitioning to PSA Crypto API as the only crypto support in Zephyr,
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_MBEDTLS` is deprecated.
+  :kconfig:option:`FLASH_AREA_CHECK_INTEGRITY_PSA` is now the default choice: if TF-M is not
+  enabled or not supported by the platform, Mbed TLS will be used as PSA Crypto API provider.
 
 Logging
 =======
@@ -273,6 +408,25 @@ MCUmgr
   revision, which now includes the SoC and board variant. The old behaviour has been deprecated,
   but can still be used by enabling
   :kconfig:option:`CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`.
+
+* Support for legacy Mbed TLS hash crypto is removed and only PSA Crypto API is used.
+  :kconfig:option:`CONFIG_MCUMGR_GRP_FS_HASH_SHA256` automatically enables Mbed TLS and its
+  PSA Crypto implementation if TF-M is not enabled in the build.
+
+Mbed TLS
+========
+
+* In order to improve the 1:1 matching between Zephyr Kconfig and Mbed TLS build symbols, the
+  following Kconfigs were renamed:
+
+  * :kconfig:option:`CONFIG_MBEDTLS_MD` -> :kconfig:option:`CONFIG_MBEDTLS_MD_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_LMS` -> :kconfig:option:`CONFIG_MBEDTLS_LMS_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_TLS_VERSION_1_2` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_2`
+  * :kconfig:option:`CONFIG_MBEDTLS_DTLS` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_PROTO_DTLS`
+  * :kconfig:option:`CONFIG_MBEDTLS_TLS_VERSION_1_3` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_3`
+  * :kconfig:option:`CONFIG_MBEDTLS_TLS_SESSION_TICKETS` -> :kconfig:option:`CONFIG_MBEDTLS_SSL_SESSION_TICKETS`
+  * :kconfig:option:`CONFIG_MBEDTLS_CTR_DRBG_ENABLED` -> :kconfig:option:`CONFIG_MBEDTLS_CTR_DRBG_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_HMAC_DRBG_ENABLED` -> :kconfig:option:`CONFIG_MBEDTLS_HMAC_DRBG_C`
 
 RTIO
 ====
@@ -302,6 +456,13 @@ Shell
   and :kconfig:option:`SHELL_MQTT_TOPIC_TX_ID`. This allows keeping the previous topics for backward
   compatibility.
   (:github:`92677`).
+
+UpdateHub
+=========
+
+* Legacy Mbed TLS as an option for crypto support has been removed and PSA Crypto is now used in all
+  cases. :kconfig:option:`CONFIG_UPDATEHUB` will automatically enable the Mbed TLS implementation of
+  PSA Crypto if TF-M is not enabled in the build.
 
 .. zephyr-keep-sorted-stop
 
@@ -337,6 +498,32 @@ LVGL
   black and white to be inverted when using LVGL with monochrome displays.
   This issue has now been fixed. Any workarounds previously applied to achieve the expected
   behavior should be removed, otherwise black and white will be inverted again.
+
+LED Strip
+=========
+
+* Renamed ``arduino,modulino-smartleds`` to :dtcompatible:`arduino,modulino-pixels`
+
+Trusted Firmware-M
+==================
+
+* The signing process for BL2 (MCUboot) was updated. The boards that run using
+  TF-M NS and require BL2 must have their flash layout with the flash controller
+  information. This will ensure that when signing the hex/bin files all the
+  details will be present in the S and NS images. The image now has the details
+  to allow the FWU state machine be correct and allow FOTA.
+  (:github:`94470`)
+
+    * The ``--align`` parameter was fixed to 1. Now, it's set to the flash DT ``write_block_size``
+      property, but still provides 1 as a fallback for specific vendors.
+    * The ``--max-sectors`` value is now calculated based on the number of images, taking into
+      consideration the largest image size.
+    * The ``--confirm`` option now confirms both S and NS HEX images, ensuring that any image
+      that runs is valid for production and development.
+    * S and NS BIN images are now available. These are the correct images to be used in FOTA. Note
+      that S and NS images are unconfirmed by default, and the application is responsible for
+      confirming them with ``psa_fwu_accept()``. Otherwise, the images will roll back on the next
+      reboot.
 
 Architectures
 *************

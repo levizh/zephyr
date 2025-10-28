@@ -489,6 +489,105 @@ class DevicetreeBindingsCheck(ComplianceTest):
                     "'required: false' is redundant, please remove"
                 )
 
+
+class DevicetreeLintingCheck(ComplianceTest):
+    """
+    Checks if we are introducing syntax or formatting issues to devicetree files.
+    """
+    name = "DevicetreeLinting"
+    doc = "See https://docs.zephyrproject.org/latest/contribute/style/devicetree.html for more details."
+
+    def _parse_json_output(self, cmd, cwd=None):
+        """Run command and parse single JSON output with issues array"""
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            text=True,
+            cwd=cwd or GIT_TOP
+        )
+
+        if not result.stdout.strip():
+            return None
+
+        try:
+            json_data = json.loads(result.stdout)
+            return json_data
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}")
+
+    def run(self):
+        # Get changed DTS files
+        dts_files = [
+            file for file in get_files(filter="d")
+            if file.endswith((".dts", ".dtsi", ".overlay"))
+        ]
+
+        if not dts_files:
+            self.skip('No DTS')
+
+        temp_patch_files = []
+        batch_size = 500
+
+        for i in range(0, len(dts_files), batch_size):
+            batch = dts_files[i:i + batch_size]
+
+            # use a temporary file for each batch
+            temp_patch = f"dts_linter_{i}.patch"
+            temp_patch_files.append(temp_patch)
+
+            cmd = [
+                "npx", "--no", "dts-linter", "--",
+                "--outputFormat", "json",
+                "--format",
+                "--patchFile", temp_patch,
+            ]
+            for file in batch:
+                cmd.extend(["--file", file])
+
+            try:
+                json_output = self._parse_json_output(cmd)
+
+                if json_output and "issues" in json_output:
+                    cwd = json_output.get("cwd", "")
+                    logging.info(f"Processing issues from: {cwd}")
+
+                    for issue in json_output["issues"]:
+                        level = issue.get("level", "unknown")
+                        message = issue.get("message", "")
+
+                        if level == "info":
+                            logging.info(message)
+                        else:
+                            title = issue.get("title", "")
+                            file = issue.get("file", "")
+                            line = issue.get("startLine", None)
+                            col = issue.get("startCol", None)
+                            end_line = issue.get("endLine", None)
+                            end_col = issue.get("endCol", None)
+                            self.fmtd_failure(level, title, file, line, col, message, end_line, end_col)
+
+            except subprocess.CalledProcessError as ex:
+                stderr_output = ex.stderr if ex.stderr else ""
+                if stderr_output.strip():
+                    self.failure(f"dts-linter found issues:\n{stderr_output}")
+                else:
+                    self.failure("dts-linter failed with no output. "
+                                "Make sure you install Node.JS and then run npm ci inside ZEPHYR_BASE")
+            except RuntimeError as ex:
+                self.failure(f"{ex}")
+
+        # merge all temp patch files into one
+        with open("dts_linter.patch", "wb") as final_patch:
+            for patch in temp_patch_files:
+                with open(patch, "rb") as f:
+                    shutil.copyfileobj(f, final_patch)
+
+        # cleanup
+        for patch in temp_patch_files:
+            os.remove(patch)
+
 class KconfigCheck(ComplianceTest):
     """
     Checks is we are introducing any new warnings/errors with Kconfig,
@@ -1265,13 +1364,39 @@ flagged.
         "FOO_LOG_LEVEL",
         "FOO_SETTING_1",
         "FOO_SETTING_2",
-        "GEN_UICR_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_PROTECTEDMEM", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_PROTECTEDMEM_SIZE_BYTES", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECONDARY_PROCESSOR_VALUE", # Used in specialized build tool, not part of main Kconfig
-        "GEN_UICR_SECURESTORAGE", # Used in specialized build tool, not part of main Kconfig
+        "GEN_UICR_APPROTECT_APPLICATION_PROTECTED",
+        "GEN_UICR_APPROTECT_CORESIGHT_PROTECTED",
+        "GEN_UICR_APPROTECT_RADIOCORE_PROTECTED",
+        "GEN_UICR_ERASEPROTECT",
+        "GEN_UICR_GENERATE_PERIPHCONF",
+        "GEN_UICR_LOCK",
+        "GEN_UICR_PROTECTEDMEM",
+        "GEN_UICR_PROTECTEDMEM_SIZE_BYTES",
+        "GEN_UICR_SECONDARY",
+        "GEN_UICR_SECONDARY_GENERATE_PERIPHCONF",
+        "GEN_UICR_SECONDARY_PROCESSOR_APPLICATION",
+        "GEN_UICR_SECONDARY_PROCESSOR_RADIOCORE",
+        "GEN_UICR_SECONDARY_PROCESSOR_VALUE",
+        "GEN_UICR_SECONDARY_PROTECTEDMEM",
+        "GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES",
+        "GEN_UICR_SECONDARY_TRIGGER",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONLOCKUP",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT0",
+        "GEN_UICR_SECONDARY_TRIGGER_APPLICATIONWDT1",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCORELOCKUP",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT0",
+        "GEN_UICR_SECONDARY_TRIGGER_RADIOCOREWDT1",
+        "GEN_UICR_SECONDARY_WDTSTART",
+        "GEN_UICR_SECONDARY_WDTSTART_CRV",
+        "GEN_UICR_SECONDARY_WDTSTART_INSTANCE_CODE",
+        "GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT0",
+        "GEN_UICR_SECONDARY_WDTSTART_INSTANCE_WDT1",
+        "GEN_UICR_SECURESTORAGE",
+        "GEN_UICR_WDTSTART",
+        "GEN_UICR_WDTSTART_CRV",
+        "GEN_UICR_WDTSTART_INSTANCE_CODE",
+        "GEN_UICR_WDTSTART_INSTANCE_WDT0",
+        "GEN_UICR_WDTSTART_INSTANCE_WDT1",
         "HEAP_MEM_POOL_ADD_SIZE_", # Used as an option matching prefix
         "HUGETLBFS",          # Linux, in boards/xtensa/intel_adsp_cavs25/doc
         "IAR_BUFFERED_WRITE",
@@ -1350,6 +1475,7 @@ flagged.
         "ZEPHYR_TRY_MASS_ERASE", # MCUBoot setting described in sysbuild
                                  # documentation
         "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
+        "ZVFS_OPEN_ADD_SIZE_", # Used as an option matching prefix
         # zephyr-keep-sorted-stop
     }
 
@@ -2116,33 +2242,34 @@ class Ruff(ComplianceTest):
     doc = "Check python files with ruff."
 
     def run(self):
+        try:
+            subprocess.run(
+                "ruff check --output-format=json",
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                shell=True,
+                cwd=GIT_TOP,
+            )
+        except subprocess.CalledProcessError as ex:
+            output = ex.output.decode("utf-8")
+            messages = json.loads(output)
+            for m in messages:
+                self.fmtd_failure(
+                    "error",
+                    f'Python lint error ({m.get("code")}) see {m.get("url")}',
+                    m.get("filename"),
+                    line=m.get("location", {}).get("row"),
+                    col=m.get("location", {}).get("column"),
+                    end_line=m.get("end_location", {}).get("row"),
+                    end_col=m.get("end_location", {}).get("column"),
+                    desc=m.get("message"),
+                )
+
         for file in get_files(filter="d"):
             if not file.endswith((".py", ".pyi")):
                 continue
 
-            try:
-                subprocess.run(
-                    f"ruff check --force-exclude --output-format=json {file}",
-                    check=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    shell=True,
-                    cwd=GIT_TOP,
-                )
-            except subprocess.CalledProcessError as ex:
-                output = ex.output.decode("utf-8")
-                messages = json.loads(output)
-                for m in messages:
-                    self.fmtd_failure(
-                        "error",
-                        f'Python lint error ({m.get("code")}) see {m.get("url")}',
-                        file,
-                        line=m.get("location", {}).get("row"),
-                        col=m.get("location", {}).get("column"),
-                        end_line=m.get("end_location", {}).get("row"),
-                        end_col=m.get("end_location", {}).get("column"),
-                        desc=m.get("message"),
-                    )
             try:
                 subprocess.run(
                     f"ruff format --force-exclude --diff {file}",

@@ -337,7 +337,7 @@ struct dns_addrinfo {
  * Status values for the callback.
  */
 enum dns_resolve_status {
-	/** Invalid value for `ai_flags' field */
+	/** Invalid value for `ai_flags` field */
 	DNS_EAI_BADFLAGS    = -1,
 	/** NAME or SERVICE is unknown */
 	DNS_EAI_NONAME      = -2,
@@ -347,17 +347,17 @@ enum dns_resolve_status {
 	DNS_EAI_FAIL        = -4,
 	/** No address associated with NAME */
 	DNS_EAI_NODATA      = -5,
-	/** `ai_family' not supported */
+	/** `ai_family` not supported */
 	DNS_EAI_FAMILY      = -6,
-	/** `ai_socktype' not supported */
+	/** `ai_socktype` not supported */
 	DNS_EAI_SOCKTYPE    = -7,
-	/** SRV not supported for `ai_socktype' */
+	/** SRV not supported for `ai_socktype` */
 	DNS_EAI_SERVICE     = -8,
 	/** Address family for NAME not supported */
 	DNS_EAI_ADDRFAMILY  = -9,
 	/** Memory allocation failure */
 	DNS_EAI_MEMORY      = -10,
-	/** System error returned in `errno' */
+	/** System error returned in `errno` */
 	DNS_EAI_SYSTEM      = -11,
 	/** Argument buffer overflow */
 	DNS_EAI_OVERFLOW    = -12,
@@ -677,6 +677,23 @@ int dns_resolve_remove(struct dns_resolve_context *ctx, int if_index);
  */
 int dns_resolve_remove_source(struct dns_resolve_context *ctx, int if_index,
 			      enum dns_server_source source);
+
+/**
+ * @brief Remove servers from the DNS resolving context that have a specific IP address.
+ *
+ * @param ctx DNS context
+ * @param servers_sa DNS server addresses as struct sockaddr. The array
+ *        is NULL terminated. Port numbers are optional in struct sockaddr, the
+ *        default will be used if set to 0.
+ * @param interfaces Network interfaces to which the DNS servers are bound.
+ *        This is an array of network interface indices. The array must be
+ *        the same length as the servers_sa array.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int dns_resolve_remove_server_addresses(struct dns_resolve_context *ctx,
+					const struct sockaddr *servers_sa[],
+					int interfaces[]);
 
 /**
  * @brief Cancel a pending DNS query.

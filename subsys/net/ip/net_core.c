@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <string.h>
 #include <errno.h>
 
+#include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/ipv4_autoconf.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
@@ -471,6 +472,7 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
 
 	net_stats_update_bytes_recv(iface, pkt_len);
+	conn_mgr_if_used(iface);
 
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
@@ -505,9 +507,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 #if NET_TC_RX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
-
-	if ((IS_ENABLED(CONFIG_NET_TC_RX_SKIP_FOR_HIGH_PRIO) &&
-	     prio >= NET_PRIORITY_CA) || NET_TC_RX_COUNT == 0) {
+	if (net_tc_rx_is_immediate(tc, prio)) {
 		net_process_rx_packet(pkt);
 	} else {
 		if (net_tc_submit_to_rx_queue(tc, pkt) != NET_OK) {

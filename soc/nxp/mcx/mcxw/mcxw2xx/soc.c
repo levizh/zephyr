@@ -88,10 +88,20 @@ __weak void clock_init(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM2);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
+	CLOCK_Enable1MFRO(true);
+#endif
+
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 
 	configure_32k_osc();
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
+	/*!< OS event timer select FRO 1 MHz clock */
+	PMC->OSTIMERr &= ~PMC_OSTIMER_OSTIMERCLKSEL_MASK;
+	PMC->OSTIMERr |= OSTIMERCLKSEL_FRO_1MHz << PMC_OSTIMER_OSTIMERCLKSEL_SHIFT;
+#endif
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
